@@ -31,7 +31,7 @@ const StatCard = ({ title, icon, count, change, variant }: StatType) => {
           </div>
           <h3 className="mb-0 fw-bold">{count}</h3>
         </div>
-        <p className="mb-0 text-muted">
+        {/* <p className="mb-0 text-muted">
           <span className={`text-${variant} me-2`}>
             {change}%{' '}
             {variant === 'danger' ? (
@@ -41,7 +41,7 @@ const StatCard = ({ title, icon, count, change, variant }: StatType) => {
             )}
           </span>
           <span className="text-nowrap">Since last month</span>
-        </p>
+        </p> */}
       </CardBody>
     </Card>
   )
@@ -57,6 +57,7 @@ const Stat = () => {
       try {
         const response = await api.get(`/api/users/stats/${user?._id}`)
         const data = response.data
+        console.log("response",response)
         // Build statData array from API response.
         const stats: StatType[] = [
           {
@@ -81,18 +82,18 @@ const Stat = () => {
             variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
           },
           {
-            title: 'Outstanding Balances',
+            title: 'Outstanding Balances  (sum of amount due by clients)',
             icon: 'solar:eye-bold-duotone',
             count: data.outstandingBalances,
             change: data.outstandingBalancesChange,
             variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
           },
           {
-            title: 'Muhammad Balances',
+            title: `${user?.firstName} Balance`,
             icon: 'solar:eye-bold-duotone',
-            count: 0,
-            change: data.outstandingBalancesChange,
-            variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
+            count: data?.loggedInUserTotalBalance,
+            change: data.loggedInUserTotalBalance,
+            variant: data.loggedInUserTotalBalance < 0 ? 'danger' : 'success',
           },
           {
             title: 'Company Balances',
