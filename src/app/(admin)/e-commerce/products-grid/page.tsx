@@ -24,9 +24,9 @@ const ProductsGridPage = () => {
               </div>
             </div>
             <Col sm={'auto'} className="mt-3 mt-sm-0">
-              <nav>
+              {/* <nav>
                 <CustomPagination />
-              </nav>
+              </nav> */}
             </Col>
           </Row>
         </Col>
