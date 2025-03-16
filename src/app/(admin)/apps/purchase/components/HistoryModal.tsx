@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Transaction History' }
 
@@ -20,6 +21,7 @@ const HistoryModal = ({ onClose, selectedProduct }: HistoryModalProps) => {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const user = useAuthStore((state) => state.user)
+  const { showNotification } = useNotificationContext()
 
   useEffect(() => {
     async function fetchHistory() {
@@ -29,6 +31,7 @@ const HistoryModal = ({ onClose, selectedProduct }: HistoryModalProps) => {
           const response = await api.get(`/api/transaction/itemshistory/${buyerId}/${selectedProduct._id}`)
           setHistory(response.data)
         } catch (error) {
+          showNotification({ message: error?.response?.data?.error || 'Error fetching transaction history', variant: 'danger' })
           console.error('Error fetching transaction history:', error)
         } finally {
           setLoading(false)

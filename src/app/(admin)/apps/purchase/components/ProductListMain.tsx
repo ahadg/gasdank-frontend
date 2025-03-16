@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore'
 import SellMultipleProductsModal from './SellProductPopup'
 import HistoryModal from './HistoryModal'
 import AddProductModal from './AddProductStockModal'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Purchase Transactions' }
 
@@ -32,6 +33,7 @@ const PurchaseTransactionsPage = () => {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageLimit, setPageLimit] = useState<number>(10)
   const [totalProducts, setTotalProducts] = useState<number>(0)
+  const { showNotification } = useNotificationContext()
 
   // Fetch user-specific categories
   useEffect(() => {
@@ -40,6 +42,7 @@ const PurchaseTransactionsPage = () => {
         const response = await api.get(`/api/categories/${user._id}`)
         setCategories(response.data)
       } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
         console.error('Error fetching categories:', error)
       }
     }

@@ -7,6 +7,7 @@ import { Button, Card, Form } from 'react-bootstrap'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Purchase Transactions' }
 
@@ -17,6 +18,7 @@ export default function PurchaseTransactionsPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const { showNotification } = useNotificationContext()
 
   // Fetch buyers for the current user
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function PurchaseTransactionsPage() {
           const response = await api.get(`/api/buyers?user_id=${user._id}`)
           setBuyers(response.data)
         } catch (error) {
+          showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
           console.error('Error fetching buyers:', error)
         } finally {
           setLoading(false)

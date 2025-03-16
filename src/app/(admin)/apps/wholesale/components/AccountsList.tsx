@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
 import AddBalanceModal from './AddBalance'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Wholesale Accounts' }
 
@@ -19,6 +20,8 @@ export default function WholesaleAccountsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [activeModal,setActiveModal] = useState<string>()
+  const { showNotification } = useNotificationContext()
+
   // Fetch buyers for the current user
   useEffect(() => {
     async function fetchAccounts() {
@@ -28,6 +31,7 @@ export default function WholesaleAccountsPage() {
           const response = await api.get(`/api/buyers?user_id=${user._id}`)
           setAccounts(response.data)
         } catch (error) {
+          showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
           console.error('Error fetching accounts:', error)
         } finally {
           setLoading(false)

@@ -6,12 +6,14 @@ import IconifyIcon from "@/components/wrappers/IconifyIcon"
 import { Card, CardHeader, CardFooter, CardTitle, Row, Col, Button } from "react-bootstrap"
 import Link from 'next/link'
 import api from '@/utils/axiosInstance'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export default function UsersPage() {
   // State to hold users loaded from API and search text
   const [users, setUsers] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
+  const { showNotification } = useNotificationContext()
 
   // Load users from API on component mount
   useEffect(() => {
@@ -22,6 +24,7 @@ export default function UsersPage() {
         // Assuming the API returns an array of users
         setUsers(response.data)
       } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching user list', variant: 'danger' })
         console.error("Error fetching users:", error)
       } finally {
         setLoading(false)

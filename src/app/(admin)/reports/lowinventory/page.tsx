@@ -6,6 +6,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { Button, Card, CardFooter, CardHeader, CardTitle, Row, Col, Form } from 'react-bootstrap'
 import Link from 'next/link'
 import api from '@/utils/axiosInstance'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 //export const metadata: Metadata = { title: 'Out of Stock Products' }
 
@@ -13,6 +14,7 @@ export default function OutOfStockProductsPage() {
   const [products, setProducts] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
+  const { showNotification } = useNotificationContext()
 
   // Load out-of-stock products from API
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function OutOfStockProductsPage() {
         // Assuming the API returns an array of products.
         setProducts(response.data)
       } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching out-of-stock products', variant: 'danger' })
         console.error("Error fetching out-of-stock products:", error)
       } finally {
         setLoading(false)

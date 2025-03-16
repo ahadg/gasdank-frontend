@@ -1,44 +1,89 @@
 'use client'
+import { useState, ChangeEvent, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { Metadata } from 'next'
+import { Button, Card, CardHeader, CardTitle, CardBody, Row, Col, Form } from 'react-bootstrap'
 import axios from 'axios'
-import { useState } from 'react'
-import { Row, Col, Card, CardHeader, CardTitle, CardBody, Button } from 'react-bootstrap'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import api from '@/utils/axiosInstance'
 
-export default function EditUserPage() {
+//export const metadata: Metadata = { title: 'Add User' }
+
+interface Access {
+  read: boolean;
+  edit: boolean;
+  delete: boolean;
+  create: boolean;
+}
+
+interface AccessData {
+  dashboard: Access;
+  purchase: Access;
+  wholesale: Access;
+  inventory: Access;
+  config: Access;
+  reports: Access;
+}
+
+const defaultAccess: AccessData = {
+  dashboard: { read: false, edit: false, delete: false, create: false },
+  purchase: { read: false, edit: false, delete: false, create: false },
+  wholesale: { read: false, edit: false, delete: false, create: false },
+  inventory: { read: false, edit: false, delete: false, create: false },
+  config: { read: false, edit: false, delete: false, create: false },
+  reports: { read: false, edit: false, delete: false, create: false },
+}
+
+const pages = ["dashboard", "purchase", "wholesale", "inventory", "config", "reports"]
+const permissions = ["read", "edit", "delete", "create"]
+
+export default function AddUserPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const { showNotification } = useNotificationContext()
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    password: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role : "user",
+    access: defaultAccess,
+  })
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleAccessChange = (page: string, perm: string, e: ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      access: {
+        ...prev.access,
+        [page]: {
+          ...prev.access[page],
+          [perm]: e.target.checked,
+        },
+      },
+    }))
+  }
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setLoading(true)
-    const formData = new FormData(event.currentTarget)
-    const password = formData.get('password')
-    const firstName = formData.get('firstName')
-    const lastName = formData.get('lastName')
-    const email = formData.get('email')
-    const phone = formData.get('phone')
-
     try {
-      const response = await api.post('/api/users', {
-        password,
-        firstName,
-        lastName,
-        email,
-        phone,
-        role : "user"
-      })
-
+      const response = await api.post('/api/users', formData)
       if (response.status === 200 || response.status === 201) {
-        //alert('User added successfully')
         showNotification({ message: 'User added successfully', variant: 'success' })
         router.back()
       }
     } catch (error: any) {
-      console.error(error)
-      //alert(error?.response?.data?.message || 'Error adding user')
-      showNotification({ message: error?.response?.data?.error || 'Login failed', variant: 'danger' })
+      console.error('Error adding user:', error)
+      showNotification({ message: error?.response?.data?.error || 'Error adding user', variant: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -46,30 +91,25 @@ export default function EditUserPage() {
 
   return (
     <div className="container-fluid">
-      <h4 className="mb-4">Edit User</h4>
+      <h4 className="mb-4">Add User</h4>
 
       <Card>
         <CardHeader className="border-bottom border-light">
-          <CardTitle as="h5" className="mb-0">
-            Edit User
-          </CardTitle>
+          <CardTitle as="h5" className="mb-0">Add User</CardTitle>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit}>
-            {/* Password */}
-        
-
-            {/* First Name & Last Name */}
+            {/* Standard Fields */}
             <Row className="mb-3">
               <Col md={6}>
-                <label className="form-label">
-                  First Name<span className="text-danger">*</span>
-                </label>
+                <label className="form-label">First Name<span className="text-danger">*</span></label>
                 <input
                   type="text"
                   name="firstName"
                   className="form-control"
-                  defaultValue=""
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="Enter first name"
                 />
               </Col>
               <Col md={6}>
@@ -78,22 +118,22 @@ export default function EditUserPage() {
                   type="text"
                   name="lastName"
                   className="form-control"
-                  placeholder=""
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Enter last name"
                 />
               </Col>
             </Row>
-
-            {/* Email & Phone Number */}
             <Row className="mb-3">
               <Col md={6}>
-                <label className="form-label">
-                  Email<span className="text-danger">*</span>
-                </label>
+                <label className="form-label">Email<span className="text-danger">*</span></label>
                 <input
                   type="email"
                   name="email"
                   className="form-control"
-                  defaultValue=""
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter email"
                 />
               </Col>
               <Col md={6}>
@@ -102,11 +142,12 @@ export default function EditUserPage() {
                   type="text"
                   name="phone"
                   className="form-control"
-                  placeholder=""
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Enter phone number"
                 />
               </Col>
             </Row>
-
             <Row className="mb-3">
               <Col md={6}>
                 <label className="form-label">Password</label>
@@ -114,15 +155,45 @@ export default function EditUserPage() {
                   type="password"
                   name="password"
                   className="form-control"
-                  defaultValue=""
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter password"
                 />
               </Col>
             </Row>
-
+            {/* Access Permissions */}
+            <Row className="mb-3">
+              <Col>
+                <h5 className="mt-4">Access Permissions</h5>
+                {pages.map((page) => (
+                  <div key={page} className="mb-3">
+                    <strong>{page.charAt(0).toUpperCase() + page.slice(1)}</strong>
+                    <div className="d-flex gap-3">
+                      {permissions.map((perm) => (
+                        <div key={perm}>
+                          <label>
+                            <input
+                              type="checkbox"
+                              name={`access.${page}.${perm}`}
+                              checked={formData.access[page][perm]}
+                              onChange={(e) => handleAccessChange(page, perm, e)}
+                            />{' '}
+                            {perm.charAt(0).toUpperCase() + perm.slice(1)}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </Col>
+            </Row>
             {/* Buttons */}
             <div className="mt-4">
+              <Button variant="secondary" className="me-2" type="button" onClick={() => router.back()} disabled={loading}>
+                CANCEL
+              </Button>
               <Button variant="primary" type="submit" disabled={loading}>
-                {loading ? 'Updating...' : 'CREATE'}
+                {loading ? 'Creating...' : 'CREATE'}
               </Button>
             </div>
           </form>

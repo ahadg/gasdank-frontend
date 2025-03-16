@@ -6,6 +6,7 @@ import { Card, CardHeader, CardFooter, CardTitle, Row, Col, Button } from "react
 import Link from 'next/link'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export default function CategoriesPage() {
   // State to hold categories loaded from API and search text
@@ -13,6 +14,7 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const user = useAuthStore((state) => state.user)
+  const { showNotification } = useNotificationContext()
 
   // Load categories from API on component mount
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function CategoriesPage() {
         // Assuming the API returns an array of categories
         setCategories(response.data)
       } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
         console.error("Error fetching categories:", error)
       } finally {
         setLoading(false)

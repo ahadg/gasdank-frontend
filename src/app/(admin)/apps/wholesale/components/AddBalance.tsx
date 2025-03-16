@@ -4,6 +4,7 @@ import { Metadata } from 'next'
 import { Button, CardHeader, CardFooter, CardTitle, Form } from 'react-bootstrap'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Add Balance' }
 
@@ -17,6 +18,7 @@ export default function AddBalanceModal({ account, onClose }: AddBalanceModalPro
   const [loading, setLoading] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState<number>(0)
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash')
+  const { showNotification } = useNotificationContext()
 
   const handleUpdate = async () => {
     setLoading(true)
@@ -34,6 +36,7 @@ export default function AddBalanceModal({ account, onClose }: AddBalanceModalPro
       console.log('Balance updated:', response.data)
       onClose()
     } catch (error: any) {
+      showNotification({ message: error?.response?.data?.error || 'Error fetching out-of-stock products', variant: 'danger' })
       console.error('Error updating balance:', error)
     } finally {
       setLoading(false)

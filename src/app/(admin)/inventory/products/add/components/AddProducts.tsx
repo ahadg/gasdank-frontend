@@ -62,6 +62,7 @@ const AddProduct = () => {
           setUserCategories(response.data)
         }
       } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
         console.error('Error fetching user categories:', error)
       }
     }
@@ -72,7 +73,7 @@ const AddProduct = () => {
     setLoading(true)
     try {
       const response = await api.post('/api/products', {
-        user_id: "67cf4bb808facf7a76f9f229",
+        user_id: user?._id,
         ...data,
       })
       if (response.status === 200 || response.status === 201) {

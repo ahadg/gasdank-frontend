@@ -1,21 +1,118 @@
+'use client'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { usePathname } from 'next/navigation'
 import FallbackLoading from '@/components/FallbackLoading'
 import LogoBox from '@/components/LogoBox'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import SimplebarReactClient from '@/components/wrappers/SimplebarReactClient'
-import { getMenuItems } from '@/helpers/Manu'
-import Image from 'next/image'
-import { lazy, Suspense } from 'react'
-import coffeeImg from '@/assets/images/coffee-cup.svg'
 import { useLayoutContext } from '@/context/useLayoutContext'
 import HoverMenuToggle from './components/HoverMenuToggle'
 import { Button } from 'react-bootstrap'
+import { useAuthStore } from '@/store/authStore'
+import api from '@/utils/axiosInstance'
 
+// Lazy load the AppMenu component
 const AppMenu = lazy(() => import('./components/AppMenu'))
 
 const VerticalNavigationBar = () => {
-
   const { toggleBackdrop } = useLayoutContext()
-  const menuItems = getMenuItems()
+  const user = useAuthStore((state) => state.user)
+  const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([])
+  
+  // Complete menu items array
+  const menuItems = [
+    {
+      key: 'dashboard',
+      label: 'Dashboard',
+      icon: 'tabler:home',
+      badge: { text: "5", variant: "success" },
+      url: '/dashboard/sales',
+    },
+    {
+      key: 'purchase',
+      label: 'Purchase',
+      icon: 'tabler:shopping-bag-edit',
+      url: '/apps/purchase',
+    },
+    {
+      key: 'wholesale',
+      label: 'Wholesale',
+      icon: 'tabler:inbox',
+      url: '/apps/wholesale',
+    },
+    {
+      key: 'inventory',
+      label: 'Inventory',
+      icon: 'tabler:calendar',
+      url: '/inventory/products',
+    },
+    {
+      key: 'config',
+      label: 'Config',
+      icon: 'tabler:medical-cross',
+      children: [
+        {
+          key: 'users',
+          label: 'Users',
+          url: '/config/users',
+          parentKey: 'hospital',
+        },
+        {
+          key: 'categories',
+          label: 'Categories',
+          url: '/config/categories',
+          parentKey: 'config',
+        },
+      ]
+    },
+    {
+      key: 'reports',
+      label: 'Reports',
+      icon: 'tabler:file-invoice',
+      children: [
+        {
+          key: 'outofstock',
+          label: 'Out of stock',
+          url: '/reports/outofstock',
+          parentKey: 'reports',
+        },
+        {
+          key: 'lowinventory',
+          label: 'Low inventory',
+          url: '/reports/lowinventory',
+          parentKey: 'reports',
+        },
+      ]
+    },
+    // Optionally include other items (e.g., logout) handled separately.
+  ]
+
+  // Fetch user access data from the backend and filter menu items accordingly.
+  useEffect(() => {
+    async function fetchUserAccess() {
+      if (user && user._id) {
+        try {
+          const response = await api.get(`/api/users/${user._id}`)
+          const userData = response.data
+          const access = userData.access || {}
+          // Filter out items that have read access false
+          const filtered = menuItems.filter(item => {
+            if (access[item.key] !== undefined) {
+              return access[item.key].read
+            }
+            return true
+          })
+          setFilteredMenuItems(filtered)
+        } catch (error) {
+          console.error("Error fetching user access:", error)
+          // Fallback to showing full menu if error occurs
+          setFilteredMenuItems(menuItems)
+        }
+      }
+    }
+    fetchUserAccess()
+  }, [user])
+
   return (
     <div className="sidenav-menu" id="leftside-menu-container">
       <LogoBox />
@@ -26,21 +123,11 @@ const VerticalNavigationBar = () => {
         </span>
       </button>
       <SimplebarReactClient>
-
         <Suspense fallback={<FallbackLoading />}>
-          <AppMenu menuItems={menuItems} />
-
-          {/* <div className="help-box text-center">
-            <Image src={coffeeImg} height={90} alt="Helper Icon Image" />
-            <h5 className="mt-3 fw-semibold fs-16">Unlimited Access</h5>
-            <p className="mb-3 text-muted">Upgrade to plan to get access to unlimited reports</p>
-            <Button variant='danger' size='sm'>Upgrade</Button>
-          </div>
-          <div className="clearfix" /> */}
+          <AppMenu menuItems={filteredMenuItems} />
         </Suspense>
       </SimplebarReactClient>
     </div>
-
   )
 }
 
