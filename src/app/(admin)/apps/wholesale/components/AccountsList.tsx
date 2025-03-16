@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { Metadata } from 'next'
 import PageTitle from '@/components/PageTitle'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
-import { Button, Card, Form, Row, Col } from 'react-bootstrap'
+import { Button, Card, Form, Row, Col, CardHeader } from 'react-bootstrap'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
@@ -47,6 +47,11 @@ export default function WholesaleAccountsPage() {
       <PageTitle title="Wholesale Accounts" subTitle="Accounts" />
 
       <Card className="mt-3 shadow-sm">
+      <CardHeader className="border-bottom border-light">
+          <div>
+            <Link href="/apps/wholesale/add" className="btn btn-primary"><IconifyIcon icon='tabler:plus' className="me-1" />Add Client</Link>
+          </div>
+        </CardHeader>
         <Card.Body>
           <h6 className="fs-15 mb-2">Select Account</h6>
           <div className="position-relative">
