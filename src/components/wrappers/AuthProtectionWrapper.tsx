@@ -1,22 +1,27 @@
 'use client'
-import { useSession } from 'next-auth/react'
+import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
-
-import type { ChildrenType } from '@/types/component-props'
 import FallbackLoading from '../FallbackLoading'
+import { useAuthStore } from '@/store/authStore'
+import type { ChildrenType } from '@/types/component-props'
 
 const AuthProtectionWrapper = ({ children }: ChildrenType) => {
-  const { status } = useSession()
   const { push } = useRouter()
   const pathname = usePathname()
+  const user = useAuthStore((state) => state.user) // Assume that user contains the token/info
 
-  if (status == 'unauthenticated') {
-    push(`/auth/login?redirectTo=${pathname}`)
+  useEffect(() => {
+    if (!user) {
+      push(`/auth/login?redirectTo=${pathname}`)
+    }
+  }, [user, push, pathname])
+
+  if (!user) {
     return <FallbackLoading />
   }
 
-  return <Suspense>{children}</Suspense>
+  return <Suspense fallback={<FallbackLoading />}>{children}</Suspense>
 }
 
 export default AuthProtectionWrapper

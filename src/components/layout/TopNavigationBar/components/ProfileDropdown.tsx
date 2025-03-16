@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/authStore" // Import your Zustand store
 
 const ProfileDropdown = () => {
   // Retrieve user from Zustand store
-  const user = useAuthStore((state) => state.user)
+  const {user,logout} = useAuthStore((state) => state)
   console.log("user",user)
 
   return (
@@ -63,7 +63,7 @@ const ProfileDropdown = () => {
           <DropdownItem
             as={Link}
             href="/auth/logout"
-            onClick={() => signOut({ redirect: false })}
+            onClick={() => logout()}
             className="active fw-semibold text-danger"
           >
             <IconifyIcon icon='tabler:logout' className="me-1 fs-17 align-middle" />
