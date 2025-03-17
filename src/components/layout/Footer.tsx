@@ -7,7 +7,7 @@ const Footer = () => {
     <footer className="footer">
       <div className="page-container">
         <Row>
-          <Col md={6} className="text-center text-md-start">
+          {/* <Col md={6} className="text-center text-md-start">
           {currentYear} © Osen - By <span className="fw-bold text-decoration-underline text-uppercase text-reset fs-12">Coderthemes</span>
           </Col>
           <Col md={6}>
@@ -16,7 +16,7 @@ const Footer = () => {
               <Link href="">Support</Link>
               <Link href="">Contact Us</Link>
             </div>
-          </Col>
+          </Col> */}
         </Row>
       </div>
     </footer>
