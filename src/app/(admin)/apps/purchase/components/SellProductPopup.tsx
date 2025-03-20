@@ -1,13 +1,14 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { Button, Form, Table, Spinner } from 'react-bootstrap'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
-import { useParams } from 'next/navigation'
+import { redirect, useParams } from 'next/navigation'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import { useRouter } from "next/navigation";
 
 const sellMultipleSchema = yup.object({
   items: yup.array().of(
@@ -22,6 +23,9 @@ const sellMultipleSchema = yup.object({
         .number()
         .required('Sale price required')
         .min(1, 'Minimum sale price is 1'),
+      shipping: yup.number()
+        .required('Sale price required')
+        .min(0, 'Minimum sale price is 0'),
       price: yup
         .number()
         .required('Price required')
@@ -51,8 +55,13 @@ export default function SellMultipleProductsModal({
   onClose: () => void
   fetchProducts: () => void
 }) {
+  useEffect(() => {
+    //redirect(`/apps/wholesale/history/${params?.id}`)
+  },[])
   const user = useAuthStore((state) => state.user)
   const params = useParams()
+  console.log("selectedProducts",selectedProducts)
+  const router = useRouter();
   const { control, handleSubmit, watch, formState: { errors } } = useForm<SellMultipleFormData>({
     resolver: yupResolver(sellMultipleSchema),
     defaultValues: {
@@ -63,6 +72,7 @@ export default function SellMultipleProductsModal({
         price: prod.price,
         sale_price: prod.price || 0,
         unit: prod.unit || '',
+        shipping: prod?.shippingCost || 0,
         measurement: 1, // default to Full
       })),
       payment: 0,
@@ -78,7 +88,13 @@ export default function SellMultipleProductsModal({
   const items = watch('items')
   const totalAmount = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price),
+      sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) * Number(item.sale_price) ,
+    0
+  )
+
+  const totalShipping = items.reduce(
+    (sum: number, item: any) =>
+      sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) ,
     0
   )
 
@@ -94,6 +110,7 @@ export default function SellMultipleProductsModal({
   const [loading, setLoading] = useState(false)
 
   const onSubmit = async (data: SellMultipleFormData) => {
+    console.log("submit_being called")
     setLoading(true)
     // Transform each item to match backend expected keys:
     const transformedItems = data.items.map((item) => ({
@@ -102,12 +119,13 @@ export default function SellMultipleProductsModal({
       measurement: item.measurement,
       unit: item.unit,
       price: item.price,
+      shipping: item.shipping,
       sale_price: item.sale_price,
     }))
 
     const org_price = items.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * Number(item.price),
+        sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) * Number(item.price),
       0
     )
 
@@ -119,6 +137,7 @@ export default function SellMultipleProductsModal({
       price: org_price,
       sale_price: totalAmount,
       profit: totalAmount - org_price,
+      total_shipping: totalShipping,
       notes: data.notes,
       type: "purchase",
     }
@@ -130,9 +149,10 @@ export default function SellMultipleProductsModal({
       fetchProducts()
       showNotification({ message: 'Transaction processed successfully', variant: 'success' })
       onClose()
+      router.push(`/apps/wholesale/history/${params?.id}`);
     } catch (error: any) {
-      showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
       console.error('Error processing purchase:', error)
+      showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -149,10 +169,10 @@ export default function SellMultipleProductsModal({
       }}
       role="dialog"
     >
-      <div className="modal-dialog modal-lg" role="document">
+      <div className="modal-dialog" role="document" style={{ maxWidth: '90vw', width: '70%' }}>
         <div className="modal-content shadow-lg rounded border border-light" style={{ backgroundColor: '#fff', position: 'relative' }}>
           <div className="modal-header bg-light border-bottom border-light">
-            <h5 className="modal-title">Sell Selected Products</h5>
+            <h5 className="modal-title">Selling Products to {user?.firstName + ' ' + user.lastName }</h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body" style={{ position: 'relative' }}>
@@ -172,7 +192,7 @@ export default function SellMultipleProductsModal({
                 <Spinner animation="border" variant="primary" />
               </div>
             )}
-            <Form onSubmit={handleSubmit(onSubmit)}>
+            <Form onSubmit={(handleSubmit(onSubmit, (errors) => console.log('Validation Errors:', errors)))}>
               <Table responsive bordered>
                 <thead className="table-light">
                   <tr>
@@ -182,6 +202,7 @@ export default function SellMultipleProductsModal({
                     <th>Measurement</th>
                     <th>Price</th>
                     <th>Sale Price</th>
+                    <th>Shipping (per unit)</th>
                     <th>Subtotal</th>
                     <th>Action</th>
                   </tr>
@@ -253,10 +274,19 @@ export default function SellMultipleProductsModal({
                         />
                       </td>
                       <td>
+                        <Form.Control
+                          type="number"
+                          step="any"
+                          placeholder="Shipping"
+                          disabled
+                          {...(control.register ? control.register(`items.${index}.shipping` as const) : {})}
+                        />
+                      </td>
+                      <td>
                         {(
-                          Number(items[index]?.quantity || 0) *
+                          (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) *
                           Number(items[index]?.measurement || 1) *
-                          Number(items[index]?.sale_price || 0)
+                          Number(items[index]?.sale_price || 0) 
                         ).toFixed(2)}
                       </td>
                       <td>
@@ -268,8 +298,11 @@ export default function SellMultipleProductsModal({
                   ))}
                 </tbody>
               </Table>
-              <div className="mt-3">
-                <strong>Total Amount: </strong>${totalAmount.toFixed(2)}
+              <div className="mt-1">
+                <strong>Total Shipping : </strong>${totalShipping.toFixed(2)}
+              </div>
+              <div className="mt-1">
+                <strong>Total Amount :  </strong>${totalAmount.toFixed(2)}
               </div>
               <div className="mt-3">
                 <Form.Group className="mb-3">
@@ -285,7 +318,7 @@ export default function SellMultipleProductsModal({
               </div>
               <div className="mt-3 d-flex justify-content-end">
                 <Button type="submit" variant="success">
-                  SELL PRODUCTS
+                  Checkout
                 </Button>
               </div>
             </Form>

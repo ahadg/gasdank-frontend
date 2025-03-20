@@ -25,7 +25,7 @@ const VerticalNavigationBar = () => {
       key: 'dashboard',
       label: 'Dashboard',
       icon: 'tabler:home',
-      badge: { text: "5", variant: "success" },
+      // badge: { text: "5", variant: "success" },
       url: '/dashboard/sales',
     },
     {

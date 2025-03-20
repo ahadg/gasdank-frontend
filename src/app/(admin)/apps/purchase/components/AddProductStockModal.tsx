@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Metadata } from 'next'
-import { Button, CardHeader, CardFooter, Form, Spinner } from 'react-bootstrap'
+import { Button, CardHeader, CardFooter, Form, Spinner, Table } from 'react-bootstrap'
 import { useForm, Controller } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -25,6 +25,8 @@ const addStockSchema = yup.object({
     .required('Quantity is required')
     .min(0.1, 'Minimum quantity is 0.1'),
   unit: yup.string().required('Unit is required'),
+  shipping: yup.number().required('shipping is required'),
+  saleprice: yup.number().required('saleprice is required'),
   measurement: yup
     .number()
     .required('Measurement is required')
@@ -39,12 +41,14 @@ const addStockSchema = yup.object({
 type AddStockFormData = yup.InferType<typeof addStockSchema>
 
 export default function AddProductModal({ product, onClose, fetchProducts }: AddProductModalProps) {
-  const { control, handleSubmit, watch } = useForm<AddStockFormData>({
+  const { control, handleSubmit, watch, setValue } = useForm<AddStockFormData>({
     resolver: yupResolver(addStockSchema),
     defaultValues: {
       quantity: 0,
       unit: product.unit || '',
       measurement: 1,
+      shipping : 0,
+      saleprice: 0,
       price: 0,
       note: '',
     },
@@ -63,8 +67,34 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
 
   // Calculate subtotal for display purposes
   const values = watch()
-  const subtotal = Number(values.quantity || 0) * Number(values.measurement || 1) * Number(values.price || 0)
+  const subtotal = Number(values.quantity || 0) * Number(values.measurement || 1) * Number(values.price * Number(values.shipping) || 0)
   const { showNotification } = useNotificationContext()
+  const [recentPurchaseLoading,setrecentPurchaseLoading] = useState<boolean>(false)
+  const [recentPurchase,setrecentPurchase] = useState<any>()
+  console.log("recentPurchase",recentPurchase)
+  useEffect(() => {
+    async function fetchHistory() {
+      if (product) {
+        setLoading(true)
+        try {
+          const response = await api.get(`/api/transaction/recent/${params?.id}/${product._id}`)
+          setrecentPurchase(response.data)
+          setrecentPurchaseLoading(true)
+          setValue('shipping', response.data.shipping || 0)
+          setValue('saleprice', response.data.sale_price || 0)
+          setValue('price', response.data.price || 0)
+          // set shipping,saleprice,price
+        } catch (error) {
+          showNotification({ message: error?.response?.data?.error || 'Error fetching transaction history', variant: 'danger' })
+          console.error('Error fetching transaction history:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    fetchHistory()
+  }, [product])
+
 
   const onSubmit = async (data: AddStockFormData) => {
     setLoading(true)
@@ -74,7 +104,8 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
       buyer_id: params?.id, // Replace with actual buyer id if needed.
       payment: 0, // Payment may be zero for stock additions
       notes: data.note,
-      price: data.price * Number(data.quantity) * Number(data.measurement),
+      price: data.price * Number(data.quantity) * Number(data.measurement) * Number(data.shipping),
+      shipping : data.shipping,
       type: "return",
       items: [
         {
@@ -133,12 +164,54 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                 <Spinner animation="border" variant="primary" />
               </div>
             )}
-            <h6 className="fs-15 mb-3">Add Stock to Inventory</h6>
-            <div className="mb-3">
-              <strong>Product:</strong> {product.name}
-            </div>
+            <h6 className="fs-15 mb-3">Returning Stock of {product.name} from ({user.firstName} {user.lastName}) </h6>
+            <h6 className="fs-15 mb-1">Recent Transactions Found:</h6>
+            {!recentPurchaseLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <div className="table-responsive">
+                <Table className="table align-middle mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>DATE</th>
+                      <th>ITEM</th>
+                      <th>QUANTITY</th>
+                      <th>SHIPPING (per unit)</th>
+                      <th>PRICE</th>
+                      <th>SALE PRICE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentPurchaseLoading  ? (
+                        <tr key={1}>
+                          <td>{new Date(recentPurchase.created_at).toLocaleDateString()}</td>
+                          <td>{recentPurchase.inventory_id?.name}</td>
+                          <td>
+                            {recentPurchase.qty} [{recentPurchase.unit}]
+                          </td>
+                          <td>
+                            {/* {renderTypeWithIcon(recentPurchase.transaction_id?.type)} */}
+                            {/* {recentPurchase.transaction_id?.type} */}
+                            {recentPurchase.shipping}
+                          </td>
+                          <td>${recentPurchase.price}</td>
+                          <td>{recentPurchase.sale_price ? `$${recentPurchase.sale_price}` : `-`}</td>
+                        </tr>
+                    
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="text-center">
+                          No transaction history found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+            )}
+
             <Form onSubmit={handleSubmit(onSubmit)}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-3 mt-1">
                 <Form.Label>Quantity to Add</Form.Label>
                 <Controller
                   control={control}
@@ -183,6 +256,26 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                 />
               </Form.Group>
               <Form.Group className="mb-3">
+                <Form.Label>Shipping</Form.Label>
+                <Controller
+                  control={control}
+                  name="shipping"
+                  render={({ field }) => (
+                    <Form.Control type="number" placeholder="Enter shipping" step="any" {...field} />
+                  )}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Sale Price</Form.Label>
+                <Controller
+                  control={control}
+                  name="saleprice"
+                  render={({ field }) => (
+                    <Form.Control type="number" placeholder="Enter Sale price" step="any" {...field} />
+                  )}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
                 <Form.Label>Price</Form.Label>
                 <Controller
                   control={control}
@@ -206,7 +299,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                 />
               </Form.Group>
               <Button type="submit" variant="success" disabled={loading}>
-                SELL PRODUCTS
+                Add to stock
               </Button>
             </Form>
           </div>

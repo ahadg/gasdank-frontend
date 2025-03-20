@@ -16,7 +16,7 @@ interface AddBalanceModalProps {
 export default function AddBalanceModal({ account, onClose }: AddBalanceModalProps) {
   const user = useAuthStore((state) => state.user)
   const [loading, setLoading] = useState(false)
-  const [paymentAmount, setPaymentAmount] = useState<number>(0)
+  const [paymentAmount, setPaymentAmount] = useState<any>()
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash')
   const { showNotification } = useNotificationContext()
 
@@ -69,7 +69,7 @@ export default function AddBalanceModal({ account, onClose }: AddBalanceModalPro
                 <Form.Label>Payment Amount</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder="0.00"
+                  placeholder=""
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
                 />

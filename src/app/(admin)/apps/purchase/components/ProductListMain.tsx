@@ -13,7 +13,7 @@ import HistoryModal from './HistoryModal'
 import AddProductModal from './AddProductStockModal'
 import { useNotificationContext } from '@/context/useNotificationContext'
 
-export const metadata: Metadata = { title: 'Purchase Transactions' }
+export const metadata: Metadata = { title: 'Sales Transactions' }
 
 type ModalType = 'history' | 'sellMultiple' | 'add' | null
 
@@ -96,7 +96,7 @@ const PurchaseTransactionsPage = () => {
 
   return (
     <div className="container-fluid">
-      <PageTitle title="Purchase Transactions" subTitle="Transactions" />
+      <PageTitle title="Sales Transactions" subTitle="Transactions" />
 
       {/* Filter & Search Section */}
       <div className="mt-3">

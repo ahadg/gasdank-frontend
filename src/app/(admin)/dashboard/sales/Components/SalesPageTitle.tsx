@@ -13,11 +13,11 @@ const SalesPageTitle = () => {
           <div className="mt-3 mt-sm-0">
             <form>
               <Row className="g-2 mb-0 align-items-center">
-                <Col xs={'auto'}>
+                {/* <Col xs={'auto'}>
                   <Button variant='light'>
                     <IconifyIcon icon='tabler:sort-ascending' className="me-1" /> Sort By
                   </Button>
-                </Col>
+                </Col> */}
                 <Col sm={'auto'}>
                   <div className="input-group">
                     <CustomFlatpickr

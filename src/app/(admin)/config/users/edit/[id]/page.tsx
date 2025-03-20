@@ -16,8 +16,19 @@ interface Access {
   create: boolean;
 }
 
+interface DashboardStatAccess {
+  today_sales: boolean;
+  today_profit: boolean;
+  inventory_value: boolean;
+  outstanding_balance: boolean;
+  user_balance: boolean;
+  company_balance: boolean;
+  online_balance: boolean;
+}
+
 interface AccessData {
   dashboard: Access;
+  dashboard_stats: DashboardStatAccess;
   purchase: Access;
   wholesale: Access;
   inventory: Access;
@@ -27,6 +38,15 @@ interface AccessData {
 
 const defaultAccess: AccessData = {
   dashboard: { read: false, edit: false, delete: false, create: false },
+  dashboard_stats: {
+    today_sales: false,
+    today_profit: false,
+    inventory_value: false,
+    outstanding_balance: false,
+    user_balance: false,
+    company_balance: false,
+    online_balance: false
+  },
   purchase: { read: false, edit: false, delete: false, create: false },
   wholesale: { read: false, edit: false, delete: false, create: false },
   inventory: { read: false, edit: false, delete: false, create: false },
@@ -37,12 +57,17 @@ const defaultAccess: AccessData = {
 const pages = ["dashboard", "purchase", "wholesale", "inventory", "config", "reports"]
 const permissions = ["read", "edit", "delete", "create"]
 
+// For dashboard stats, define the permission keys
+const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance","online_balance"]
+
 export default function EditUserPage() {
   const router = useRouter()
   const params = useParams()
   const userId = params.id // assuming your dynamic route segment is named [id]
   const { showNotification } = useNotificationContext()
   const [loading, setLoading] = useState(false)
+  
+  // Initialize form data with default access object
   const [formData, setFormData] = useState({
     password: '',
     firstName: '',
@@ -73,6 +98,7 @@ export default function EditUserPage() {
     if (userId) fetchUser()
   }, [userId])
 
+  // Handle standard input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
@@ -80,6 +106,7 @@ export default function EditUserPage() {
     }))
   }
 
+  // Handle changes for access checkboxes (for main pages)
   const handleAccessChange = (page: string, perm: string, e: ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
@@ -88,6 +115,20 @@ export default function EditUserPage() {
         [page]: {
           ...prev.access[page],
           [perm]: e.target.checked,
+        },
+      },
+    }))
+  }
+
+  // Handle changes for dashboard stats permissions
+  const handleStatAccessChange = (stat: string, e: ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      access: {
+        ...prev.access,
+        dashboard_stats: {
+          ...prev.access.dashboard_stats,
+          [stat]: e.target.checked,
         },
       },
     }))
@@ -133,12 +174,11 @@ export default function EditUserPage() {
                 />
               </Col>
             </Row>
+
             {/* First Name & Last Name */}
             <Row className="mb-3">
               <Col md={6}>
-                <label className="form-label">
-                  First Name<span className="text-danger">*</span>
-                </label>
+                <label className="form-label">First Name<span className="text-danger">*</span></label>
                 <input
                   type="text"
                   name="firstName"
@@ -160,12 +200,11 @@ export default function EditUserPage() {
                 />
               </Col>
             </Row>
+
             {/* Email & Phone */}
             <Row className="mb-3">
               <Col md={6}>
-                <label className="form-label">
-                  Email<span className="text-danger">*</span>
-                </label>
+                <label className="form-label">Email<span className="text-danger">*</span></label>
                 <input
                   type="email"
                   name="email"
@@ -187,6 +226,7 @@ export default function EditUserPage() {
                 />
               </Col>
             </Row>
+
             {/* Access Permissions Section */}
             <Row className="mb-3">
               <Col>
@@ -213,6 +253,31 @@ export default function EditUserPage() {
                 ))}
               </Col>
             </Row>
+
+            {/* Dashboard Stats Permissions Section */}
+            <Row className="mb-3">
+              <Col>
+                <h5 className="mt-0">Dashboard Stats Access</h5>
+                <div className="d-flex gap-3 flex-wrap">
+                  {statPermissions.map((stat) => (
+                    <div key={stat} className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id={`dashboard_stats_${stat}`}
+                        name={`access.dashboard_stats.${stat}`}
+                        checked={formData.access?.dashboard_stats?.[stat]}
+                        onChange={(e) => handleStatAccessChange(stat, e)}
+                      />
+                      <label className="form-check-label" htmlFor={`dashboard_stats_${stat}`}>
+                        {stat.replace('_', ' ').toUpperCase()}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </Col>
+            </Row>
+
             {/* Buttons */}
             <div className="mt-4">
               <Button variant="secondary" className="me-2" type="button" onClick={() => router.back()} disabled={loading}>

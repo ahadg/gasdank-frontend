@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
 import { useNotificationContext } from '@/context/useNotificationContext'
 
-export const metadata: Metadata = { title: 'Purchase Transactions' }
+export const metadata: Metadata = { title: 'Sales Transactions' }
 
 export default function PurchaseTransactionsPage() {
   const user = useAuthStore((state) => state.user)
@@ -46,7 +46,7 @@ export default function PurchaseTransactionsPage() {
 
   return (
     <div className="container-fluid">
-      <PageTitle title="Purchase Transactions" subTitle="Transactions" />
+      <PageTitle title="Sales Transactions" subTitle="Transactions" />
       <Card className="mt-3 shadow-sm">
         <Card.Body>
           <h6 className="fs-15 mb-3">Select Buyer</h6>

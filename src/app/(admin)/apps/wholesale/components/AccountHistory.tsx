@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useReactToPrint } from "react-to-print";
+import moment from 'moment';
 
 export const metadata: Metadata = { title: 'Transaction History' }
 
@@ -85,7 +86,7 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
 
   return (
     <div>
-      <h5 className="mb-3">Transaction History</h5>
+      <h5 className="mb-3 mt-2">Transaction History  ({moment().format('MMMM Do YYYY')})</h5>
       {loading ? (
         <p>Loading transactions...</p>
       ) : (
@@ -99,7 +100,7 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
                 <th>Notes</th>
                 <th>Amount Recieved</th>
                 <th>Amount Due</th>
-                <th style={{ width: 120 }}>Actions</th>
+                {/* <th style={{ width: 120 }}>Actions</th> */}
               </tr>
             </thead>
             <tbody>
@@ -132,15 +133,15 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
                     <tr key={idx}>
                       <td>{new Date(tx.created_at).toLocaleDateString()}</td>
                       <td>{detailsContent}</td>
-                      <td>{tx.type}</td>
+                      <td>{tx.type == "purchase" ? "sale" : tx.type}</td>
                       <td>{tx.notes}</td>
                       <td>{(tx.type === "payment" || tx.type === "return") && ("+ $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
                       <td>{tx.type === "purchase" && ("- $" + tx.sale_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
-                      <td>
+                      {/* <td>
                         <Button variant="primary" size="sm">
                           VIEW
                         </Button>
-                      </td>
+                      </td> */}
                     </tr>
                   )
                 })
@@ -156,7 +157,7 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
           <div className="mt-4 border-top pt-3">
             <Row>
               <Col md={4}>
-                <strong>Total Purchase Amount:</strong>
+                <strong>Total Sale Amount:</strong>
               </Col>
               <Col md={8}>
                 ${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}

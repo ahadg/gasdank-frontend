@@ -16,52 +16,26 @@ export interface StatType {
   variant: 'danger' | 'success'
 }
 
-const StatCard = ({ title, icon, count, change, variant }: StatType) => {
-  return (
-    <Card>
-      <CardBody>
-        <h5 className="text-muted fs-13 text-uppercase" title={title}>
-          {title}
-        </h5>
-        <div className="d-flex align-items-center justify-content-center gap-2 my-2 py-1">
-          <div className="user-img fs-42 flex-shrink-0">
-            <span className="avatar-title text-bg-primary rounded-circle fs-22">
-              <IconifyIcon icon={icon} />
-            </span>
-          </div>
-          <h3 className="mb-0 fw-bold">{count}</h3>
-        </div>
-        {/* <p className="mb-0 text-muted">
-          <span className={`text-${variant} me-2`}>
-            {change}%{' '}
-            {variant === 'danger' ? (
-              <IconifyIcon icon="tabler:caret-down-filled" />
-            ) : (
-              <IconifyIcon icon="tabler:caret-up-filled" />
-            )}
-          </span>
-          <span className="text-nowrap">Since last month</span>
-        </p> */}
-      </CardBody>
-    </Card>
-  )
+interface StatTypeExtended extends StatType {
+  permissionKey: string
 }
 
 const Stat = () => {
-  const [statData, setStatData] = useState<StatType[]>([])
+  const [statData, setStatData] = useState<StatTypeExtended[]>([])
   const [loading, setLoading] = useState(false)
   const user = useAuthStore((state) => state.user)
+
   useEffect(() => {
     async function fetchStats() {
       setLoading(true)
       try {
         const response = await api.get(`/api/users/stats/${user?._id}`)
         const data = response.data
-        console.log("response",response)
-        // Build statData array from API response.
-        const stats: StatType[] = [
+        // Build statData array from API response with a permission key for each stat.
+        const stats: StatTypeExtended[] = [
           {
             title: 'Total Sales',
+            permissionKey: 'today_sales',
             icon: 'solar:case-round-minimalistic-bold-duotone',
             count: data.totalSales,
             change: data.totalSalesChange,
@@ -69,6 +43,7 @@ const Stat = () => {
           },
           {
             title: 'Total Profit',
+            permissionKey: 'today_profit',
             icon: 'solar:bill-list-bold-duotone',
             count: data.totalProfit,
             change: data.totalProfitChange,
@@ -76,13 +51,15 @@ const Stat = () => {
           },
           {
             title: 'Inventory Value',
+            permissionKey: 'inventory_value',
             icon: 'solar:wallet-money-bold-duotone',
             count: data.inventoryValue,
             change: data.inventoryValueChange,
             variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
           },
           {
-            title: 'Outstanding Balances  (sum of amount due by clients)',
+            title: 'Outstanding Balances',
+            permissionKey: 'outstanding_balance',
             icon: 'solar:eye-bold-duotone',
             count: data.outstandingBalances,
             change: data.outstandingBalancesChange,
@@ -90,28 +67,43 @@ const Stat = () => {
           },
           {
             title: `${user?.firstName} Balance`,
+            permissionKey: 'user_balance',
             icon: 'solar:eye-bold-duotone',
-            count: data?.loggedInUserTotalBalance,
+            count: data.loggedInUserTotalBalance,
             change: data.loggedInUserTotalBalance,
             variant: data.loggedInUserTotalBalance < 0 ? 'danger' : 'success',
           },
           {
             title: 'Company Balances',
+            permissionKey: 'company_balance',
             icon: 'solar:eye-bold-duotone',
             count: data.companyBalance,
             change: data.companyBalanceChange,
             variant: data.companyBalanceChange < 0 ? 'danger' : 'success',
           },
+          {
+            title: 'Online Balances',
+            permissionKey: 'online_balance',
+            icon: 'solar:eye-bold-duotone',
+            count: data.onlineBalance,
+            change: data.onlineBalanceChange,
+            variant: data.onlineBalanceChange < 0 ? 'danger' : 'success',
+          },
         ]
-        setStatData(stats)
+        // Filter out stat cards for which the user does not have access
+        const userStats = data?.user?.access?.dashboard_stats || {}
+        const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
+        setStatData(filteredStats)
       } catch (error) {
         console.error('Error fetching stats:', error)
       } finally {
         setLoading(false)
       }
     }
-    fetchStats()
-  }, [])
+    if (user && user._id) {
+      fetchStats()
+    }
+  }, [user])
 
   if (loading) return <p>Loading stats...</p>
 
@@ -119,7 +111,31 @@ const Stat = () => {
     <Row className="row-cols-xxl-4 row-cols-md-2 row-cols-1 text-center">
       {statData.map((item, idx) => (
         <Col key={idx}>
-          <StatCard {...item} />
+          <Card>
+            <CardBody>
+              <h5 className="text-muted fs-13 text-uppercase" title={item.title}>
+                {item.title}
+              </h5>
+              <div className="d-flex align-items-center justify-content-center gap-2 my-2 py-1">
+                <div className="user-img fs-42 flex-shrink-0">
+                  <span className="avatar-title text-bg-primary rounded-circle fs-22">
+                    <IconifyIcon icon={item.icon} />
+                  </span>
+                </div>
+                <h3 className="mb-0 fw-bold">{item.count}</h3>
+              </div>
+              {/* <p className="mb-0 text-muted">
+                <span className={`text-${item.variant} me-2`}>
+                  {item.change}% {item.variant === 'danger' ? (
+                    <IconifyIcon icon="tabler:caret-down-filled" />
+                  ) : (
+                    <IconifyIcon icon="tabler:caret-up-filled" />
+                  )}
+                </span>
+                <span className="text-nowrap">Since last month</span>
+              </p> */}
+            </CardBody>
+          </Card>
         </Col>
       ))}
     </Row>

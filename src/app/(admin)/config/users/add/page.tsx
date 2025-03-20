@@ -15,28 +15,57 @@ interface Access {
   delete: boolean;
   create: boolean;
 }
+interface DashboardStatAccess {
+  today_sales: boolean
+  today_profit: boolean
+  inventory_value: boolean
+  outstanding_balance: boolean
+  user_balance: boolean
+  company_balance: boolean
+  online_balance: boolean
+}
 
 interface AccessData {
-  dashboard: Access;
-  purchase: Access;
-  wholesale: Access;
-  inventory: Access;
-  config: Access;
-  reports: Access;
+  dashboard: Access
+  dashboard_stats: DashboardStatAccess
+  purchase: Access
+  wholesale: Access
+  inventory: Access
+  config: Access
+  reports: Access
 }
 
 const defaultAccess: AccessData = {
-  dashboard: { read: false, edit: false, delete: false, create: false },
-  purchase: { read: false, edit: false, delete: false, create: false },
-  wholesale: { read: false, edit: false, delete: false, create: false },
-  inventory: { read: false, edit: false, delete: false, create: false },
-  config: { read: false, edit: false, delete: false, create: false },
-  reports: { read: false, edit: false, delete: false, create: false },
+  dashboard: { read: true, edit: true, delete: true, create: true },
+  dashboard_stats: {
+    today_sales: true,
+    today_profit: true,
+    inventory_value: true,
+    outstanding_balance: true,
+    user_balance: true,
+    company_balance: true,
+    online_balance: true
+  },
+  purchase: { read: true, edit: true, delete: true, create: true },
+  wholesale: { read: true, edit: true, delete: true, create: true },
+  inventory: { read: true, edit: true, delete: true, create: true },
+  config: { read: true, edit: true, delete: true, create: true },
+  reports: { read: true, edit: true, delete: true, create: true },
 }
 
-const pages = ["dashboard", "purchase", "wholesale", "inventory", "config", "reports"]
-const permissions = ["read", "edit", "delete", "create"]
+const pages = ['dashboard', 'purchase', 'wholesale', 'inventory', 'config', 'reports']
+const permissions = ['read', 'edit', 'delete', 'create']
 
+// Permissions for dashboard stats
+const statPermissions = [
+  'today_sales',
+  'today_profit',
+  'inventory_value',
+  'outstanding_balance',
+  'user_balance',
+  'company_balance',
+  "online_balance"
+]
 export default function AddUserPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
@@ -87,6 +116,20 @@ export default function AddUserPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Handle changes for dashboard stats permissions
+  const handleStatAccessChange = (stat: string, e: ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      access: {
+        ...prev.access,
+        dashboard_stats: {
+          ...prev.access.dashboard_stats,
+          [stat]: e.target.checked,
+        },
+      },
+    }))
   }
 
   return (
@@ -185,6 +228,29 @@ export default function AddUserPage() {
                     </div>
                   </div>
                 ))}
+              </Col>
+            </Row>
+               {/* Dashboard Stats Permissions Section */}
+               <Row className="mb-3">
+              <Col>
+                <h5 className="mt-0">Dashboard Stats Access</h5>
+                <div className="d-flex gap-3 flex-wrap">
+                  {statPermissions.map((stat) => (
+                    <div key={stat} className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id={`dashboard_stats_${stat}`}
+                        name={`access.dashboard_stats.${stat}`}
+                        checked={formData.access?.dashboard_stats?.[stat]}
+                        onChange={(e) => handleStatAccessChange(stat, e)}
+                      />
+                      <label className="form-check-label" htmlFor={`dashboard_stats_${stat}`}>
+                        {stat.replace('_', ' ').toUpperCase()}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </Col>
             </Row>
             {/* Buttons */}
