@@ -34,10 +34,10 @@ export const MENU_ITEMS: MenuItemType[] = [
   //   isTitle: true
   // },
   {
-    key: 'purchase',
-    label: 'Purchase',
+    key: 'sale',
+    label: 'Sales',
     icon: 'tabler:shopping-bag-edit',
-    url: '/apps/purchase',
+    url: '/apps/sale',
   },
   {
     key: 'wholesale',

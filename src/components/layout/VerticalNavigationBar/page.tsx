@@ -29,10 +29,10 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/sales',
     },
     {
-      key: 'purchase',
-      label: 'Purchase',
+      key: 'sale',
+      label: 'Sales',
       icon: 'tabler:shopping-bag-edit',
-      url: '/apps/purchase',
+      url: '/apps/sale',
     },
     {
       key: 'wholesale',

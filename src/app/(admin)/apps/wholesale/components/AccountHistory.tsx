@@ -35,7 +35,7 @@ interface ITransaction {
   item_count: number;
   total: number;
   amount: number;
-  type?: string; // "purchase" | "return" | "payment"
+  type?: string; // "sale" | "return" | "payment"
   items?: ITransactionItem[];
   created_at: string;
   transactionpayment_id?: {
@@ -71,8 +71,8 @@ const AccountHistory = () => {
   }, [id, user?._id])
 
   // Compute receipt totals:
-  const totalPurchaseAmount = transactions
-  .filter((tx) => (tx.type === 'purchase'))
+  const totalsaleAmount = transactions
+  .filter((tx) => (tx.type === 'sale'))
   .reduce((sum, tx) => sum + tx.sale_price, 0)
 const totalPaymentReceived = transactions
   .filter((tx) => (tx.type === 'payment' || tx.type === 'return'))
@@ -80,8 +80,8 @@ const totalPaymentReceived = transactions
     (sum, tx) => sum + (tx?.price || 0),
     0
   )
-// Final amount due = total purchase amount minus payment received.
-const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
+// Final amount due = total sale amount minus payment received.
+const finalAmountDue = totalsaleAmount - totalPaymentReceived
 
 
   return (
@@ -133,10 +133,10 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
                     <tr key={idx}>
                       <td>{new Date(tx.created_at).toLocaleDateString()}</td>
                       <td>{detailsContent}</td>
-                      <td>{tx.type == "purchase" ? "sale" : tx.type}</td>
+                      <td>{tx.type == "sale" ? "sale" : tx.type}</td>
                       <td>{tx.notes}</td>
-                      <td>{(tx.type === "payment" || tx.type === "return") && ("+ $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
-                      <td>{tx.type === "purchase" && ("- $" + tx.sale_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
+                      <td>{(tx.type === "payment" || tx.type === "return") && ("- $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
+                      <td>{tx.type === "sale" && ("+ $" + tx.sale_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
                       {/* <td>
                         <Button variant="primary" size="sm">
                           VIEW
@@ -160,7 +160,7 @@ const finalAmountDue = totalPurchaseAmount - totalPaymentReceived
                 <strong>Total Sale Amount:</strong>
               </Col>
               <Col md={8}>
-                ${totalPurchaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${totalsaleAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </Col>
             </Row>
             <Row>

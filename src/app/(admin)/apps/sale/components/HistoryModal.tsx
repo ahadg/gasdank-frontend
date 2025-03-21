@@ -45,7 +45,7 @@ const HistoryModal = ({ onClose, selectedProduct }: HistoryModalProps) => {
   // Helper function to render type icon with text
   const renderTypeWithIcon = (type: string | undefined) => {
     let icon = null
-    if (type === 'purchase') {
+    if (type === 'sale') {
       icon = <IconifyIcon icon="tabler:arrow-up" className="text-success me-1" />
     } else if (type === 'return') {
       icon = <IconifyIcon icon="tabler:arrow-down" className="text-danger me-1" />

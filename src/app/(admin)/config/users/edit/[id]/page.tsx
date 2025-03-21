@@ -29,7 +29,7 @@ interface DashboardStatAccess {
 interface AccessData {
   dashboard: Access;
   dashboard_stats: DashboardStatAccess;
-  purchase: Access;
+  sale: Access;
   wholesale: Access;
   inventory: Access;
   config: Access;
@@ -47,14 +47,14 @@ const defaultAccess: AccessData = {
     company_balance: false,
     online_balance: false
   },
-  purchase: { read: false, edit: false, delete: false, create: false },
+  sale: { read: false, edit: false, delete: false, create: false },
   wholesale: { read: false, edit: false, delete: false, create: false },
   inventory: { read: false, edit: false, delete: false, create: false },
   config: { read: false, edit: false, delete: false, create: false },
   reports: { read: false, edit: false, delete: false, create: false },
 }
 
-const pages = ["dashboard", "purchase", "wholesale", "inventory", "config", "reports"]
+const pages = ["dashboard", "sale", "wholesale", "inventory", "config", "reports"]
 const permissions = ["read", "edit", "delete", "create"]
 
 // For dashboard stats, define the permission keys
@@ -241,7 +241,7 @@ export default function EditUserPage() {
                             <input
                               type="checkbox"
                               name={`access.${page}.${perm}`}
-                              checked={formData.access[page][perm]}
+                              checked={formData.access?.[page]?.[perm]}
                               onChange={(e) => handleAccessChange(page, perm, e)}
                             />{' '}
                             {perm.charAt(0).toUpperCase() + perm.slice(1)}

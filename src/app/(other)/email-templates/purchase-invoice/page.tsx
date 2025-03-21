@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import logoDark from '@/assets/images/logo-dark.png'
 
-const PurchaseInvoicePage = () => {
+const saleInvoicePage = () => {
   return (
     <table className="body-wrap" style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif', boxSizing: 'border-box', fontSize: 14, width: '100%',height: '100vh', backgroundColor: '#f6f6f6', margin: 0 }} bgcolor="#f6f6f6">
       <tbody><tr style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif', boxSizing: 'border-box', fontSize: 14, margin: 0 }}>
@@ -94,4 +94,4 @@ const PurchaseInvoicePage = () => {
   )
 }
 
-export default PurchaseInvoicePage
+export default saleInvoicePage

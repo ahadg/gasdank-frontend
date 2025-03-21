@@ -21,25 +21,31 @@ export default function WholesaleAccountsPage() {
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [activeModal,setActiveModal] = useState<string>()
   const { showNotification } = useNotificationContext()
-
-  // Fetch buyers for the current user
-  useEffect(() => {
-    async function fetchAccounts() {
-      if (user?._id) {
-        setLoading(true)
-        try {
-          const response = await api.get(`/api/buyers?user_id=${user._id}`)
-          setAccounts(response.data)
-        } catch (error) {
-          showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
-          console.error('Error fetching accounts:', error)
-        } finally {
-          setLoading(false)
-        }
+  async function fetchAccounts() {
+    if (user?._id) {
+      setLoading(true)
+      try {
+        const response = await api.get(`/api/buyers?user_id=${user._id}`)
+        setAccounts(response.data)
+      } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
+        console.error('Error fetching accounts:', error)
+      } finally {
+        setLoading(false)
       }
     }
+  }
+  // Fetch buyers for the current user
+  useEffect(() => {
     fetchAccounts()
   }, [user?._id])
+  console.log("selectedAccount",selectedAccount)
+  useEffect(() => {
+    if(selectedAccount) {
+      let newSelectedAccount = accounts.find((item) => item?._id == selectedAccount?._id)
+      setSelectedAccount(newSelectedAccount)
+    }
+  },[accounts])
 
   // Filter accounts based on search query (searching on firstName and lastName)
   const filteredAccounts = accounts.filter((acc) =>
@@ -114,7 +120,7 @@ export default function WholesaleAccountsPage() {
               <h6 className="fs-15">Account Actions</h6>
               <div className="d-flex gap-3">
                 <Link href={`/apps/wholesale/history/${selectedAccount._id}`}>
-                  <Button variant="primary">View History</Button>
+                  <Button variant="primary">View Transaction</Button>
                 </Link>
                 {/* <Link href={`/apps/wholesale/add/${selectedAccount._id}`}> */}
                 <Button 
@@ -138,7 +144,7 @@ export default function WholesaleAccountsPage() {
           </Card.Footer>
         )}
         {activeModal === 'balance' && selectedAccount && (
-          <AddBalanceModal account={selectedAccount} onClose={() => setActiveModal(null)} />
+          <AddBalanceModal fetchAccounts={fetchAccounts} account={selectedAccount} onClose={() => setActiveModal(null)} />
         )}
       </Card>
     </div>

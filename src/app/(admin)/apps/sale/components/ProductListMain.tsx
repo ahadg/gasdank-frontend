@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: 'Sales Transactions' }
 
 type ModalType = 'history' | 'sellMultiple' | 'add' | null
 
-const PurchaseTransactionsPage = () => {
+const saleTransactionsPage = () => {
   const router = useRouter()
   const user = useAuthStore((state) => state.user) || { _id: '67cf4bb808facf7a76f9f229' }
   const [activeModal, setActiveModal] = useState<ModalType>(null)
@@ -96,7 +96,7 @@ const PurchaseTransactionsPage = () => {
 
   return (
     <div className="container-fluid">
-      <PageTitle title="Sales Transactions" subTitle="Transactions" />
+      <PageTitle title={`Sales Transactions (${user?.firstName} ${user?.lastName})`} subTitle="Transactions" />
 
       {/* Filter & Search Section */}
       <div className="mt-3">
@@ -274,4 +274,4 @@ const PurchaseTransactionsPage = () => {
   )
 }
 
-export default PurchaseTransactionsPage
+export default saleTransactionsPage

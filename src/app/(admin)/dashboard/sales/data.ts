@@ -128,7 +128,7 @@ export const activityData: ActivityType[] = [
   {
     title: 'You sold an item',
     icon: 'tabler:basket',
-    description: 'Paul Burgess just purchased “My - Admin Dashboard”!',
+    description: 'Paul Burgess just saled “My - Admin Dashboard”!',
     time: addOrSubtractMinutesFromDate(15),
     variant: 'info'
   },
@@ -156,7 +156,7 @@ export const activityData: ActivityType[] = [
   {
     title: 'You sold an item',
     icon: 'tabler:basket',
-    description: 'Paul Burgess just purchased “My - Admin Dashboard”!',
+    description: 'Paul Burgess just saled “My - Admin Dashboard”!',
     time: addOrSubtractMinutesFromDate(15),
     variant: 'info'
   },

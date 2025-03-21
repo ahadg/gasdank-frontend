@@ -347,7 +347,7 @@ const ProductDetailsDescription = () => {
                       </Col>
                       <Col lg={6}>
                         <div className="border rounded p-2 text-center">
-                          <p className="fw-semibold text-dark fs-20 my-1">Enjoy an Additional 20% Discount on Your Purchase : <span className="text-primary fw-semibold">OCEN24</span></p>
+                          <p className="fw-semibold text-dark fs-20 my-1">Enjoy an Additional 20% Discount on Your sale : <span className="text-primary fw-semibold">OCEN24</span></p>
                           <p className="fs-15 text-muted fw-medium">Fast &amp; Free Delivery</p>
                           <Button variant="primary">Show Offers</Button>
                         </div>

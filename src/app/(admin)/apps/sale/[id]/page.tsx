@@ -1,14 +1,14 @@
 "use client"
 import { Metadata } from 'next'
 import { useState } from 'react'
-import BuyerList from './components/BuyerList'
-//import ProductSelector from './components/ProductSelector'
+import TransactionMain from '../components/BuyerList'
+import ProductSelector from '../components/ProductListMain'
 // If you're using Next.js App Router in v13+, you can export metadata:
 // export const metadata: Metadata = {
-//   title: 'Purchase Transactions',
+//   title: 'sale Transactions',
 // }
 
-export default function PurchaseTransactionsPage() {
+export default function saleTransactionsPage() {
   const [selectedAccount, setSelectedAccount] = useState('brandon test')
 
   const handleAccountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,8 +17,8 @@ export default function PurchaseTransactionsPage() {
 
   return (
     <>
-    <BuyerList />
-    {/* <ProductSelector /> */}
+    {/* <TransactionMain /> */}
+    <ProductSelector />
     </>
   )
 }

@@ -181,7 +181,7 @@ const SummaryCard = () => {
   return (
     <Card>
       <CardHeader className="border-bottom">
-        <CardTitle as={'h5'} className="mb-0">Purchase Summary</CardTitle>
+        <CardTitle as={'h5'} className="mb-0">sale Summary</CardTitle>
       </CardHeader>
       <CardBody>
         <div className="table-responsive">

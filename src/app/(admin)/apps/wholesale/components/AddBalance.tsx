@@ -11,9 +11,10 @@ export const metadata: Metadata = { title: 'Add Balance' }
 interface AddBalanceModalProps {
   account: any
   onClose: () => void
+  fetchAccounts: () => void
 }
 
-export default function AddBalanceModal({ account, onClose }: AddBalanceModalProps) {
+export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddBalanceModalProps) {
   const user = useAuthStore((state) => state.user)
   const [loading, setLoading] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState<any>()
@@ -34,6 +35,7 @@ export default function AddBalanceModal({ account, onClose }: AddBalanceModalPro
     try {
       const response = await api.post('/api/transaction', payload)
       console.log('Balance updated:', response.data)
+      fetchAccounts()
       onClose()
     } catch (error: any) {
       showNotification({ message: error?.response?.data?.error || 'Error fetching out-of-stock products', variant: 'danger' })

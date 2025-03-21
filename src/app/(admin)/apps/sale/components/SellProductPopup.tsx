@@ -139,19 +139,19 @@ export default function SellMultipleProductsModal({
       profit: totalAmount - org_price,
       total_shipping: totalShipping,
       notes: data.notes,
-      type: "purchase",
+      type: "sale",
     }
 
     try {
       console.log("payload", payload)
       const response = await api.post('/api/transaction', payload)
-      console.log('Purchase processed:', response.data)
+      console.log('sale processed:', response.data)
       fetchProducts()
       showNotification({ message: 'Transaction processed successfully', variant: 'success' })
       onClose()
       router.push(`/apps/wholesale/history/${params?.id}`);
     } catch (error: any) {
-      console.error('Error processing purchase:', error)
+      console.error('Error processing sale:', error)
       showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
     } finally {
       setLoading(false)

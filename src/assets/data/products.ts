@@ -121,7 +121,7 @@ export const productData: ProductType[] = [
     brand: ['Nike', 'H&M', 'ZARA', 'Puma'],
     averagePriceMin: 200,
     averagePriceMax: 2000,
-    discountsAvailable: 'Bulk Purchase Deals',
+    discountsAvailable: 'Bulk sale Deals',
     sellingItems: ['Hoodie'],
     productName: 'Winter Fashion',
     discountPrice: 90.00,

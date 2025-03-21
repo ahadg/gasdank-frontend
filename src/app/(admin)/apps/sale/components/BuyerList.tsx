@@ -11,7 +11,7 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Sales Transactions' }
 
-export default function PurchaseTransactionsPage() {
+export default function saleTransactionsPage() {
   const user = useAuthStore((state) => state.user)
   const [buyers, setBuyers] = useState<any[]>([])
   const [selectedBuyer, setSelectedBuyer] = useState<any>(null)
@@ -103,7 +103,7 @@ export default function PurchaseTransactionsPage() {
 
           {selectedBuyer && (
             <div className="mt-4 p-3 bg-light rounded shadow-sm">
-              <h6 className="fs-15">Balance Due</h6>
+              <h6 className="fs-15">Balance</h6>
               <p className="mb-0 fs-5 text-dark">
                 ${Number(selectedBuyer.currentBalance).toLocaleString()}
               </p>
@@ -112,7 +112,7 @@ export default function PurchaseTransactionsPage() {
         </Card.Body>
         <Card.Footer className="bg-white">
           <div className="d-flex justify-content-end">
-            <Link href={`/apps/purchase/${selectedBuyer?._id}`}>
+            <Link href={`/apps/sale/${selectedBuyer?._id}`}>
               <Button variant="primary" disabled={!selectedBuyer}>
                 CONTINUE
               </Button>

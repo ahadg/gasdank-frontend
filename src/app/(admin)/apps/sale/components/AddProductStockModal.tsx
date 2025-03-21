@@ -69,17 +69,17 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
   const values = watch()
   const subtotal = Number(values.quantity || 0) * Number(values.measurement || 1) * Number(values.price * Number(values.shipping) || 0)
   const { showNotification } = useNotificationContext()
-  const [recentPurchaseLoading,setrecentPurchaseLoading] = useState<boolean>(false)
-  const [recentPurchase,setrecentPurchase] = useState<any>()
-  console.log("recentPurchase",recentPurchase)
+  const [recentsaleLoading,setrecentsaleLoading] = useState<boolean>(false)
+  const [recentsale,setrecentsale] = useState<any>()
+  console.log("recentsale",recentsale)
   useEffect(() => {
     async function fetchHistory() {
       if (product) {
         setLoading(true)
         try {
           const response = await api.get(`/api/transaction/recent/${params?.id}/${product._id}`)
-          setrecentPurchase(response.data)
-          setrecentPurchaseLoading(true)
+          setrecentsale(response.data)
+          setrecentsaleLoading(true)
           setValue('shipping', response.data.shipping || 0)
           setValue('saleprice', response.data.sale_price || 0)
           setValue('price', response.data.price || 0)
@@ -166,7 +166,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
             )}
             <h6 className="fs-15 mb-3">Returning Stock of {product.name} from ({user.firstName} {user.lastName}) </h6>
             <h6 className="fs-15 mb-1">Recent Transactions Found:</h6>
-            {!recentPurchaseLoading ? (
+            {!recentsaleLoading ? (
               <p>Loading...</p>
             ) : (
               <div className="table-responsive">
@@ -182,20 +182,20 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                     </tr>
                   </thead>
                   <tbody>
-                    {recentPurchaseLoading  ? (
+                    {recentsaleLoading  ? (
                         <tr key={1}>
-                          <td>{new Date(recentPurchase.created_at).toLocaleDateString()}</td>
-                          <td>{recentPurchase.inventory_id?.name}</td>
+                          <td>{new Date(recentsale.created_at).toLocaleDateString()}</td>
+                          <td>{recentsale.inventory_id?.name}</td>
                           <td>
-                            {recentPurchase.qty} [{recentPurchase.unit}]
+                            {recentsale.qty} [{recentsale.unit}]
                           </td>
                           <td>
-                            {/* {renderTypeWithIcon(recentPurchase.transaction_id?.type)} */}
-                            {/* {recentPurchase.transaction_id?.type} */}
-                            {recentPurchase.shipping}
+                            {/* {renderTypeWithIcon(recentsale.transaction_id?.type)} */}
+                            {/* {recentsale.transaction_id?.type} */}
+                            {recentsale.shipping}
                           </td>
-                          <td>${recentPurchase.price}</td>
-                          <td>{recentPurchase.sale_price ? `$${recentPurchase.sale_price}` : `-`}</td>
+                          <td>${recentsale.price}</td>
+                          <td>{recentsale.sale_price ? `$${recentsale.sale_price}` : `-`}</td>
                         </tr>
                     
                     ) : (

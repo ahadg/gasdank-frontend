@@ -126,7 +126,7 @@ const ViewInvoicePage = () => {
                 <p className="mb-0"><span className="fs-12 fw-bold text-uppercase">Note : </span>Payment for all accounts is due within 7 days from the date of invoice receipt. Payments can be made via cheque, credit card, or direct online payment. Failure to settle the account within 7 days will result in the agreed quoted fee, as noted above, being charged against the credit details provided as confirmation of the work undertaken.</p>
               </div>
               <div className="mt-4">
-                <p className="mb-2 pb-2"><b>Congratulations on your recent purchase!</b> It has been our pleasure to serve you, and we hope we see you again soon.</p>
+                <p className="mb-2 pb-2"><b>Congratulations on your recent sale!</b> It has been our pleasure to serve you, and we hope we see you again soon.</p>
                 <div className="d-inline-block">
                   <Image src={signatureImg} alt="signature" height={32} />
                   <h5 className="mb-0 mt-2">Authorized Sign</h5>

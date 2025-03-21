@@ -28,7 +28,7 @@ interface DashboardStatAccess {
 interface AccessData {
   dashboard: Access
   dashboard_stats: DashboardStatAccess
-  purchase: Access
+  sale: Access
   wholesale: Access
   inventory: Access
   config: Access
@@ -46,14 +46,14 @@ const defaultAccess: AccessData = {
     company_balance: true,
     online_balance: true
   },
-  purchase: { read: true, edit: true, delete: true, create: true },
+  sale: { read: true, edit: true, delete: true, create: true },
   wholesale: { read: true, edit: true, delete: true, create: true },
   inventory: { read: true, edit: true, delete: true, create: true },
   config: { read: true, edit: true, delete: true, create: true },
   reports: { read: true, edit: true, delete: true, create: true },
 }
 
-const pages = ['dashboard', 'purchase', 'wholesale', 'inventory', 'config', 'reports']
+const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'config', 'reports']
 const permissions = ['read', 'edit', 'delete', 'create']
 
 // Permissions for dashboard stats

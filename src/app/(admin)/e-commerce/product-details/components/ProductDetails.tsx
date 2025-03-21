@@ -67,8 +67,8 @@ const ProductDetails = () => {
             </CardBody>
             <CardFooter className="p-0 rounded">
               <div className="bg-dark-gradient shadow text-center p-3 rounded mt-3">
-                <p className="fs-20 fw-semibold text-white mb-1">Enjoy an Additional 20% Discount on Your Purchase</p>
-                <p className="mb-1 text-white-50">On Purchase Of 2+ Style</p>
+                <p className="fs-20 fw-semibold text-white mb-1">Enjoy an Additional 20% Discount on Your sale</p>
+                <p className="mb-1 text-white-50">On sale Of 2+ Style</p>
                 <p className="mb-0 text-white-50">USE CODE : <span className="text-warning fw-bold">OCEN24</span></p>
               </div>
               <div className="bg-body-secondary shadow rounded p-3 mt-3">
