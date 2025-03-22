@@ -88,15 +88,16 @@ export default function SellMultipleProductsModal({
   const items = watch('items')
   const totalAmount = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) * Number(item.sale_price) ,
+      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) +  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
     0
   )
 
   const totalShipping = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) ,
+      sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
     0
-  )
+  );
+  
 
   // Define available unit options
   const unitOptions = ['kg', 'pound', 'per piece', 'gram']
@@ -125,7 +126,7 @@ export default function SellMultipleProductsModal({
 
     const org_price = items.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.shipping) * Number(item.measurement) * Number(item.price),
+        sum + Number(item.quantity) * Number(item.measurement) * Number(item.price) + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
       0
     )
 
@@ -200,7 +201,7 @@ export default function SellMultipleProductsModal({
                     <th>Quantity</th>
                     <th>Unit</th>
                     <th>Measurement</th>
-                    <th>Price</th>
+                    <th>Org Price</th>
                     <th>Sale Price</th>
                     <th>Shipping (per unit)</th>
                     <th>Subtotal</th>
@@ -260,7 +261,7 @@ export default function SellMultipleProductsModal({
                         <Form.Control
                           type="number"
                           step="any"
-                          disabled
+                          //disabled
                           placeholder="Price"
                           {...(control.register ? control.register(`items.${index}.price` as const) : {})}
                         />
@@ -278,7 +279,7 @@ export default function SellMultipleProductsModal({
                           type="number"
                           step="any"
                           placeholder="Shipping"
-                          disabled
+                          //disabled
                           {...(control.register ? control.register(`items.${index}.shipping` as const) : {})}
                         />
                       </td>

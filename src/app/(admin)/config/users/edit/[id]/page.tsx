@@ -58,7 +58,7 @@ const pages = ["dashboard", "sale", "wholesale", "inventory", "config", "reports
 const permissions = ["read", "edit", "delete", "create"]
 
 // For dashboard stats, define the permission keys
-const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance","online_balance"]
+const statPermissions = ["today_sales", "today_profit", "inventory_value","company_outstanding_balance","clients_outstanding_balance", "user_balance", "company_balance","online_balance"]
 
 export default function EditUserPage() {
   const router = useRouter()
