@@ -73,7 +73,7 @@ export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddB
                   type="number"
                   placeholder=""
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                  onChange={(e) => setPaymentAmount((e.target.value))}
                 />
               </Form.Group>
               <Form.Group className="mb-3">

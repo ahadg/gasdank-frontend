@@ -173,7 +173,7 @@ const finalAmountDue = totalsaleAmount - totalPaymentReceived
             </Row>
             <Row>
               <Col md={4}>
-                <strong>Final Amount Due:</strong>
+                <strong>Final Amount:</strong>
               </Col>
               <Col md={8}>
                 ${finalAmountDue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
