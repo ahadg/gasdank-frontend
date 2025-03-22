@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Metadata } from 'next'
 import PageTitle from '@/components/PageTitle'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
@@ -18,6 +18,8 @@ export const metadata: Metadata = { title: 'Sales Transactions' }
 type ModalType = 'history' | 'sellMultiple' | 'add' | null
 
 const saleTransactionsPage = () => {
+  const { id } = useParams() // buyer id from route parameter
+  const buyerId = id
   const router = useRouter()
   const user = useAuthStore((state) => state.user) || { _id: '67cf4bb808facf7a76f9f229' }
   const [activeModal, setActiveModal] = useState<ModalType>(null)
@@ -31,10 +33,11 @@ const saleTransactionsPage = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1)
+  const [Buyer, setBuyer] = useState<any>()
   const [pageLimit, setPageLimit] = useState<number>(10)
   const [totalProducts, setTotalProducts] = useState<number>(0)
   const { showNotification } = useNotificationContext()
-
+  console.log('Buyer',Buyer)
   // Fetch user-specific categories
   useEffect(() => {
     async function fetchCategories() {
@@ -48,13 +51,26 @@ const saleTransactionsPage = () => {
     }
     fetchCategories()
   }, [user._id])
+
+  async function fetchBuyer() {
+    setLoading(true)
+    try {
+      const response = await api.get(`/api/buyers/${buyerId}`)
+      // Expecting response.data to have: { page, limit, totalProducts, products }
+      setBuyer(response.data)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
   
   // Fetch products for the user with pagination
   async function fetchProducts() {
     setLoading(true)
     try {
       // Build query string with pagination and category filter if set
-      let query = `/api/products/${user._id}?page=${currentPage}&limit=${pageLimit}`
+      let query = `/api/products/${user._id}/${buyerId}?page=${currentPage}&limit=${pageLimit}`
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }
@@ -73,6 +89,10 @@ const saleTransactionsPage = () => {
   useEffect(() => {
     fetchProducts()
   }, [user._id, filterCategory, currentPage])
+
+  useEffect(() => {
+    fetchBuyer()
+  },[])
   
   // Filter products on the front end by search query
   const filteredProducts = products.filter((prod) => {
@@ -96,7 +116,7 @@ const saleTransactionsPage = () => {
 
   return (
     <div className="container-fluid">
-      <PageTitle title={`Sales Transactions (${user?.firstName} ${user?.lastName})`} subTitle="Transactions" />
+      <PageTitle title={`Sales Transactions (${Buyer?.firstName} ${Buyer?.lastName})`} subTitle="Transactions" />
 
       {/* Filter & Search Section */}
       <div className="mt-3">

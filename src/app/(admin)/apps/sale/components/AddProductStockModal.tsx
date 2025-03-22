@@ -53,6 +53,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
       note: '',
     },
   })
+  const [buyer,setbuyer] = useState<any>()
   const [loading, setLoading] = useState(false)
   const user = useAuthStore((state) => state.user)
   const params = useParams()
@@ -78,11 +79,12 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
         setLoading(true)
         try {
           const response = await api.get(`/api/transaction/recent/${params?.id}/${product._id}`)
-          setrecentsale(response.data)
+          setrecentsale(response.data.recentTransactionItem)
           setrecentsaleLoading(true)
-          setValue('shipping', response.data.shipping || 0)
-          setValue('saleprice', response.data.sale_price || 0)
-          setValue('price', response.data.price || 0)
+          setValue('shipping', response.data.recentTransactionItem.shipping || 0)
+          setValue('saleprice', response.data.recentTransactionItem.sale_price || 0)
+          setValue('price', response.data.recentTransactionItem.price || 0)
+          setbuyer(response.data.buyer)
           // set shipping,saleprice,price
         } catch (error) {
           showNotification({ message: error?.response?.data?.error || 'Error fetching transaction history', variant: 'danger' })
@@ -164,7 +166,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                 <Spinner animation="border" variant="primary" />
               </div>
             )}
-            <h6 className="fs-15 mb-3">Returning Stock of {product.name} from ({user.firstName} {user.lastName}) </h6>
+            <h6 className="fs-15 mb-3">Returning Stock of {product.name} from ({buyer?.firstName} {buyer?.lastName}) </h6>
             <h6 className="fs-15 mb-1">Recent Transactions Found:</h6>
             {!recentsaleLoading ? (
               <p>Loading...</p>
