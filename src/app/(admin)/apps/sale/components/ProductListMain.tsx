@@ -64,7 +64,7 @@ const saleTransactionsPage = () => {
       setLoading(false)
     }
   }
-  
+  console.log("filterCategory",filterCategory)
   // Fetch products for the user with pagination
   async function fetchProducts() {
     setLoading(true)
@@ -136,7 +136,7 @@ const saleTransactionsPage = () => {
               >
                 <option value="">All Categories</option>
                 {categories.map((cat) => (
-                  <option key={cat._id} value={cat.name}>
+                  <option key={cat._id} value={cat._id}>
                     {cat.name}
                   </option>
                 ))}
@@ -216,7 +216,7 @@ const saleTransactionsPage = () => {
                       />
                     </td>
                     <td>{prod.name}</td>
-                    <td>{prod.category}</td>
+                    <td>{prod?.category?.name}</td>
                     <td>{prod.qty}</td>
                     <td>{prod.unit}</td>
                     <td className="text-center">

@@ -75,7 +75,7 @@ const AccountHistory = () => {
   .filter((tx) => (tx.type === 'sale'))
   .reduce((sum, tx) => sum + tx.sale_price, 0)
 const totalPaymentReceived = transactions
-  .filter((tx) => (tx.type === 'payment' || tx.type === 'return'))
+  .filter((tx) => (tx.type === 'payment' || tx.type === 'return' || tx.type === "inventory_addition"))
   .reduce(
     (sum, tx) => sum + (tx?.price || 0),
     0
@@ -133,9 +133,9 @@ const finalAmountDue = totalPaymentReceived - totalsaleAmount
                     <tr key={idx}>
                       <td>{new Date(tx.created_at).toLocaleDateString()}</td>
                       <td>{detailsContent}</td>
-                      <td>{tx.type == "sale" ? "sale" : tx.type}</td>
+                      <td>{tx.type == "inventory_addition" ? "Inventory Addition" : tx.type}</td>
                       <td>{tx.notes}</td>
-                      <td>{(tx.type === "payment" || tx.type === "return") && ("- $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
+                      <td>{(tx.type === "payment" || tx.type === "return" || tx.type === "inventory_addition") && ("- $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
                       <td>{tx.type === "sale" && ("+ $" + tx.sale_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
                       {/* <td>
                         <Button variant="primary" size="sm">

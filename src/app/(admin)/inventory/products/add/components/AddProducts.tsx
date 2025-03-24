@@ -112,6 +112,54 @@ export default function AddProductsPage() {
     append({ name: '', qty: 0, unit: '', category: '', price: 0 })
   }
 
+  const produce_transaction = async (data,avg_shipping,shippingCost) => {
+    console.log("produce_transaction called")
+    setLoading(true)
+    // Transform each item to match backend expected keys:
+    const transformedItems = data.map((item) => ({
+      inventory_id: item._id, // Assuming productId corresponds to inventory id
+      qty: Number(item.qty),
+      measurement: 1,
+      unit: item.unit,
+      price: item.price,
+      shipping: avg_shipping,
+      //sale_price: item.price,
+    }))
+
+    // const org_price = data.reduce(
+    //   (sum: number, item: any) =>
+    //     sum + Number(item.quantity) * Number(item.price) + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
+    //   0
+    // )
+
+    // Construct payload:
+    const payload = {
+      user_id: user._id,
+      buyer_id: selectedAccount._id, // Buyer id from route parameters
+      items: transformedItems,
+      price: totalProductsAmount,
+      //sale_price: totalAmount,
+      //profit: totalAmount - org_price,
+      total_shipping: Number(shippingCost),
+      notes: data.notes,
+      type: "inventory_addition",
+    }
+
+    try {
+      console.log("payload", payload)
+      const response = await api.post('/api/transaction', payload)
+      console.log('sale processed:', response.data)
+      //fetchProducts()
+      showNotification({ message: 'Transaction processed successfully', variant: 'success' })
+      //router.push(`/apps/wholesale/history/${params?.id}`);
+    } catch (error: any) {
+      console.error('Error processing sale:', error)
+      showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const onSubmit = async (data: MultipleProductFormData) => {
     if (!selectedAccount) {
       showNotification({ message: 'Please select an account first.', variant: 'danger' })
@@ -122,21 +170,26 @@ export default function AddProductsPage() {
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
     const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
     try {
-      const calls = data.products.map((prod) =>
-        api.post('/api/products', {
+      let products = []
+      const calls = data.products.map(async (prod) => {
+        const the_category = userCategories?.find((item) => item?.name === prod.category)
+        let res = await api.post('/api/products', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
           name: prod.name,
           qty: prod.qty,
           unit: prod.unit,
-          category: prod.category,
+          category: the_category?._id,
           price: prod.price,
           shippingCost: avg_shipping,
           status: "", // Set default status if needed
           notes: "",  // Optional
         })
-      )
+        products.push(res.data)
+      })
       await Promise.all(calls)
+      console.log("productsss",products)
+      produce_transaction(products,avg_shipping,shippingCost)
       await api.post(`/api/buyers/balance/${selectedAccount._id}`, { currentBalance : -totalAmount } )
       showNotification({ message: 'Products added successfully', variant: 'success' })
       router.back()

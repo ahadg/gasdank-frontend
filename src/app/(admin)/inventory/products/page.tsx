@@ -85,7 +85,7 @@ const ProductsPage = () => {
                     <th>Unit</th>
                     <th>Category</th>
                     <th>Price</th>
-                    <th>Shipping Cost</th>
+                    {/* <th>Shipping Cost</th> */}
                     <th>Notes</th>
                     <th className="text-center" style={{ width: 125 }}>Action</th>
                   </tr>
@@ -101,9 +101,9 @@ const ProductsPage = () => {
                         <td>{item.name}</td>
                         <td>{item.qty}</td>
                         <td>{item.unit}</td>
-                        <td>{item.category}</td>
-                        <td>${item.price.toLocaleString()}</td>
-                        <td>${item.shippingCost.toLocaleString()}</td>
+                        <td>{item.category?.name}</td>
+                        <td>${(item.price + item.shippingCost).toLocaleString(2)}</td>
+                        {/* <td>${item.shippingCost.toLocaleString()}</td> */}
                         <td>{item.notes}</td>
                         <td className="text-center">
                           <div className="hstack gap-1 justify-content-end">
