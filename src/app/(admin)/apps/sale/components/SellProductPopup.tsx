@@ -126,7 +126,13 @@ export default function SellMultipleProductsModal({
 
     const org_price = items.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * Number(item.price) + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
+        sum + Number(item.quantity) * Number(item.measurement) * Number(item.price),
+      0
+    )
+
+    const totalsale_price_amount = items.reduce(
+      (sum: number, item: any) =>
+        sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price)  ,
       0
     )
 
@@ -136,8 +142,8 @@ export default function SellMultipleProductsModal({
       buyer_id: params?.id, // Buyer id from route parameters
       items: transformedItems,
       price: org_price,
-      sale_price: totalAmount,
-      profit: totalAmount - org_price,
+      sale_price: totalsale_price_amount,
+      profit: totalsale_price_amount - org_price,
       total_shipping: totalShipping,
       notes: data.notes,
       type: "sale",
@@ -203,7 +209,7 @@ export default function SellMultipleProductsModal({
                     <th>Measurement</th>
                     <th>Org Price</th>
                     <th>Sale Price</th>
-                    <th>Shipping (per unit)</th>
+                    {/* <th>Shipping (per unit)</th> */}
                     <th>Subtotal</th>
                     <th>Action</th>
                   </tr>
@@ -274,7 +280,7 @@ export default function SellMultipleProductsModal({
                           {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
                         />
                       </td>
-                      <td>
+                      {/* <td>
                         <Form.Control
                           type="number"
                           step="any"
@@ -282,12 +288,12 @@ export default function SellMultipleProductsModal({
                           //disabled
                           {...(control.register ? control.register(`items.${index}.shipping` as const) : {})}
                         />
-                      </td>
+                      </td> */}
                       <td>
                         {(
-                          (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) *
-                          Number(items[index]?.measurement || 1) *
-                          Number(items[index]?.sale_price || 0) 
+                          (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) +
+                          (Number(items[index]?.measurement || 1) *
+                          Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0) )
                         ).toFixed(2)}
                       </td>
                       <td>

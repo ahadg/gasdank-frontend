@@ -35,6 +35,7 @@ interface ITransaction {
   item_count: number;
   total: number;
   amount: number;
+  total_shipping : number;
   type?: string; // "sale" | "return" | "payment"
   items?: ITransactionItem[];
   created_at: string;
@@ -51,7 +52,7 @@ const AccountHistory = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const { id } = useParams() // buyer id from route parameter
   const user = useAuthStore((state) => state.user)
-
+  console.log("transactions",transactions)
   useEffect(() => {
     async function fetchHistory() {
       setLoading(true)
@@ -73,11 +74,11 @@ const AccountHistory = () => {
   // Compute receipt totals:
   const totalsaleAmount = transactions
   .filter((tx) => (tx.type === 'sale'))
-  .reduce((sum, tx) => sum + tx.sale_price, 0)
+  .reduce((sum, tx) => sum + (tx.sale_price + tx.total_shipping), 0)
 const totalPaymentReceived = transactions
   .filter((tx) => (tx.type === 'payment' || tx.type === 'return' || tx.type === "inventory_addition"))
   .reduce(
-    (sum, tx) => sum + (tx?.price || 0),
+    (sum, tx) => sum + ((tx?.price || 0) + (tx?.total_shipping || 0)),
     0
   )
 // Final amount due = total sale amount minus payment received.
@@ -135,8 +136,10 @@ const finalAmountDue = totalPaymentReceived - totalsaleAmount
                       <td>{detailsContent}</td>
                       <td>{tx.type == "inventory_addition" ? "Inventory Addition" : tx.type}</td>
                       <td>{tx.notes}</td>
-                      <td>{(tx.type === "payment" || tx.type === "return" || tx.type === "inventory_addition") && ("- $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
-                      <td>{tx.type === "sale" && ("+ $" + tx.sale_price?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
+                      <td>{(tx.type === "payment" ?  
+                      ("- $" + tx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 })) : 
+                      tx.type === "return" || tx.type === "inventory_addition") && ("- $" + (tx.price + (tx.total_shipping || 0))?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
+                      <td>{tx.type === "sale" && ("+ $" + (tx.sale_price + tx.total_shipping)?.toLocaleString(undefined, { minimumFractionDigits: 2 }))}</td>
                       {/* <td>
                         <Button variant="primary" size="sm">
                           VIEW

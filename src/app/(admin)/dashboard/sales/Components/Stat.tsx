@@ -20,24 +20,54 @@ interface StatTypeExtended extends StatType {
   permissionKey: string
 }
 
+/**
+ * Convert a JavaScript Date to a local ISO string suitable for <input type="datetime-local">
+ * For example, "2025-06-24T07:00"
+ */
+function toLocalDateTimeString(date: Date) {
+  // Adjust for the user's local time zone offset
+  const offsetMs = date.getTime() - date.getTimezoneOffset() * 60000
+  const localDate = new Date(offsetMs)
+  // Format to YYYY-MM-DDTHH:MM (slice(0,16) cuts off seconds and milliseconds)
+  return localDate.toISOString().slice(0, 16)
+}
+
 const Stat = () => {
+  const user = useAuthStore((state) => state.user)
+
+  // Set default start date to today at 00:00 local time
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return toLocalDateTimeString(today)
+  })
+
+  // Set default end date to "now" in local time
+  const [endDate, setEndDate] = useState(() => {
+    const now = new Date()
+    return toLocalDateTimeString(now)
+  })
+
   const [statData, setStatData] = useState<StatTypeExtended[]>([])
   const [loading, setLoading] = useState(false)
-  const [startDate, setStartDate] = useState<string>('')
-  const [endDate, setEndDate] = useState<string>('')
-  const user = useAuthStore((state) => state.user)
-  console.log("startDate",startDate)
+
+  // Build the stats
   const fetchStats = async () => {
+    if (!user?._id) return
+
     setLoading(true)
     try {
+      // Build query params
       const queryParams = new URLSearchParams()
       if (startDate) queryParams.append('startDate', startDate)
       if (endDate) queryParams.append('endDate', endDate)
-      const url = `/api/users/stats/${user?._id}?${queryParams.toString()}`
+
+      // Example: GET /api/users/stats/<USER_ID>?startDate=...&endDate=...
+      const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-      console.log("response...",data)
-      // Build statData array from API response with a permission key for each stat.
+
+      // Build statData array from the API response
       const stats: StatTypeExtended[] = [
         {
           title: 'Total Sales',
@@ -67,7 +97,7 @@ const Stat = () => {
           title: "Client's Outstanding Balance",
           permissionKey: 'clients_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
-          count: data.ClientoutPayableBalances || 0,
+          count: data.ClientoutPayableBalances || '0',
           change: data.outstandingBalancesChange,
           variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
         },
@@ -75,7 +105,7 @@ const Stat = () => {
           title: "Company's Outstanding Balance",
           permissionKey: 'company_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
-          count: Math.abs(Number(data.companyPayableBalance)),
+          count: String(Math.abs(Number(data.companyPayableBalance))),
           change: data.outstandingBalancesChange,
           variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
         },
@@ -104,10 +134,10 @@ const Stat = () => {
           variant: data.onlineBalanceChange < 0 ? 'danger' : 'success',
         },
       ]
-      // Get the user's dashboard stats access from the fetched data (or you can use user.access.dashboard_stats)
+
+      // Filter out stats that user does not have access to
       const userStats = user?.access?.dashboard_stats || {}
-      console.log("userStats",userStats)
-      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
+      const filteredStats = stats.filter((stat) => userStats[stat.permissionKey] === true)
       setStatData(filteredStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -116,12 +146,10 @@ const Stat = () => {
     }
   }
 
-  // Fetch stats initially when user is available
+  // Fetch stats initially (and re-fetch whenever user, startDate, or endDate changes)
   useEffect(() => {
-    //if (user && user._id) {
-      fetchStats()
-    //}
-  }, [user])
+    fetchStats()
+  }, [user, startDate, endDate])
 
   return (
     <div>
@@ -147,11 +175,11 @@ const Stat = () => {
               />
             </Form.Group>
           </Col>
-          <Col md={4}>
+          {/* <Col md={4} className="d-flex align-items-center">
             <Button variant="primary" onClick={fetchStats} className="mt-2">
               Apply Filter
             </Button>
-          </Col>
+          </Col> */}
         </Row>
       </Form>
 
@@ -174,16 +202,17 @@ const Stat = () => {
                     </div>
                     <h3 className="mb-0 fw-bold">{item.count}</h3>
                   </div>
-                  <p className="mb-0 text-muted">
+                  {/* <p className="mb-0 text-muted">
                     <span className={`text-${item.variant} me-2`}>
-                      {item.change}% {item.variant === 'danger' ? (
+                      {item.change}%{' '}
+                      {item.variant === 'danger' ? (
                         <IconifyIcon icon="tabler:caret-down-filled" />
                       ) : (
                         <IconifyIcon icon="tabler:caret-up-filled" />
                       )}
                     </span>
                     <span className="text-nowrap">Since last month</span>
-                  </p>
+                  </p> */}
                 </CardBody>
               </Card>
             </Col>

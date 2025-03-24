@@ -96,7 +96,7 @@ export default function OutOfStockProductsPage() {
                     filteredProducts.map((product, idx) => (
                       <tr key={idx}>
                         <td>{product.name}</td>
-                        <td>{product.category}</td>
+                        <td>{product.category?.name}</td>
                         <td>{product.qty}</td>
                         <td>${product.price?.toFixed(2)}</td>
                         <td>

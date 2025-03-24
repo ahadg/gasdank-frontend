@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, ChangeEvent, FormEvent, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Metadata } from 'next'
 import { Row, Col, Card, CardBody, CardHeader, CardTitle, Button, Form, Table } from 'react-bootstrap'
@@ -33,7 +33,7 @@ export default function AddProductsPage() {
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
 
-  // Form state for multiple products
+  // react-hook-form
   const { control, handleSubmit, watch } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
@@ -47,23 +47,17 @@ export default function AddProductsPage() {
     name: 'products',
   })
 
+  // Calculate totals
   const productsData = watch('products')
   const shippingCost = watch('shippingCost')
-  
+
   const totalProductsAmount = productsData.reduce(
     (sum: number, item: any) => sum + Number(item.qty) * Number(item.price),
     0
   )
   const totalAmount = totalProductsAmount + Number(shippingCost)
 
-  // Calculate total quantity and average shipping per unit
-  const totalQuantity = useMemo(
-    () => productsData.reduce((sum: number, item: any) => sum + Number(item.qty), 0),
-    [productsData]
-  )
-  const avgShipping = totalQuantity > 0 ? Number(shippingCost) / totalQuantity : 0
-
-  // State for account selector (buyer)
+  // Buyer (account) selection
   const [accounts, setAccounts] = useState<any[]>([])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -71,27 +65,27 @@ export default function AddProductsPage() {
   const [loading, setLoading] = useState(false)
 
   // Fetch buyers for the current user
-  async function fetchAccounts() {
-    if (user?._id) {
-      try {
-        const response = await api.get(`/api/buyers?user_id=${user._id}`)
-        setAccounts(response.data)
-      } catch (error) {
-        showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
-        console.error('Error fetching accounts:', error)
+  useEffect(() => {
+    async function fetchAccounts() {
+      if (user?._id) {
+        try {
+          const response = await api.get(`/api/buyers?user_id=${user._id}`)
+          setAccounts(response.data)
+        } catch (error) {
+          showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
+          console.error('Error fetching accounts:', error)
+        }
       }
     }
-  }
-  useEffect(() => {
     fetchAccounts()
-  }, [user?._id])
+  }, [user?._id, showNotification])
 
-  // Filter accounts based on search query
+  // Filter accounts
   const filteredAccounts = accounts.filter((acc) =>
     `${acc.firstName} ${acc.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Fetch user-specific categories
+  // Categories
   const [userCategories, setUserCategories] = useState<any[]>([])
   useEffect(() => {
     async function fetchUserCategories() {
@@ -106,52 +100,40 @@ export default function AddProductsPage() {
       }
     }
     fetchUserCategories()
-  }, [user?._id])
+  }, [user?._id, showNotification])
 
+  // Add new row
   const handleAddRow = () => {
     append({ name: '', qty: 0, unit: '', category: '', price: 0 })
   }
 
-  const produce_transaction = async (data,avg_shipping,shippingCost) => {
-    console.log("produce_transaction called")
-    setLoading(true)
-    // Transform each item to match backend expected keys:
-    const transformedItems = data.map((item) => ({
-      inventory_id: item._id, // Assuming productId corresponds to inventory id
-      qty: Number(item.qty),
-      measurement: 1,
-      unit: item.unit,
-      price: item.price,
-      shipping: avg_shipping,
-      //sale_price: item.price,
-    }))
-
-    // const org_price = data.reduce(
-    //   (sum: number, item: any) =>
-    //     sum + Number(item.quantity) * Number(item.price) + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
-    //   0
-    // )
-
-    // Construct payload:
-    const payload = {
-      user_id: user._id,
-      buyer_id: selectedAccount._id, // Buyer id from route parameters
-      items: transformedItems,
-      price: totalProductsAmount,
-      //sale_price: totalAmount,
-      //profit: totalAmount - org_price,
-      total_shipping: Number(shippingCost),
-      notes: data.notes,
-      type: "inventory_addition",
-    }
-
+  // Additional transaction creation function
+  const produce_transaction = async (data: any[], avg_shipping: number, shippingCost: number) => {
     try {
-      console.log("payload", payload)
+      setLoading(true)
+      // Transform each item to match backend expected keys:
+      const transformedItems = data.map((item) => ({
+        inventory_id: item._id, // If you have an ID
+        qty: Number(item.qty),
+        measurement: 1,
+        unit: item.unit,
+        price: item.price,
+        shipping: avg_shipping,
+      }))
+
+      const payload = {
+        user_id: user._id,
+        buyer_id: selectedAccount?._id,
+        items: transformedItems,
+        price: totalProductsAmount,
+        total_shipping: Number(shippingCost),
+        type: 'inventory_addition',
+      }
+
+      console.log('payload', payload)
       const response = await api.post('/api/transaction', payload)
       console.log('sale processed:', response.data)
-      //fetchProducts()
       showNotification({ message: 'Transaction processed successfully', variant: 'success' })
-      //router.push(`/apps/wholesale/history/${params?.id}`);
     } catch (error: any) {
       console.error('Error processing sale:', error)
       showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
@@ -160,20 +142,23 @@ export default function AddProductsPage() {
     }
   }
 
-  const onSubmit = async (data: MultipleProductFormData) => {
+  // Submit callback
+  const onSubmit = async (formValues: MultipleProductFormData) => {
     if (!selectedAccount) {
       showNotification({ message: 'Please select an account first.', variant: 'danger' })
       return
     }
     setLoading(true)
-    // Recalculate total quantity for avg shipping (can also use totalQuantity from useMemo)
-    const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
-    const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
     try {
-      let products = []
-      const calls = data.products.map(async (prod) => {
-        const the_category = userCategories?.find((item) => item?.name === prod.category)
-        let res = await api.post('/api/products', {
+      // Calculate average shipping cost
+      const total_quantity = formValues.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
+      const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
+
+      let products: any[] = []
+      // For each product, create it in the DB, push the created product to array
+      const calls = formValues.products.map(async (prod) => {
+        const the_category = userCategories.find((cat) => cat.name === prod.category)
+        const res = await api.post('/api/products', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
           name: prod.name,
@@ -182,15 +167,20 @@ export default function AddProductsPage() {
           category: the_category?._id,
           price: prod.price,
           shippingCost: avg_shipping,
-          status: "", // Set default status if needed
-          notes: "",  // Optional
+          status: '',
+          notes: '',
         })
         products.push(res.data)
       })
       await Promise.all(calls)
-      console.log("productsss",products)
-      produce_transaction(products,avg_shipping,shippingCost)
-      await api.post(`/api/buyers/balance/${selectedAccount._id}`, { currentBalance : -totalAmount } )
+      console.log('Created products =>', products)
+
+      // Then produce the transaction with these newly created products
+      await produce_transaction(products, avg_shipping, shippingCost)
+
+      // Possibly update buyer's balance
+      // await api.post(`/api/buyers/balance/${selectedAccount._id}`, { currentBalance: -totalAmount })
+
       showNotification({ message: 'Products added successfully', variant: 'success' })
       router.back()
     } catch (error: any) {
@@ -199,6 +189,12 @@ export default function AddProductsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Error callback
+  const onError = (formErrors: any) => {
+    console.log('Form errors', formErrors)
+    showNotification({ message: 'Please select/input all the necessary fields', variant: 'danger' })
   }
 
   return (
@@ -264,10 +260,7 @@ export default function AddProductsPage() {
           </div>
 
           {/* Product Form */}
-          <Form onSubmit={handleSubmit(onSubmit, (formErrors) => {
-            console.log("Form errors", formErrors)
-            showNotification({ message: 'Please select/input all the necessary fields', variant: 'danger' })
-          })}>
+          <Form onSubmit={handleSubmit(onSubmit, onError)}>
             <Table responsive bordered className="mb-3">
               <thead className="table-light">
                 <tr>
@@ -367,9 +360,6 @@ export default function AddProductsPage() {
               </Col>
             </Row>
             <div className="mt-3">
-              {/* <div>
-                <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
-              </div> */}
               <div>
                 <strong>Total Amount: </strong>${totalAmount.toFixed(2)}
               </div>

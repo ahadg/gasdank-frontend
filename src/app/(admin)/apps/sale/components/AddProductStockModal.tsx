@@ -68,7 +68,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
 
   // Calculate subtotal for display purposes
   const values = watch()
-  const subtotal = Number(values.quantity || 0) * Number(values.measurement || 1) * Number(values.price * Number(values.shipping) || 0)
+  const subtotal = Number(values.quantity || 0) * Number(values.measurement || 1) * Number(values.price ) + (Number(values.shipping) )
   const { showNotification } = useNotificationContext()
   const [recentsaleLoading,setrecentsaleLoading] = useState<boolean>(false)
   const [recentsale,setrecentsale] = useState<any>()
@@ -81,9 +81,9 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
           const response = await api.get(`/api/transaction/recent/${params?.id}/${product._id}`)
           setrecentsale(response.data.recentTransactionItem)
           setrecentsaleLoading(true)
-          setValue('shipping', response.data.recentTransactionItem.shipping || 0)
-          setValue('saleprice', response.data.recentTransactionItem.sale_price || 0)
-          setValue('price', response.data.recentTransactionItem.price || 0)
+          setValue('shipping', response.data.recentTransactionItem?.shipping || 0)
+          setValue('saleprice', response.data.recentTransactionItem?.sale_price || 0)
+          setValue('price', response.data.recentTransactionItem?.price || 0)
           setbuyer(response.data.buyer)
           // set shipping,saleprice,price
         } catch (error) {
@@ -106,15 +106,16 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
       buyer_id: params?.id, // Replace with actual buyer id if needed.
       payment: 0, // Payment may be zero for stock additions
       notes: data.note,
-      price: data.price * Number(data.quantity) * Number(data.measurement) * Number(data.shipping),
-      shipping : data.shipping,
+      price: Number(data.price) * Number(data.quantity) * Number(data.measurement),
+      total_shipping : data.shipping,
       type: "return",
       items: [
         {
           inventory_id: product._id,
-          qty: Number(data.quantity) * Number(data.measurement),
+          qty: Number(data.quantity),
           measurement: data.measurement,
           unit: data.unit,
+          shipping : Number(data?.shipping) / Number(data.quantity),
           price: data.price,
         },
       ],
@@ -184,12 +185,12 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                     </tr>
                   </thead>
                   <tbody>
-                    {recentsaleLoading  ? (
+                    {recentsaleLoading && ( recentsale ? (
                         <tr key={1}>
-                          <td>{new Date(recentsale.created_at).toLocaleDateString()}</td>
-                          <td>{recentsale.inventory_id?.name}</td>
+                          <td>{new Date(recentsale?.created_at).toLocaleDateString()}</td>
+                          <td>{recentsale?.inventory_id?.name}</td>
                           <td>
-                            {recentsale.qty} [{recentsale.unit}]
+                            {recentsale?.qty} [{recentsale.unit}]
                           </td>
                           <td>
                             {/* {renderTypeWithIcon(recentsale.transaction_id?.type)} */}
@@ -206,7 +207,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                           No transaction history found.
                         </td>
                       </tr>
-                    )}
+                    ))}
                   </tbody>
                 </Table>
               </div>
@@ -258,7 +259,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Shipping</Form.Label>
+                <Form.Label>Total Shipping</Form.Label>
                 <Controller
                   control={control}
                   name="shipping"

@@ -61,7 +61,7 @@ const saleTransactionsPage = () => {
     } catch (error) {
       console.error('Error fetching products:', error)
     } finally {
-      setLoading(false)
+      //setLoading(false)
     }
   }
   console.log("filterCategory",filterCategory)

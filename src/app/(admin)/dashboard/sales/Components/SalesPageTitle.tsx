@@ -18,7 +18,7 @@ const SalesPageTitle = () => {
                     <IconifyIcon icon='tabler:sort-ascending' className="me-1" /> Sort By
                   </Button>
                 </Col> */}
-                <Col sm={'auto'}>
+                {/* <Col sm={'auto'}>
                   <div className="input-group">
                     <CustomFlatpickr
                       className="form-control border-0 shadow"
@@ -33,7 +33,7 @@ const SalesPageTitle = () => {
                       <IconifyIcon icon='tabler:calendar' className="fs-15" />
                     </span>
                   </div>
-                </Col>
+                </Col> */}
               </Row>
             </form>
           </div>
