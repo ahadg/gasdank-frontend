@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Metadata } from 'next'
 import { Row, Col, Card, CardBody, Button, Form } from 'react-bootstrap'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 export const metadata: Metadata = { title: 'Dashboard Stats' }
 
@@ -20,29 +21,19 @@ interface StatTypeExtended extends StatType {
   permissionKey: string
 }
 
-/**
- * Convert a JavaScript Date to a local ISO string suitable for <input type="datetime-local">
- * For example, "2025-06-24T07:00"
- */
 function toLocalDateTimeString(date: Date) {
-  // Adjust for the user's local time zone offset
   const offsetMs = date.getTime() - date.getTimezoneOffset() * 60000
   const localDate = new Date(offsetMs)
-  // Format to YYYY-MM-DDTHH:MM (slice(0,16) cuts off seconds and milliseconds)
   return localDate.toISOString().slice(0, 16)
 }
 
 const Stat = () => {
   const user = useAuthStore((state) => state.user)
-
-  // Set default start date to today at 00:00 local time
   const [startDate, setStartDate] = useState(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return toLocalDateTimeString(today)
   })
-
-  // Set default end date to "now" in local time
   const [endDate, setEndDate] = useState(() => {
     const now = new Date()
     return toLocalDateTimeString(now)
@@ -51,23 +42,23 @@ const Stat = () => {
   const [statData, setStatData] = useState<StatTypeExtended[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Build the stats
+  // State for editing user balance
+  const [editingBalance, setEditingBalance] = useState(false)
+  const [newBalance, setNewBalance] = useState<string>('')
+  const { showNotification } = useNotificationContext()
+  const [balance,setbalance] = useState<number>()
   const fetchStats = async () => {
     if (!user?._id) return
 
     setLoading(true)
     try {
-      // Build query params
       const queryParams = new URLSearchParams()
       if (startDate) queryParams.append('startDate', startDate)
       if (endDate) queryParams.append('endDate', endDate)
-
-      // Example: GET /api/users/stats/<USER_ID>?startDate=...&endDate=...
       const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-
-      // Build statData array from the API response
+      setbalance(data.loggedInUserTotalBalance)
       const stats: StatTypeExtended[] = [
         {
           title: 'Total Sales',
@@ -135,9 +126,8 @@ const Stat = () => {
         },
       ]
 
-      // Filter out stats that user does not have access to
       const userStats = user?.access?.dashboard_stats || {}
-      const filteredStats = stats.filter((stat) => userStats[stat.permissionKey] === true)
+      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
       setStatData(filteredStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -146,7 +136,22 @@ const Stat = () => {
     }
   }
 
-  // Fetch stats initially (and re-fetch whenever user, startDate, or endDate changes)
+  // Update user cash balance via PUT /api/users/{userId}
+  const updateBalance = async () => {
+    if (!newBalance) return
+    try {
+      await api.put(`/api/users/${user._id}`, { cash_balance: balance - Number(newBalance) })
+      showNotification({ message: 'Balance updated successfully', variant: 'success' })
+      // Refresh stats after update
+      fetchStats()
+      setEditingBalance(false)
+      setNewBalance('')
+    } catch (error: any) {
+      console.error('Error updating balance:', error)
+      showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
+    }
+  }
+
   useEffect(() => {
     fetchStats()
   }, [user, startDate, endDate])
@@ -175,11 +180,6 @@ const Stat = () => {
               />
             </Form.Group>
           </Col>
-          {/* <Col md={4} className="d-flex align-items-center">
-            <Button variant="primary" onClick={fetchStats} className="mt-2">
-              Apply Filter
-            </Button>
-          </Col> */}
         </Row>
       </Form>
 
@@ -202,17 +202,31 @@ const Stat = () => {
                     </div>
                     <h3 className="mb-0 fw-bold">{item.count}</h3>
                   </div>
-                  {/* <p className="mb-0 text-muted">
-                    <span className={`text-${item.variant} me-2`}>
-                      {item.change}%{' '}
-                      {item.variant === 'danger' ? (
-                        <IconifyIcon icon="tabler:caret-down-filled" />
+                  {item.permissionKey === 'user_balance' && (
+                    <div className="d-flex justify-content-center align-items-center mt-2">
+                      {editingBalance ? (
+                        <>
+                          <Form.Control
+                            type="number"
+                            placeholder="Add Balance"
+                            value={newBalance}
+                            onChange={(e) => setNewBalance(e.target.value)}
+                            style={{ width: '100px', marginRight: '8px' }}
+                          />
+                          <Button variant="success" size="sm" onClick={updateBalance}>
+                            Update
+                          </Button>
+                          <Button variant="outline-secondary" size="sm" onClick={() => setEditingBalance(false)} className="ms-2">
+                            Cancel
+                          </Button>
+                        </>
                       ) : (
-                        <IconifyIcon icon="tabler:caret-up-filled" />
+                        <Button variant="link" size="sm" onClick={() => setEditingBalance(true)}>
+                          <IconifyIcon icon="tabler:plus" /> Add Balance
+                        </Button>
                       )}
-                    </span>
-                    <span className="text-nowrap">Since last month</span>
-                  </p> */}
+                    </div>
+                  )}
                 </CardBody>
               </Card>
             </Col>
