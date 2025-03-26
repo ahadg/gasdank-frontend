@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Metadata } from 'next'
-import { Button, CardHeader, CardFooter, CardTitle, Form } from 'react-bootstrap'
+import { Button, CardHeader, CardFooter, Form } from 'react-bootstrap'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
@@ -14,22 +14,24 @@ interface AddBalanceModalProps {
   fetchAccounts: () => void
 }
 
-export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddBalanceModalProps) {
+export default function AddBalanceModal({ fetchAccounts, account, onClose }: AddBalanceModalProps) {
   const user = useAuthStore((state) => state.user)
   const [loading, setLoading] = useState(false)
-  const [paymentAmount, setPaymentAmount] = useState<any>()
+  const [paymentAmount, setPaymentAmount] = useState<string>('')
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash')
+  const [transactionDirection, setTransactionDirection] = useState<string>('received')
   const { showNotification } = useNotificationContext()
 
   const handleUpdate = async () => {
     setLoading(true)
-    // Construct payload according to your backend expectations.
+    // Construct payload using transactionDirection for the type.
     const payload = {
       user_id: user._id,
       buyer_id: account._id,
       payment: paymentAmount,
       notes: '',
-      type: 'payment', // Payment transaction type
+      payment_direction : transactionDirection, // "received" or "given"
+      type :  "payment",
       payment_method: paymentMethod,
     }
     try {
@@ -38,7 +40,7 @@ export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddB
       fetchAccounts()
       onClose()
     } catch (error: any) {
-      showNotification({ message: error?.response?.data?.error || 'Error fetching out-of-stock products', variant: 'danger' })
+      showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
       console.error('Error updating balance:', error)
     } finally {
       setLoading(false)
@@ -59,21 +61,21 @@ export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddB
       <div className="modal-dialog modal-lg" role="document">
         <div className="modal-content shadow-lg rounded border border-light" style={{ backgroundColor: '#fff' }}>
           <CardHeader className="bg-light border-bottom border-light">
-            {/* <CardTitle as="h5" className="mb-0">Add Balance</CardTitle> */}
+            {/* Optionally, add a title here */}
             <button type="button" className="btn-close" onClick={onClose}></button>
           </CardHeader>
           <div className="modal-body">
             <h6 className="fs-15 mb-3">
-              Add Balance for {account.firstName} {account.lastName}
+              {account.firstName} {account.lastName}
             </h6>
             <Form>
               <Form.Group className="mb-3">
                 <Form.Label>Payment Amount</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder=""
+                  placeholder="Enter amount"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount((e.target.value))}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
                 />
               </Form.Group>
               <Form.Group className="mb-3">
@@ -106,15 +108,29 @@ export default function AddBalanceModal({ fetchAccounts,account, onClose }: AddB
                     checked={paymentMethod === 'Crypto'}
                     onChange={() => setPaymentMethod('Crypto')}
                   />
-                  {/* <Form.Check
+                </div>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Transaction Direction</Form.Label>
+                <div>
+                  <Form.Check
                     inline
                     type="radio"
-                    id="sellMethod"
-                    name="paymentMethod"
-                    label="Sell Product"
-                    checked={paymentMethod === 'Sell Product'}
-                    onChange={() => setPaymentMethod('Sell Product')}
-                  /> */}
+                    id="receivedMethod"
+                    name="transactionDirection"
+                    label="Received"
+                    checked={transactionDirection === 'received'}
+                    onChange={() => setTransactionDirection('received')}
+                  />
+                  <Form.Check
+                    inline
+                    type="radio"
+                    id="givenMethod"
+                    name="transactionDirection"
+                    label="Given"
+                    checked={transactionDirection === 'given'}
+                    onChange={() => setTransactionDirection('given')}
+                  />
                 </div>
               </Form.Group>
             </Form>

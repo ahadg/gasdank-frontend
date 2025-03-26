@@ -37,8 +37,8 @@ export default function AddProductsPage() {
   const { control, handleSubmit, watch } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ name: '', qty: 0, unit: 'pound', category: '', price: 0 }],
-      shippingCost: 0,
+      products: [{ name: '', qty: null, unit: 'pound', category: '', price: null }],
+      shippingCost: null,
     },
   })
 

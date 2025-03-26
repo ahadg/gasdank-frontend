@@ -110,7 +110,7 @@ const Stat = () => {
           variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
         },
         {
-          title: `${user?.firstName} Balance`,
+          title: `${user?.firstName} Cash`,
           permissionKey: 'user_balance',
           icon: 'solar:eye-bold-duotone',
           count: data.loggedInUserTotalBalance,
