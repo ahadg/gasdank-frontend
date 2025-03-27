@@ -15,6 +15,7 @@ const sellMultipleSchema = yup.object({
     yup.object({
       productId: yup.string().required(),
       name: yup.string().required(),
+      qty : yup.string(),
       quantity: yup
         .number()
         .required('Quantity required')
@@ -68,7 +69,8 @@ export default function SellMultipleProductsModal({
       items: selectedProducts.map((prod) => ({
         productId: prod._id,
         name: prod.name,
-        quantity: 0,
+        qty: prod.qty,
+        //quantity: '',
         price: prod.price,
         sale_price: prod.price || 0,
         unit: prod.unit || '',
@@ -176,7 +178,7 @@ export default function SellMultipleProductsModal({
       }}
       role="dialog"
     >
-      <div className="modal-dialog" role="document" style={{ maxWidth: '90vw', width: '70%' }}>
+      <div className="modal-dialog" role="document" style={{ maxWidth: '90vw', width: '85%' }}>
         <div className="modal-content shadow-lg rounded border border-light" style={{ backgroundColor: '#fff', position: 'relative' }}>
           <div className="modal-header bg-light border-bottom border-light">
             <h5 className="modal-title">Selling Products to {user?.firstName + ' ' + user.lastName }</h5>
@@ -204,6 +206,7 @@ export default function SellMultipleProductsModal({
                 <thead className="table-light">
                   <tr>
                     <th>Product</th>
+                    <th>Quantity Available</th>
                     <th>Quantity</th>
                     <th>Unit</th>
                     <th>Measurement</th>
@@ -218,6 +221,7 @@ export default function SellMultipleProductsModal({
                   {fields.map((field, index) => (
                     <tr key={field.id}>
                       <td>{field.name}</td>
+                      <td>{field.qty}</td>
                       <td>
                         <Form.Control
                           type="number"

@@ -127,7 +127,9 @@ const Stat = () => {
       ]
 
       const userStats = user?.access?.dashboard_stats || {}
-      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
+      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true 
+      //  && Number(stat?.count) !== 0
+      )
       setStatData(filteredStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -140,7 +142,7 @@ const Stat = () => {
   const updateBalance = async () => {
     if (!newBalance) return
     try {
-      await api.put(`/api/users/${user._id}`, { cash_balance: balance - Number(newBalance) })
+      await api.put(`/api/users/${user._id}`, { cash_balance: balance - parseInt(newBalance) })
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()
