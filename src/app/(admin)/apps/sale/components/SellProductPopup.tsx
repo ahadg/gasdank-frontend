@@ -88,6 +88,12 @@ export default function SellMultipleProductsModal({
   })
 
   const items = watch('items')
+  const totalAmountwithshipping = items.reduce(
+    (sum: number, item: any) =>
+      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) 
+    +  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
+    0
+  )
   const totalAmount = items.reduce(
     (sum: number, item: any) =>
       sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) 
@@ -95,11 +101,11 @@ export default function SellMultipleProductsModal({
     ,0
   )
 
-  // const totalShipping = items.reduce(
-  //   (sum: number, item: any) =>
-  //     sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
-  //   0
-  // );
+  const totalShipping = items.reduce(
+    (sum: number, item: any) =>
+      sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
+    0
+  );
   
 
   // Define available unit options
@@ -147,8 +153,8 @@ export default function SellMultipleProductsModal({
       price: org_price,
       sale_price: totalsale_price_amount,
       profit: totalsale_price_amount - org_price,
-      total_shipping: 0,
-      // totalShipping,
+      //total_shipping: 0,
+      total_shipping:totalShipping,
       notes: data.notes,
       type: "sale",
     }
