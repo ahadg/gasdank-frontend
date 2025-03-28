@@ -72,7 +72,7 @@ export default function SellMultipleProductsModal({
         qty: prod.qty,
         //quantity: '',
         price: prod.price,
-        sale_price: prod.price || 0,
+        //sale_price: prod.price || 0,
         unit: prod.unit || '',
         shipping: prod?.shippingCost || 0,
         measurement: 1, // default to Full
