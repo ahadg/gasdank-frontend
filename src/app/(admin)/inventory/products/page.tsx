@@ -106,18 +106,18 @@ const ProductsPage = () => {
                         {/* <td>${item.shippingCost.toLocaleString()}</td> */}
                         <td>{item.notes}</td>
                         <td className="text-center">
-                          <div className="hstack gap-1 justify-content-end">
-                            <Button variant="soft-primary" size="sm" className="btn-icon rounded-circle me-1">
+                          <div className="hstack justify-content-center">
+                            {/* <Button variant="soft-primary" size="sm" className="btn-icon rounded-circle me-1">
                               <IconifyIcon icon="tabler:eye" />
-                            </Button>
+                            </Button> */}
                             <Link href={`/inventory/products/edit/${item._id}`}>
                               <Button variant="soft-success" size="sm" className="btn-icon rounded-circle">
                                 <IconifyIcon icon="tabler:edit" className="fs-16" />
                               </Button>
                             </Link>
-                            <Button variant="soft-danger" size="sm" className="btn-icon rounded-circle">
+                            {/* <Button variant="soft-danger" size="sm" className="btn-icon rounded-circle">
                               <IconifyIcon icon="tabler:trash" />
-                            </Button>
+                            </Button> */}
                           </div>
                         </td>
                       </tr>

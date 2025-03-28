@@ -90,15 +90,16 @@ export default function SellMultipleProductsModal({
   const items = watch('items')
   const totalAmount = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) +  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
-    0
+      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) 
+    //+  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
+    ,0
   )
 
-  const totalShipping = items.reduce(
-    (sum: number, item: any) =>
-      sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
-    0
-  );
+  // const totalShipping = items.reduce(
+  //   (sum: number, item: any) =>
+  //     sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
+  //   0
+  // );
   
 
   // Define available unit options
@@ -146,7 +147,8 @@ export default function SellMultipleProductsModal({
       price: org_price,
       sale_price: totalsale_price_amount,
       profit: totalsale_price_amount - org_price,
-      total_shipping: totalShipping,
+      total_shipping: 0,
+      // totalShipping,
       notes: data.notes,
       type: "sale",
     }
@@ -210,7 +212,7 @@ export default function SellMultipleProductsModal({
                     <th>Quantity</th>
                     <th>Unit</th>
                     <th>Measurement</th>
-                    <th>Org Price</th>
+                    {/* <th>Org Price</th> */}
                     <th>Sale Price</th>
                     {/* <th>Shipping (per unit)</th> */}
                     <th>Subtotal</th>
@@ -267,7 +269,7 @@ export default function SellMultipleProductsModal({
                           )}
                         />
                       </td>
-                      <td>
+                      {/* <td>
                         <Form.Control
                           type="number"
                           step="any"
@@ -275,7 +277,7 @@ export default function SellMultipleProductsModal({
                           placeholder="Price"
                           {...(control.register ? control.register(`items.${index}.price` as const) : {})}
                         />
-                      </td>
+                      </td> */}
                       <td>
                         <Form.Control
                           type="number"
@@ -295,7 +297,7 @@ export default function SellMultipleProductsModal({
                       </td> */}
                       <td>
                         {(
-                          (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) +
+                          // (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) +
                           (Number(items[index]?.measurement || 1) *
                           Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0) )
                         ).toFixed(2)}
@@ -309,9 +311,9 @@ export default function SellMultipleProductsModal({
                   ))}
                 </tbody>
               </Table>
-              <div className="mt-1">
+              {/* <div className="mt-1">
                 <strong>Total Shipping : </strong>${totalShipping.toFixed(2)}
-              </div>
+              </div> */}
               <div className="mt-1">
                 <strong>Total Amount :  </strong>${totalAmount.toFixed(2)}
               </div>

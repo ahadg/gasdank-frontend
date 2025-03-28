@@ -34,7 +34,7 @@ const ProfileDropdown = () => {
           <IconifyIcon icon='tabler:chevron-down' className="d-none d-lg-block align-middle ms-2" />
         </DropdownToggle>
         <DropdownMenu className="dropdown-menu-end">
-          <DropdownHeader className="noti-title">
+          {/* <DropdownHeader className="noti-title">
             <h6 className="text-overflow m-0">Welcome !</h6>
           </DropdownHeader>
           <DropdownItem>
@@ -59,7 +59,7 @@ const ProfileDropdown = () => {
           <DropdownItem>
             <IconifyIcon icon='tabler:lock-square-rounded' className="me-1 fs-17 align-middle" />
             <span className="align-middle">Lock Screen</span>
-          </DropdownItem>
+          </DropdownItem> */}
           <DropdownItem
             as={Link}
             href="/auth/logout"

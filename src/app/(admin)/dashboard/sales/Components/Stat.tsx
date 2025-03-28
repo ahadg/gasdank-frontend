@@ -142,7 +142,7 @@ const Stat = () => {
   const updateBalance = async () => {
     if (!newBalance) return
     try {
-      await api.put(`/api/users/${user._id}`, { cash_balance: balance - parseInt(newBalance) })
+      await api.put(`/api/users/${user._id}`, { cash_balance: balance + parseInt(newBalance) })
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()

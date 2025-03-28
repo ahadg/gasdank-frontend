@@ -24,11 +24,11 @@ const TopNavigationBarPage = () => {
         </div>
         <div className="d-flex align-items-center gap-2">
           {/* <Languages /> */}
-          <Suspense>
+          {/* <Suspense>
             <Notifications />
-          </Suspense>
+          </Suspense> */}
           {/* <Apps /> */}
-          <ThemeCustomizerToggle />
+          {/* <ThemeCustomizerToggle /> */}
           <ThemeModeToggle />
           <ProfileDropdown />
         </div>

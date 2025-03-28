@@ -19,6 +19,10 @@ const multipleProductSchema = yup.object({
       name: yup.string().required('Product name is required'),
       qty: yup.number().required('Quantity is required').min(1, 'Minimum quantity is 1'),
       unit: yup.string().required('Unit is required'),
+      measurement: yup
+        .number()
+        .required('Measurement is required')
+        .oneOf([1, 0.5, 0.25], 'Invalid measurement'),
       category: yup.string().required('Category is required'),
       price: yup.number().required('Price is required').min(0, 'Price must be non-negative'),
     })
@@ -28,17 +32,16 @@ const multipleProductSchema = yup.object({
 
 type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
 
-export default function AddProductsPage() {
+ function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
 
-  // react-hook-form
   const { control, handleSubmit, watch } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ name: '', qty: null, unit: 'pound', category: '', price: null }],
-      shippingCost: null,
+      products: [{ name: '', unit: 'pound', category: '', measurement: 1 }],
+      shippingCost: 0,
     },
   })
 
@@ -47,17 +50,24 @@ export default function AddProductsPage() {
     name: 'products',
   })
 
-  // Calculate totals
+  // Watch form values
   const productsData = watch('products')
   const shippingCost = watch('shippingCost')
 
   const totalProductsAmount = productsData.reduce(
-    (sum: number, item: any) => sum + Number(item.qty) * Number(item.price),
+    (sum: number, item: any) => sum + Number(item.qty) * Number(item.price) * Number(item.measurement),
     0
   )
   const totalAmount = totalProductsAmount + Number(shippingCost)
 
-  // Buyer (account) selection
+  // Calculate total quantity and average shipping per unit
+  const totalQuantity = useMemo(
+    () => productsData.reduce((sum: number, item: any) => sum + Number(item.qty), 0),
+    [productsData]
+  )
+  const avgShipping = totalQuantity > 0 ? Number(shippingCost) / totalQuantity : 0
+
+  // State for account (buyer) selector
   const [accounts, setAccounts] = useState<any[]>([])
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -80,12 +90,12 @@ export default function AddProductsPage() {
     fetchAccounts()
   }, [user?._id, showNotification])
 
-  // Filter accounts
+  // Filter accounts based on search query
   const filteredAccounts = accounts.filter((acc) =>
     `${acc.firstName} ${acc.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Categories
+  // Fetch user-specific categories
   const [userCategories, setUserCategories] = useState<any[]>([])
   useEffect(() => {
     async function fetchUserCategories() {
@@ -102,28 +112,39 @@ export default function AddProductsPage() {
     fetchUserCategories()
   }, [user?._id, showNotification])
 
-  // Add new row
+  const measurementOptions = [
+    { label: 'Full', value: 1 },
+    { label: 'Half', value: 0.5 },
+    { label: 'Quarter', value: 0.25 },
+  ]
+
   const handleAddRow = () => {
-    append({ name: '', qty: 0, unit: '', category: '', price: 0 })
+    append({ name: '', qty: 0, unit: '', category: '', price: 0, measurement: 1 })
   }
 
-  // Additional transaction creation function
+  // Error callback for form submission
+  const onError = (errors: any) => {
+    console.log("Form errors", errors)
+    showNotification({ message: 'Please select/input all the necessary fields', variant: 'danger' })
+  }
+
+  // Additional transaction production function
   const produce_transaction = async (data: any[], avg_shipping: number, shippingCost: number) => {
     try {
+      console.log("data",data)
       setLoading(true)
-      // Transform each item to match backend expected keys:
       const transformedItems = data.map((item) => ({
-        inventory_id: item._id, // If you have an ID
+        inventory_id: item._id,
         qty: Number(item.qty),
-        measurement: 1,
+        measurement: item.measurement,
         unit: item.unit,
         price: item.price,
-        shipping: avg_shipping,
+        shipping: avg_shipping.toFixed(2),
       }))
 
       const payload = {
         user_id: user._id,
-        buyer_id: selectedAccount?._id,
+        buyer_id: selectedAccount._id,
         items: transformedItems,
         price: totalProductsAmount,
         total_shipping: Number(shippingCost),
@@ -132,55 +153,46 @@ export default function AddProductsPage() {
 
       console.log('payload', payload)
       const response = await api.post('/api/transaction', payload)
-      console.log('sale processed:', response.data)
+      console.log('Transaction processed:', response.data)
       showNotification({ message: 'Transaction processed successfully', variant: 'success' })
     } catch (error: any) {
-      console.error('Error processing sale:', error)
+      console.error('Error processing transaction:', error.response)
       showNotification({ message: error?.response?.data?.error || 'Error processing transaction', variant: 'danger' })
     } finally {
       setLoading(false)
     }
   }
 
-  // Submit callback
-  const onSubmit = async (formValues: MultipleProductFormData) => {
+  const onSubmit = async (data: MultipleProductFormData) => {
     if (!selectedAccount) {
       showNotification({ message: 'Please select an account first.', variant: 'danger' })
       return
     }
     setLoading(true)
+    const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
+    const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
     try {
-      // Calculate average shipping cost
-      const total_quantity = formValues.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
-      const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
-
       let products: any[] = []
-      // For each product, create it in the DB, push the created product to array
-      const calls = formValues.products.map(async (prod) => {
+      const calls = data.products.map(async (prod) => {
         const the_category = userCategories.find((cat) => cat.name === prod.category)
+        console.log('prod',prod)
         const res = await api.post('/api/products', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
           name: prod.name,
-          qty: prod.qty,
+          qty: prod.qty * prod.measurement,
           unit: prod.unit,
           category: the_category?._id,
           price: prod.price,
-          shippingCost: avg_shipping,
-          status: '',
-          notes: '',
+          shippingCost: avg_shipping.toFixed(2),
+          status: "",
+          notes: "",
         })
-        products.push(res.data)
+        products.push({...res.data,measurement : prod.measurement, qty: prod.qty})
       })
       await Promise.all(calls)
       console.log('Created products =>', products)
-
-      // Then produce the transaction with these newly created products
       await produce_transaction(products, avg_shipping, shippingCost)
-
-      // Possibly update buyer's balance
-      // await api.post(`/api/buyers/balance/${selectedAccount._id}`, { currentBalance: -totalAmount })
-
       showNotification({ message: 'Products added successfully', variant: 'success' })
       router.back()
     } catch (error: any) {
@@ -191,11 +203,8 @@ export default function AddProductsPage() {
     }
   }
 
-  // Error callback
-  const onError = (formErrors: any) => {
-    console.log('Form errors', formErrors)
-    showNotification({ message: 'Please select/input all the necessary fields', variant: 'danger' })
-  }
+  // Calculate average shipping per unit using useMemo
+  const avgShippingDisplay = totalQuantity > 0 ? Number(shippingCost) / totalQuantity : 0
 
   return (
     <div className="container-fluid">
@@ -267,6 +276,7 @@ export default function AddProductsPage() {
                   <th>Product Name</th>
                   <th>Quantity</th>
                   <th>Unit</th>
+                  <th>Measurement</th>
                   <th>Category</th>
                   <th>Price</th>
                   <th>Action</th>
@@ -304,6 +314,22 @@ export default function AddProductsPage() {
                             <option value="pound">Pound</option>
                             <option value="kilo">Kilo</option>
                             <option value="gram">Gram</option>
+                          </Form.Select>
+                        )}
+                      />
+                    </td>
+                    <td>
+                      <Controller
+                        control={control}
+                        name={`products.${index}.measurement` as const}
+                        render={({ field }) => (
+                          <Form.Select {...field}>
+                            <option value="">Select measurement</option>
+                            {measurementOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
                           </Form.Select>
                         )}
                       />
@@ -360,6 +386,9 @@ export default function AddProductsPage() {
               </Col>
             </Row>
             <div className="mt-3">
+              {/* <div>
+                <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
+              </div> */}
               <div>
                 <strong>Total Amount: </strong>${totalAmount.toFixed(2)}
               </div>
@@ -375,3 +404,5 @@ export default function AddProductsPage() {
     </div>
   )
 }
+
+export default AddProductsPage
