@@ -153,7 +153,7 @@ const AccountHistory = () => {
                   : txItem.measurement
               return (
                 <div key={index}>
-                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price)})
+                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)})
                 </div>
               )
             })}
