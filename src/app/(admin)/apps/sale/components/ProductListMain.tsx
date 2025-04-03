@@ -70,7 +70,7 @@ const saleTransactionsPage = () => {
     setLoading(true)
     try {
       // Build query string with pagination and category filter if set
-      let query = `/api/products/${user._id}/${buyerId}?page=${currentPage}&limit=${pageLimit}`
+      let query = `/api/products/${user._id}/products/${buyerId}?page=${currentPage}&limit=${pageLimit}`
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }

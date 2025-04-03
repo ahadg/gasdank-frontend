@@ -70,7 +70,7 @@ const EditProduct = () => {
         reset({
           qty: productData.qty,
           unit: productData.unit,
-          category: productData.category,
+          category: productData.category?._id,
           name: productData.name,
           price: productData.price,
           shippingCost: productData.shippingCost,
@@ -79,6 +79,7 @@ const EditProduct = () => {
         })
       } catch (error) {
         console.error('Error fetching product:', error)
+        console.error('Error fetching:', error?.response?.data?.error)
       }
     }
    fetchProduct()
@@ -104,7 +105,7 @@ const EditProduct = () => {
     setLoading(true)
     try {
       const response = await api.put(`/api/products/${productId}`, {
-        user_id: "67cf4bb808facf7a76f9f229", // Or use user._id if applicable
+        user_id: user?._id, // Or use user._id if applicable
         ...data,
       })
       if (response.status === 200 || response.status === 204) {
@@ -119,6 +120,16 @@ const EditProduct = () => {
     }
   }
 
+  const onError = (formErrors: any) => {
+    const firstErrorKey = Object.keys(formErrors)[0]
+    if (firstErrorKey) {
+      const firstErrorMessage = formErrors[firstErrorKey]?.message
+      if (firstErrorMessage) {
+        showNotification({ message: firstErrorMessage, variant: 'danger' })
+      }
+    }
+  }
+
   return (
     <div className="container-fluid">
       <h4 className="mb-4">Edit Product</h4>
@@ -127,7 +138,7 @@ const EditProduct = () => {
           <CardTitle as="h5" className="mb-0">Edit Product</CardTitle>
         </CardHeader>
         <CardBody>
-          <Form onSubmit={handleSubmit(onSubmit)}>
+          <Form onSubmit={handleSubmit(onSubmit,onError)}>
             <Row>
               <Col lg={6}>
                 <div className="mb-3">
@@ -168,7 +179,7 @@ const EditProduct = () => {
                       <Form.Select {...field}>
                         <option value="">Select category</option>
                         {userCategories.map((cat: any) => (
-                          <option key={cat._id} value={cat.name}>
+                          <option key={cat._id} value={cat._id}>
                             {cat.name}
                           </option>
                         ))}
