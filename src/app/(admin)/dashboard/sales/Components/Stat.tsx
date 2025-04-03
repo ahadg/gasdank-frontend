@@ -43,7 +43,7 @@ const Stat = () => {
   const [loading, setLoading] = useState(false)
 
   // State for editing user balance
-  const [editingBalance, setEditingBalance] = useState(false)
+  const [editingBalance, setEditingBalance] = useState<string>('')
   const [newBalance, setNewBalance] = useState<string>('')
   const { showNotification } = useNotificationContext()
   const [balance,setbalance] = useState<number>()
@@ -154,7 +154,7 @@ const Stat = () => {
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()
-      setEditingBalance(false)
+      setEditingBalance('')
       setNewBalance('')
     } catch (error: any) {
       console.error('Error updating balance:', error)
@@ -212,9 +212,9 @@ const Stat = () => {
                     </div>
                     <h3 className="mb-0 fw-bold">{item.count}</h3>
                   </div>
-                  {item.permissionKey === 'user_balance' && (
+                  {(item.permissionKey === 'user_balance' || item.title === "Eft Balance" || item.title === "Crypto Balance") && (
                     <div className="d-flex justify-content-center align-items-center mt-2">
-                      {editingBalance ? (
+                      {editingBalance === item.title ? (
                         <>
                           <Form.Control
                             type="number"
@@ -226,12 +226,12 @@ const Stat = () => {
                           <Button variant="success" size="sm" onClick={updateBalance}>
                             Update
                           </Button>
-                          <Button variant="outline-secondary" size="sm" onClick={() => setEditingBalance(false)} className="ms-2">
+                          <Button variant="outline-secondary" size="sm" onClick={() => setEditingBalance('')} className="ms-2">
                             Cancel
                           </Button>
                         </>
                       ) : (
-                        <Button variant="link" size="sm" onClick={() => setEditingBalance(true)}>
+                        <Button variant="link" size="sm" onClick={() => setEditingBalance(item.title)}>
                           <IconifyIcon icon="tabler:plus" /> Add Balance
                         </Button>
                       )}

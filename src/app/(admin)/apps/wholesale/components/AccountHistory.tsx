@@ -14,6 +14,8 @@ interface ITransactionItem {
   transactionitem_id: {
     sale_price: number;
     _id: string;
+    shippingCost : number;
+    shipping : number;
     inventory_id: {
       name: string;
     };
@@ -99,29 +101,35 @@ const AccountHistory = () => {
       .reduce((sum, tx) => sum + (tx?.total_shipping || 0), 0)
   }, [transactions])
 
+  const totalShipping_client = useMemo(() => {
+    return transactions
+      .filter((tx) => tx.type === 'inventory_addition')
+      .reduce((sum, tx) => sum + (tx?.total_shipping || 0), 0)
+  }, [transactions])
+
   const totalPaymentReceived = useMemo(() => {
     return transactions
       .filter((tx) => tx.type === 'payment' || tx.type === 'return' || tx.type === 'inventory_addition')
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'received') {
-            return sum + ((tx?.price || 0) + (tx?.total_shipping || 0))
+            return sum + ((tx?.price || 0) + (!excludeShipping ? tx?.total_shipping : 0 || 0))
           }
           return sum
         } else {
-          return sum + ((tx?.price || 0) + (tx?.total_shipping || 0))
+          return sum + ((tx?.price || 0) + (!excludeShipping ? tx?.total_shipping : 0 || 0))
         }
       }, 0)
-  }, [transactions])
+  }, [transactions,excludeShipping])
 
   // Final amount due is calculated differently based on the checkbox.
   const finalAmountDue = useMemo(() => {
     if (excludeShipping) {
       // Exclude shipping cost entirely.
-      return totalPaymentReceived - totalsaleAmount
+      return totalsaleAmount - totalPaymentReceived 
     }
     // Otherwise, include total shipping and any additional shipping payment.
-    return (totalPaymentReceived ) - (totalsaleAmount + totalShipping)
+    return (totalsaleAmount + totalShipping) - (totalPaymentReceived + totalShipping_client )
   }, [totalPaymentReceived, totalsaleAmount, excludeShipping])
 
   const formatCurrency = (value: number) =>
@@ -151,9 +159,9 @@ const AccountHistory = () => {
                   : txItem.measurement === '0.25'
                   ? 'Quarter'
                   : txItem.measurement
-              return (
+              return ( 
                 <div key={index}>
-                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)})
+                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)}) {!excludeShipping && ('+ (🚚' + " $" +(txItem.shipping * txItem.qty) + ")")}
                 </div>
               )
             })}
@@ -209,11 +217,11 @@ const AccountHistory = () => {
                         ? tx.payment_direction === 'received' &&
                           ('- ' + formatCurrency(tx.price))
                         : (tx.type === 'return' || tx.type === 'inventory_addition') &&
-                          ('- ' + formatCurrency(tx.price + (tx.total_shipping || 0)))}
+                          ('- ' +  (!excludeShipping ? formatCurrency(tx.price + tx.total_shipping) : formatCurrency(tx.price)))}
                     </td>
                     <td>
                       {tx.type === 'sale'
-                        ? ('+ ' + formatCurrency(tx.sale_price))
+                        ? ('+ ' + (!excludeShipping ? formatCurrency(tx.sale_price + tx.total_shipping) : formatCurrency(tx.sale_price) ))
                         : tx.type === 'payment' &&
                           tx.payment_direction === 'given' &&
                           ('+ ' + formatCurrency(tx.price))}
