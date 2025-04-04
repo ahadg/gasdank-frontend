@@ -260,7 +260,7 @@ const AccountHistory = () => {
             )}
             <Row className="mt-2">
               <Col md={4}>
-                <strong>Final Amount:</strong>
+                <strong>Final Amount Due:</strong>
               </Col>
               <Col md={8}>{formatCurrency(finalAmountDue)}</Col>
             </Row>
