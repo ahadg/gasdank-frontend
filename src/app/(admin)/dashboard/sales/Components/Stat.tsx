@@ -150,21 +150,22 @@ const Stat = () => {
 
   // Update user cash balance via PUT /api/users/{userId}
   const updateBalance = async (title) => {
+    console.log(title,newBalance,otherBalance)
     if (!newBalance) return
     try {
       let update_obj = {}
       if(title === "Eft Balance") {
           update_obj = {
             other_balance : { 
+              ...otherBalance,
               EFT : otherBalance?.EFT ? otherBalance?.EFT  + parseInt(newBalance) :  parseInt(newBalance),
-              ...otherBalance
             }
           } 
       }else if(title === "Crypto Balance") {
         update_obj = {
           other_balance : {
+            ...otherBalance,
             Crypto : otherBalance?.Crypto ? otherBalance?.Crypto  + parseInt(newBalance) :  parseInt(newBalance),
-            ...otherBalance
           }
         } 
       } else  {
@@ -172,8 +173,8 @@ const Stat = () => {
           cash_balance: balance + parseInt(newBalance)
         } 
       }
+      console.log("update_obj",update_obj)
       await api.put(`/api/users/${user._id}`, update_obj)
-      setNewBalance('')
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()
