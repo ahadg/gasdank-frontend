@@ -113,11 +113,11 @@ const AccountHistory = () => {
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'received') {
-            return sum + ((tx?.price || 0) + (!excludeShipping ? tx?.total_shipping : 0 || 0))
+            return sum + ((tx?.price || 0))
           }
           return sum
         } else {
-          return sum + ((tx?.price || 0) + (!excludeShipping ? tx?.total_shipping : 0 || 0))
+          return sum + ((tx?.price || 0))
         }
       }, 0)
   }, [transactions,excludeShipping])
@@ -130,7 +130,7 @@ const AccountHistory = () => {
     }
     // Otherwise, include total shipping and any additional shipping payment.
     return (totalsaleAmount + totalShipping) - (totalPaymentReceived + totalShipping_client )
-  }, [totalPaymentReceived, totalsaleAmount, excludeShipping])
+  }, [totalPaymentReceived, totalsaleAmount, excludeShipping,totalShipping_client])
 
   const formatCurrency = (value: number) =>
     `$${value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -242,20 +242,20 @@ const AccountHistory = () => {
               <Col md={4}>
                 <strong>Total Sale Amount:</strong>
               </Col>
-              <Col md={8}>{formatCurrency(totalsaleAmount + totalShipping)}</Col>
+              <Col md={8}>{formatCurrency(totalsaleAmount)}</Col>
             </Row>
             <Row>
               <Col md={4}>
                 <strong>Total Payment Received:</strong>
               </Col>
-              <Col md={8}>{formatCurrency(totalPaymentReceived)}</Col>
+              <Col md={8}>{formatCurrency(totalPaymentReceived + totalShipping_client)}</Col>
             </Row>
             {!excludeShipping && (
               <Row>
                 <Col md={4}>
                   <strong>Total Shipping Cost:</strong>
                 </Col>
-                <Col md={8}>{formatCurrency(totalShipping_client)}</Col>
+                <Col md={8}>{formatCurrency(totalShipping)}</Col>
               </Row>
             )}
             <Row className="mt-2">
