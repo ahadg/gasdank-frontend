@@ -47,6 +47,7 @@ const Stat = () => {
   const [newBalance, setNewBalance] = useState<string>('')
   const { showNotification } = useNotificationContext()
   const [balance,setbalance] = useState<number>()
+  const [otherBalance,setotherBalance] = useState<any>({})
   const fetchStats = async () => {
     if (!user?._id) return
 
@@ -59,6 +60,7 @@ const Stat = () => {
       const response = await api.get(url)
       const data = response.data
       setbalance(data.loggedInUserTotalBalance)
+      setotherBalance(data.other_balance)
       const stats: StatTypeExtended[] = [
         {
           title: 'Total Sales',
@@ -147,10 +149,31 @@ const Stat = () => {
   }
 
   // Update user cash balance via PUT /api/users/{userId}
-  const updateBalance = async () => {
+  const updateBalance = async (title) => {
     if (!newBalance) return
     try {
-      await api.put(`/api/users/${user._id}`, { cash_balance: balance + parseInt(newBalance) })
+      let update_obj = {}
+      if(title === "Eft Balance") {
+          update_obj = {
+            other_balance : { 
+              EFT : otherBalance?.EFT ? otherBalance?.EFT  + parseInt(newBalance) :  parseInt(newBalance),
+              ...otherBalance
+            }
+          } 
+      }else if(title === "Crypto Balance") {
+        update_obj = {
+          other_balance : {
+            Crypto : otherBalance?.Crypto ? otherBalance?.Crypto  + parseInt(newBalance) :  parseInt(newBalance),
+            ...otherBalance
+          }
+        } 
+      } else  {
+        update_obj = {
+          cash_balance: balance + parseInt(newBalance)
+        } 
+      }
+      await api.put(`/api/users/${user._id}`, update_obj)
+      setNewBalance('')
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()
@@ -223,7 +246,7 @@ const Stat = () => {
                             onChange={(e) => setNewBalance(e.target.value)}
                             style={{ width: '100px', marginRight: '8px' }}
                           />
-                          <Button variant="success" size="sm" onClick={updateBalance}>
+                          <Button variant="success" size="sm" onClick={() => updateBalance(item?.title)}>
                             Update
                           </Button>
                           <Button variant="outline-secondary" size="sm" onClick={() => setEditingBalance('')} className="ms-2">

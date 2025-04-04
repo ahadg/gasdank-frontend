@@ -161,7 +161,7 @@ const AccountHistory = () => {
                   : txItem.measurement
               return ( 
                 <div key={index}>
-                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)}) {!excludeShipping && ('+ (🚚' + " $" +(txItem.shipping * txItem.qty) + ")")}
+                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)}) {!excludeShipping && ('+ (🚚' + " " +(formatCurrency(txItem.shipping * txItem.qty)) + ")")}
                 </div>
               )
             })}
@@ -242,7 +242,7 @@ const AccountHistory = () => {
               <Col md={4}>
                 <strong>Total Sale Amount:</strong>
               </Col>
-              <Col md={8}>{formatCurrency(totalsaleAmount)}</Col>
+              <Col md={8}>{formatCurrency(totalsaleAmount + totalShipping)}</Col>
             </Row>
             <Row>
               <Col md={4}>
@@ -255,12 +255,12 @@ const AccountHistory = () => {
                 <Col md={4}>
                   <strong>Total Shipping Cost:</strong>
                 </Col>
-                <Col md={8}>{formatCurrency(totalShipping)}</Col>
+                <Col md={8}>{formatCurrency(totalShipping_client)}</Col>
               </Row>
             )}
             <Row className="mt-2">
               <Col md={4}>
-                <strong>Final Amount Due:</strong>
+                <strong>Final Amount:</strong>
               </Col>
               <Col md={8}>{formatCurrency(finalAmountDue)}</Col>
             </Row>
