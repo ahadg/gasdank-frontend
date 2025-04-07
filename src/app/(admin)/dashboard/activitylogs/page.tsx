@@ -98,6 +98,11 @@ const ActivityLogsPage = () => {
   useEffect(() => {
     fetchActivityData()
   }, [page, startDate, endDate, activityType])
+  
+
+  // const getNameBytype = () => {
+  //   if()
+  // }
 
   return (
     <>
@@ -141,6 +146,7 @@ const ActivityLogsPage = () => {
                             <option value="inventory_addition">Inventory Addition</option>
                             <option value="sale">Sale</option>
                             <option value="payment">Transaction</option>
+                            <option value="user_created">User</option>
                           </Form.Select>
                         </Form.Group>
                       </Col>
@@ -186,7 +192,7 @@ const ActivityLogsPage = () => {
                           <td>
                             {item.buyer_id?.firstName} {item.buyer_id?.lastName}
                           </td>
-                          <td>{item.type}</td>
+                          <td>{item.type?.split("_").length < 2 ? item?.type : item.type?.split("_")[0] + ' ' + item.type?.split("_")?.[1]}</td>
                           <td>
                             <div className="mb-1">{item?.description}</div>
                             {item.notes && <div className="text-muted small">Note: {item.notes}</div>}
