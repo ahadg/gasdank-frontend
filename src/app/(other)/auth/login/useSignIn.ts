@@ -1,69 +1,71 @@
 'use client'
-import axios from 'axios'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
-
 import { useNotificationContext } from '@/context/useNotificationContext'
-import useQueryParams from '@/hooks/useQueryParams'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
+import useQueryParams from '@/hooks/useQueryParams'
 
-const useSignIn = () => {
+const schema = yup.object({
+  identifier: yup.string().required('Username or email is required'),
+  pin: yup
+    .string()
+    .matches(/^\d{4}$/, 'PIN must be exactly 4 digits')
+    .required('PIN is required'),
+})
+
+type FormData = yup.InferType<typeof schema>
+
+export const useSignIn = () => {
   const [loading, setLoading] = useState(false)
-  const { push } = useRouter()
+  const router = useRouter()
   const { showNotification } = useNotificationContext()
   const setAuth = useAuthStore((state) => state.setAuth)
   const queryParams = useQueryParams()
-
-  const loginFormSchema = yup.object({
-    email: yup.string().email('Please enter a valid email').required('Please enter your email'),
-    password: yup.string().required('Please enter your password'),
-  })
-
-  const { control, handleSubmit } = useForm({
-    resolver: yupResolver(loginFormSchema),
+  const form = useForm<FormData>({
+    resolver: yupResolver(schema),
     defaultValues: {
-      email: 'muhmmadahad594@gmail.com',
-      password: 'ahad1234',
+      identifier: '',
+      pin: '',
     },
   })
 
-  type LoginFormFields = yup.InferType<typeof loginFormSchema>
+  const { setValue } = form
 
-  const login = handleSubmit(async (values: LoginFormFields) => {
+  // Load identifier from localStorage on mount
+  useEffect(() => {
+    const savedIdentifier = localStorage.getItem('last_login_identifier')
+    if (savedIdentifier) {
+      setValue('identifier', savedIdentifier)
+    }
+  }, [setValue])
+
+  const login = form.handleSubmit(async ({ identifier, pin }) => {
     setLoading(true)
     try {
-      // Make an axios POST request to your login API endpoint
-      const response = await api.post('/api/auth/login', {
-        email: values.email,
-        password: values.password,
-      })
-      console.log("response.data",response.data)
-      // Assume your API returns an object with a token and user information
-      const { token, user } = response.data
+      const res = await api.post('/api/auth/login', { identifier, pin })
+      const { token, user } = res.data
 
       if (token && user) {
-        // Update Zustand store with the authentication data
+        localStorage.setItem('last_login_identifier', identifier) // ✅ Save for next time
         setAuth(token, user)
-        // Optionally, store token in cookie/localStorage if needed here
-
-        // Redirect the user to the dashboard
-        push(queryParams['redirectTo'] ?? '/dashboard/sales')
-        showNotification({ message: 'Successfully logged in. Redirecting....', variant: 'success' })
+        showNotification({ message: 'Login successful', variant: 'success' })
+        router.push(queryParams['redirectTo'] ?? '/dashboard/sales')
       } else {
-        showNotification({ message: 'Login failed. Invalid response.', variant: 'danger' })
+        showNotification({ message: 'Invalid login response', variant: 'danger' })
       }
     } catch (error: any) {
-      showNotification({ message: error?.response?.data?.message || 'Login failed', variant: 'danger' })
+      showNotification({
+        message: error?.response?.data?.message || 'Login failed',
+        variant: 'danger',
+      })
     } finally {
       setLoading(false)
     }
   })
 
-  return { loading, login, control }
+  return { form, login, loading }
 }
-
-export default useSignIn

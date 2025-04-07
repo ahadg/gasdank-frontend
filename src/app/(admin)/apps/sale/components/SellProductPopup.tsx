@@ -123,15 +123,17 @@ export default function SellMultipleProductsModal({
     console.log("submit_being called")
     setLoading(true)
     // Transform each item to match backend expected keys:
-    const transformedItems = data.items.map((item) => ({
+    const transformedItems = data.items.map((item) => {
+      return {
       inventory_id: item.productId, // Assuming productId corresponds to inventory id
       qty: Number(item.quantity) * Number(item.measurement),
       measurement: item.measurement,
+      name : item?.name,
       unit: item.unit,
       price: item.price,
       shipping: item.shipping,
       sale_price: item.sale_price,
-    }))
+    }})
 
     const org_price = items.reduce(
       (sum: number, item: any) =>

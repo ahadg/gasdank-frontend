@@ -27,6 +27,7 @@ const addStockSchema = yup.object({
   unit: yup.string().required('Unit is required'),
   shipping: yup.number().required('shipping is required'),
   saleprice: yup.number().required('saleprice is required'),
+  name :  yup.string().optional(),
   measurement: yup
     .number()
     .required('Measurement is required')
@@ -41,6 +42,7 @@ const addStockSchema = yup.object({
 type AddStockFormData = yup.InferType<typeof addStockSchema>
 
 export default function AddProductModal({ product, onClose, fetchProducts }: AddProductModalProps) {
+  console.log("product_product",product)
   const { control, handleSubmit, watch, setValue } = useForm<AddStockFormData>({
     resolver: yupResolver(addStockSchema),
     defaultValues: {
@@ -97,6 +99,12 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
     fetchHistory()
   }, [product])
 
+  const onError = (errors: any) => {
+    const firstError = Object.values(errors)[0] as { message?: string }
+    const message = firstError?.message || 'Please correct the form errors'
+    showNotification({ message, variant: 'danger' })
+  }
+
 
   const onSubmit = async (data: AddStockFormData) => {
     setLoading(true)
@@ -115,6 +123,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
           qty: Number(data.quantity),
           measurement: data.measurement,
           unit: data.unit,
+          name : product?.name,
           shipping : Number(data?.shipping) / Number(data.quantity),
           price: data.price,
         },
@@ -213,7 +222,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
               </div>
             )}
 
-            <Form onSubmit={handleSubmit(onSubmit)}>
+            <Form onSubmit={handleSubmit(onSubmit,onError)}>
               <Form.Group className="mb-3 mt-1">
                 <Form.Label>Quantity to Add</Form.Label>
                 <Controller

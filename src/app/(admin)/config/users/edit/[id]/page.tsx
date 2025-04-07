@@ -1,13 +1,12 @@
 'use client'
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import axios from 'axios'
-import { Metadata } from 'next'
 import { Row, Col, Card, CardHeader, CardTitle, CardBody, Button, Form } from 'react-bootstrap'
+import { useForm } from 'react-hook-form'
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
 import api from '@/utils/axiosInstance'
 import { useNotificationContext } from '@/context/useNotificationContext'
-
-//export const metadata: Metadata = { title: 'Edit User' }
 
 interface Access {
   read: boolean;
@@ -15,7 +14,6 @@ interface Access {
   delete: boolean;
   create: boolean;
 }
-
 interface DashboardStatAccess {
   today_sales: boolean;
   today_profit: boolean;
@@ -25,7 +23,6 @@ interface DashboardStatAccess {
   company_balance: boolean;
   online_balance: boolean;
 }
-
 interface AccessData {
   dashboard: Access;
   dashboard_stats: DashboardStatAccess;
@@ -35,7 +32,6 @@ interface AccessData {
   config: Access;
   reports: Access;
 }
-
 const defaultAccess: AccessData = {
   dashboard: { read: false, edit: false, delete: false, create: false },
   dashboard_stats: {
@@ -45,7 +41,7 @@ const defaultAccess: AccessData = {
     outstanding_balance: false,
     user_balance: false,
     company_balance: false,
-    online_balance: false
+    online_balance: false,
   },
   sale: { read: false, edit: false, delete: false, create: false },
   wholesale: { read: false, edit: false, delete: false, create: false },
@@ -56,96 +52,99 @@ const defaultAccess: AccessData = {
 
 const pages = ["dashboard", "sale", "wholesale", "inventory", "config", "reports"]
 const permissions = ["read", "edit", "delete", "create"]
+const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance", "online_balance"]
 
-// For dashboard stats, define the permission keys
-const statPermissions = ["today_sales", "today_profit", "inventory_value","company_outstanding_balance","clients_outstanding_balance", "user_balance", "company_balance","online_balance"]
+const schema = yup.object({
+  firstName: yup.string().required('First name is required'),
+  lastName: yup.string().optional(),
+  userName: yup.string().required('User name is required'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  phone: yup.string().optional(),
+  password: yup
+  .string()
+  .optional()
+  .matches(/^\d{4}$/, 'PIN must be exactly 4 digits')
+  .nullable()
+  .transform((value) => (value === '' ? null : value)),
+
+})
+
+type FormData = yup.InferType<typeof schema>
 
 export default function EditUserPage() {
   const router = useRouter()
   const params = useParams()
-  const userId = params.id // assuming your dynamic route segment is named [id]
+  const userId = params.id
   const { showNotification } = useNotificationContext()
+
   const [loading, setLoading] = useState(false)
-  
-  // Initialize form data with default access object
-  const [formData, setFormData] = useState({
-    password: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    access: defaultAccess,
+  const [accessData, setAccessData] = useState<AccessData>(defaultAccess)
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
   })
 
-  // Load user data on mount
   useEffect(() => {
     async function fetchUser() {
       try {
         const response = await api.get(`/api/users/${userId}`)
         const userData = response.data
-        setFormData({
-          password: '', // Do not pre-fill password for security reasons.
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          email: userData.email || '',
-          phone: userData.phone || '',
-          access: userData.access || defaultAccess,
-        })
+        setValue('firstName', userData.firstName || '')
+        setValue('lastName', userData.lastName || '')
+        setValue('userName', userData.userName || '')
+        setValue('email', userData.email || '')
+        setValue('phone', userData.phone || '')
+        setAccessData(userData.access || defaultAccess)
       } catch (error) {
         console.error('Error fetching user:', error)
       }
     }
     if (userId) fetchUser()
-  }, [userId])
+  }, [userId, setValue])
 
-  // Handle standard input changes
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
+  const handleAccessChange = (page: string, perm: string, checked: boolean) => {
+    setAccessData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  // Handle changes for access checkboxes (for main pages)
-  const handleAccessChange = (page: string, perm: string, e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      access: {
-        ...prev.access,
-        [page]: {
-          ...prev.access[page],
-          [perm]: e.target.checked,
-        },
+      [page]: {
+        ...prev[page],
+        [perm]: checked,
       },
     }))
   }
 
-  // Handle changes for dashboard stats permissions
-  const handleStatAccessChange = (stat: string, e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
+  const handleStatAccessChange = (stat: string, checked: boolean) => {
+    setAccessData((prev) => ({
       ...prev,
-      access: {
-        ...prev.access,
-        dashboard_stats: {
-          ...prev.access.dashboard_stats,
-          [stat]: e.target.checked,
-        },
+      dashboard_stats: {
+        ...prev.dashboard_stats,
+        [stat]: checked,
       },
     }))
   }
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const onSubmit = async (data: FormData) => {
     setLoading(true)
     try {
-      const response = await api.patch(`/api/users/${userId}`, formData)
+      const payload = {
+        ...data,
+        access: accessData,
+      }
+      const response = await api.patch(`/api/users/${userId}`, payload)
       if (response.status === 200 || response.status === 204) {
         showNotification({ message: 'User updated successfully', variant: 'success' })
         router.back()
       }
     } catch (error: any) {
       console.error('Error updating user:', error)
-      showNotification({ message: error?.response?.data?.error || error?.response?.data?.message || "Error updating user", variant: 'danger' })
+      showNotification({
+        message: error?.response?.data?.error || error?.response?.data?.message || "Error updating user",
+        variant: 'danger',
+      })
     } finally {
       setLoading(false)
     }
@@ -159,135 +158,88 @@ export default function EditUserPage() {
           <CardTitle as="h5" className="mb-0">Edit User</CardTitle>
         </CardHeader>
         <CardBody>
-          <form onSubmit={handleSubmit}>
-            {/* Password */}
+          <Form onSubmit={handleSubmit(onSubmit)}>
             <Row className="mb-3">
               <Col md={6}>
-                <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  className="form-control"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter new password"
-                />
+                <Form.Label>First Name<span className="text-danger">*</span></Form.Label>
+                <Form.Control type="text" {...register('firstName')} isInvalid={!!errors.firstName} />
+                <Form.Control.Feedback type="invalid">{errors.firstName?.message}</Form.Control.Feedback>
+              </Col>
+              <Col md={6}>
+                <Form.Label>Last Name</Form.Label>
+                <Form.Control type="text" {...register('lastName')} />
+              </Col>
+            </Row>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Label>User Name<span className="text-danger">*</span></Form.Label>
+                <Form.Control type="text" {...register('userName')} isInvalid={!!errors.userName} />
+                <Form.Control.Feedback type="invalid">{errors.userName?.message}</Form.Control.Feedback>
+              </Col>
+              <Col md={6}>
+                <Form.Label>Email<span className="text-danger">*</span></Form.Label>
+                <Form.Control type="email" {...register('email')} isInvalid={!!errors.email} />
+                <Form.Control.Feedback type="invalid">{errors.email?.message}</Form.Control.Feedback>
+              </Col>
+            </Row>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Label>Phone</Form.Label>
+                <Form.Control type="text" {...register('phone')} />
+              </Col>
+              <Col md={6}>
+                <Form.Label>PIN</Form.Label>
+                <Form.Control type="password" {...register('password')} isInvalid={!!errors.password} />
+                <Form.Control.Feedback type="invalid">{errors.password?.message}</Form.Control.Feedback>
               </Col>
             </Row>
 
-            {/* First Name & Last Name */}
-            <Row className="mb-3">
-              <Col md={6}>
-                <label className="form-label">First Name<span className="text-danger">*</span></label>
-                <input
-                  type="text"
-                  name="firstName"
-                  className="form-control"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="Enter first name"
-                />
-              </Col>
-              <Col md={6}>
-                <label className="form-label">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  className="form-control"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Enter last name"
-                />
-              </Col>
-            </Row>
-
-            {/* Email & Phone */}
-            <Row className="mb-3">
-              <Col md={6}>
-                <label className="form-label">Email<span className="text-danger">*</span></label>
-                <input
-                  type="email"
-                  name="email"
-                  className="form-control"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter email"
-                />
-              </Col>
-              <Col md={6}>
-                <label className="form-label">Phone Number</label>
-                <input
-                  type="text"
-                  name="phone"
-                  className="form-control"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Enter phone number"
-                />
-              </Col>
-            </Row>
-
-            {/* Access Permissions Section */}
-            <Row className="mb-3">
-              <Col>
-                <h5 className="mt-4">Access Permissions</h5>
-                {pages.map((page) => (
-                  <div key={page} className="mb-3">
-                    <strong>{page.charAt(0).toUpperCase() + page.slice(1)}</strong>
-                    <div className="d-flex gap-3">
-                      {permissions.map((perm) => (
-                        <div key={perm}>
-                          <label>
-                            <input
-                              type="checkbox"
-                              name={`access.${page}.${perm}`}
-                              checked={formData.access?.[page]?.[perm]}
-                              onChange={(e) => handleAccessChange(page, perm, e)}
-                            />{' '}
-                            {perm.charAt(0).toUpperCase() + perm.slice(1)}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </Col>
-            </Row>
-
-            {/* Dashboard Stats Permissions Section */}
-            <Row className="mb-3">
-              <Col>
-                <h5 className="mt-0">Dashboard Stats Access</h5>
-                <div className="d-flex gap-3 flex-wrap">
-                  {statPermissions.map((stat) => (
-                    <div key={stat} className="form-check">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id={`dashboard_stats_${stat}`}
-                        name={`access.dashboard_stats.${stat}`}
-                        checked={formData.access?.dashboard_stats?.[stat]}
-                        onChange={(e) => handleStatAccessChange(stat, e)}
-                      />
-                      <label className="form-check-label" htmlFor={`dashboard_stats_${stat}`}>
-                        {stat.replace('_', ' ').toUpperCase()}
+            <h5 className="mt-4">Access Permissions</h5>
+            {pages.map((page) => (
+              <div key={page} className="mb-3">
+                <strong>{page.charAt(0).toUpperCase() + page.slice(1)}</strong>
+                <div className="d-flex gap-3">
+                  {permissions.map((perm) => (
+                    <div key={perm}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={accessData[page][perm]}
+                          onChange={(e) => handleAccessChange(page, perm, e.target.checked)}
+                        />{' '}
+                        {perm}
                       </label>
                     </div>
                   ))}
                 </div>
-              </Col>
-            </Row>
+              </div>
+            ))}
 
-            {/* Buttons */}
+            <h5 className="mt-4">Dashboard Stats Access</h5>
+            <div className="d-flex flex-wrap gap-3">
+              {statPermissions.map((stat) => (
+                <div key={stat}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={accessData.dashboard_stats[stat]}
+                      onChange={(e) => handleStatAccessChange(stat, e.target.checked)}
+                    />{' '}
+                    {stat.replace(/_/g, ' ').toUpperCase()}
+                  </label>
+                </div>
+              ))}
+            </div>
+
             <div className="mt-4">
-              <Button variant="secondary" className="me-2" type="button" onClick={() => router.back()} disabled={loading}>
+              <Button variant="secondary" className="me-2" onClick={() => router.back()} disabled={loading}>
                 CANCEL
               </Button>
               <Button variant="primary" type="submit" disabled={loading}>
                 {loading ? 'Updating...' : 'UPDATE'}
               </Button>
             </div>
-          </form>
+          </Form>
         </CardBody>
       </Card>
     </div>

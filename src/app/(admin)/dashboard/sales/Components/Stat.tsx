@@ -6,6 +6,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import { describe } from 'node:test'
 
 export const metadata: Metadata = { title: 'Dashboard Stats' }
 
@@ -153,6 +154,7 @@ const Stat = () => {
     console.log(title,newBalance,otherBalance)
     if (!newBalance) return
     try {
+      let payment_method = ''
       let update_obj = {}
       if(title === "Eft Balance") {
           update_obj = {
@@ -161,6 +163,7 @@ const Stat = () => {
               EFT : otherBalance?.EFT ? otherBalance?.EFT  + parseInt(newBalance) :  parseInt(newBalance),
             }
           } 
+          payment_method = 'EFT'
       }else if(title === "Crypto Balance") {
         update_obj = {
           other_balance : {
@@ -168,13 +171,26 @@ const Stat = () => {
             Crypto : otherBalance?.Crypto ? otherBalance?.Crypto  + parseInt(newBalance) :  parseInt(newBalance),
           }
         } 
+        payment_method = 'Crypto'
       } else  {
         update_obj = {
           cash_balance: balance + parseInt(newBalance)
         } 
+        payment_method = 'Cash'
       }
       console.log("update_obj",update_obj)
       await api.put(`/api/users/${user._id}`, update_obj)
+      await api.post(`/api/activity/${user._id}`, {
+        page : 'dashboard',
+        action : "UPDATE",
+        resource_type : "balance_modification",
+        type : "balance_modification",
+        payment_method,
+        description : `${parseInt(newBalance)} ${payment_method} added from dashboard`,
+        user_id : user?._id,
+        user_created_by : user?.created_by,
+        amount : parseInt(newBalance)
+      })
       showNotification({ message: 'Balance updated successfully', variant: 'success' })
       // Refresh stats after update
       fetchStats()

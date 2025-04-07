@@ -25,13 +25,10 @@ const LoginPage = () => {
     <>
       <div className="auth-bg d-flex min-vh-100 justify-content-center align-items-center">
         <Row className="g-0 justify-content-center w-100 m-xxl-5 px-xxl-4 m-3">
-          <Col xl={4} lg={5} md={6}>
-            <Card className="overflow-hidden text-center h-100 p-xxl-4 p-3 mb-0">
-              <Link href="/dashboard/sales" className="auth-brand mb-3">
-                <Image src={"https://w.gasdank.net/assets/img/logo-small.png"} alt="dark logo" width={60} height={60} className="logo-dark" />
-                <Image src={logo} alt="logo light" height={24} className="logo-light" />
-              </Link>
-              <h3 className="fw-semibold mb-2">Login your account</h3>
+       
+        
+            
+            
               {/* <p className="text-muted mb-4">Enter your email address and password to access admin panel.</p> */}
               {/* <div className="d-flex justify-content-center gap-2 mb-3">
                 <Button variant='soft-danger' className="avatar-lg"> <span> <IconifyIcon width={24} height={24} icon='tabler:brand-google-filled' className="fs-24" /></span></Button>
@@ -45,8 +42,8 @@ const LoginPage = () => {
               <p className="mt-auto mb-0">
                  {currentYear} © Osen - By <span className="fw-bold text-decoration-underline text-uppercase text-reset fs-12">{developedBy}</span>
               </p> */}
-            </Card>
-          </Col>
+           
+        
         </Row>
       </div>
     </>

@@ -47,6 +47,12 @@ const VerticalNavigationBar = () => {
       url: '/inventory/products',
     },
     {
+      key: 'acivitylogs',
+      label: 'Acivity logs',
+      icon: 'tabler:calendar',
+      url: '/dashboard/activitylogs',
+    },
+    {
       key: 'config',
       label: 'Config',
       icon: 'tabler:medical-cross',

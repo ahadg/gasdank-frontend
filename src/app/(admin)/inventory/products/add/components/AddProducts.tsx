@@ -137,6 +137,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
         inventory_id: item._id,
         qty: Number(item.qty),
         measurement: item.measurement,
+        name : item?.name,
         unit: item.unit,
         price: item.price,
         shipping: avg_shipping.toFixed(2),
