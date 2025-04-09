@@ -18,10 +18,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Osen Nextjs - Responsive Bootstrap 5 Admin Dashboard',
+    template: '%s | Gasdank  - Gasdank Admin Dashboard',
     default: DEFAULT_PAGE_TITLE,
   },
-  description: 'A fully responsive premium admin dashboard template, Real Estate Management Admin Template',
+  description:  ''
+  //'A fully responsive premium admin dashboard template, Real Estate Management Admin Template',
 }
 
 const splashScreenStyles = `
@@ -67,7 +68,7 @@ export default function RootLayout({
     </head>
     <body className={inter.className}>
     <div id="splash-screen">
-      <Image alt="Logo" width={112} height={24} src={logoDark} style={{ height: '6%', width: 'auto' }} priority />
+      <Image alt="Logo" width={112} height={24} src={"https://w.gasdank.net/assets/img/logo-small.png"}  style={{ height: '6%', width: 'auto' }} priority />
     </div>
     <NextTopLoader color="#604ae3" showSpinner={false} />
     <div id="__next_splash">

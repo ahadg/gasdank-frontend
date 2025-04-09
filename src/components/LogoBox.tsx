@@ -9,12 +9,12 @@ const LogoBox = () => {
   return (
     <Link href="/dashboard/sales" className="logo">
       <span className="logo-light">
-        <span className="logo-lg"><Image src={logo} width={73} height={20} alt="logo" /></span>
-        <span className="logo-sm"><Image src={logoSm} width={21} height={20} alt="small logo" /></span>
+        <span className="logo-lg"><Image  src={"https://w.gasdank.net/assets/img/logo-small.png"} width={53} height={55} alt="logo" /></span>
+        <span className="logo-sm"><Image  src={"https://w.gasdank.net/assets/img/logo-small.png"}  width={53} height={55} alt="small logo" /></span>
       </span>
       <span className="logo-dark">
-        <span className="logo-lg"><Image src={logoDark} width={73} height={20}  alt="dark logo" /></span>
-        <span className="logo-sm"><Image src={logoSm} width={21} height={20} alt="small logo" /></span>
+        <span className="logo-lg"><Image  src={"https://w.gasdank.net/assets/img/logo-small.png"} width={53} height={55}  alt="dark logo" /></span>
+        <span className="logo-sm"><Image  src={"https://w.gasdank.net/assets/img/logo-small.png"} width={53} height={55} alt="small logo" /></span>
       </span>
     </Link>
   )
