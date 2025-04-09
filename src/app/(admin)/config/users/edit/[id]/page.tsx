@@ -7,6 +7,7 @@ import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import api from '@/utils/axiosInstance'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import { useAuthStore } from '@/store/authStore'
 
 interface Access {
   read: boolean;
@@ -79,7 +80,8 @@ export default function EditUserPage() {
 
   const [loading, setLoading] = useState(false)
   const [accessData, setAccessData] = useState<AccessData>(defaultAccess)
-
+  const user = useAuthStore((state) => state.user) || { _id: '67cf4bb808facf7a76f9f229' }
+  console.log("user",user)
   const {
     register,
     handleSubmit,
