@@ -15,7 +15,7 @@ const FileUpload = ({ title }: { title: string }) => {
           helpText={<span className="text-muted fs-13 ">(1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are allowed )</span>}
           showPreview
         />
-      </CardBody>
+      </CardBody>   
     </Card>
   )
 }
