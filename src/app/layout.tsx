@@ -9,6 +9,7 @@ import { DEFAULT_PAGE_TITLE } from '@/context/constants'
 import 'flatpickr/dist/flatpickr.css'
 import 'jsvectormap/dist/css/jsvectormap.min.css'
 import '@/assets/scss/app.scss'
+import { logoT } from './(other)/auth/login/components/LoginForm'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -68,7 +69,7 @@ export default function RootLayout({
     </head>
     <body className={inter.className}>
     <div id="splash-screen">
-      <Image alt="Logo" width={112} height={24} src={"https://w.gasdank.net/assets/img/logo-small.png"}  style={{ height: '6%', width: 'auto' }} priority />
+      <Image alt="Logo" width={112} height={24} src={logoT}  style={{ height: '6%', width: 'auto' }} priority />
     </div>
     <NextTopLoader color="#604ae3" showSpinner={false} />
     <div id="__next_splash">

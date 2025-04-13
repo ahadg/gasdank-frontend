@@ -6,9 +6,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import logoDark from '@/assets/images/logo-dark.png'
 import logo from '@/assets/images/logo.png'
+import logoT from '@/assets/images/logoT.png'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import { currentYear, developedBy } from '@/context/constants'
 import { useSignIn } from '../useSignIn'
+
+export { logoT }
 
 const LoginPinPage = () => {
   const { form, login, loading } = useSignIn()
@@ -40,7 +43,7 @@ const LoginPinPage = () => {
         <Col xl={4} lg={5} md={6}>
           <Card className="shadow-lg border-0 rounded-4 p-4 text-center">
             <Link href="/" className="auth-brand mb-4 d-block">
-              <Image src={"https://w.gasdank.net/assets/img/logo-small.png"} alt="dark logo" width={60} height={60} className="logo-dark" />
+              <Image src={logoT} alt="dark logo" width={60} height={60} className="logo-dark" />
               {/* <Image src={logo} alt="logo light" height={28} className="logo-light" /> */}
             </Link>
 
