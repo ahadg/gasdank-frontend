@@ -25,7 +25,7 @@ const ProductsPage = () => {
   async function fetchProducts() {
     setLoading(true)
     try {
-      const response = await api.get(`/api/products/${user?._id}?page=${page}&limit=${limit}`)
+      const response = await api.get(`/api/inventory/${user?._id}?page=${page}&limit=${limit}`)
       // Expect API to return { products: [...], total: number }
       setProducts(response.data.products)
       setTotalPages(Math.ceil(response.data.totalProducts / limit))

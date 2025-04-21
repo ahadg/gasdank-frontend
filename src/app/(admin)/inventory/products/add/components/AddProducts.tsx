@@ -177,7 +177,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
       const calls = data.products.map(async (prod) => {
         const the_category = userCategories.find((cat) => cat.name === prod.category)
         console.log('prod',prod)
-        const res = await api.post('/api/products', {
+        const res = await api.post('/api/inventory', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
           name: prod.name,

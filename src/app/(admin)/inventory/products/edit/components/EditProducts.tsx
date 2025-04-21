@@ -58,12 +58,12 @@ const EditProduct = () => {
   const [userCategories, setUserCategories] = useState<any[]>([])
   const user = useAuthStore((state) => state.user)
   console.log("productId",productId)
-  // Load product data from GET /api/products/:id
+  // Load product data from GET /api/inventory/:id
   useEffect(() => {
     console.log("productId",productId)
     async function fetchProduct() {
       try {
-        const response = await api.get(`/api/products/product/${productId}`)
+        const response = await api.get(`/api/inventory/product/${productId}`)
         const productData = response.data
         console.log("productData",productData)
         // Pre-populate the form with the fetched product data.
@@ -104,7 +104,7 @@ const EditProduct = () => {
   const onSubmit = async (data: ProductFormData) => {
     setLoading(true)
     try {
-      const response = await api.put(`/api/products/${productId}`, {
+      const response = await api.put(`/api/inventory/${productId}`, {
         user_id: user?._id, // Or use user._id if applicable
         ...data,
       })
