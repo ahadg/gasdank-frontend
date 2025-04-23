@@ -53,6 +53,12 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/activitylogs',
     },
     {
+      key: 'expenses',
+      label: 'Expenses',
+      icon: 'tabler:calendar',
+      url: '/dashboard/expenses/add',
+    },
+    {
       key: 'config',
       label: 'Config',
       icon: 'tabler:medical-cross',
