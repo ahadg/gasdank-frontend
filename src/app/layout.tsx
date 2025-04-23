@@ -19,7 +19,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Gasdank  - Gasdank Admin Dashboard',
+    template: '%s | Manapl  - Manapl Admin Dashboard',
     default: DEFAULT_PAGE_TITLE,
   },
   description:  ''

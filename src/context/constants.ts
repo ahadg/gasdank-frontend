@@ -14,7 +14,7 @@ export const buyLink = ''
 
 export const basePath = ''
 
-export const DEFAULT_PAGE_TITLE = 'Gasdank  - Gasdank Admin Dashboard'
+export const DEFAULT_PAGE_TITLE = 'Manapl  - Manapl Admin Dashboard'
 
 // Replace the URL's value in env with your backend's URL or if you're using nextjs's API, add the server's origin URL
 export const API_BASE_PATH = ''
