@@ -55,8 +55,14 @@ const VerticalNavigationBar = () => {
     {
       key: 'expenses',
       label: 'Expenses',
-      icon: 'tabler:calendar',
+      icon: 'tabler:moneybag-minus',
       url: '/dashboard/expenses/add',
+    },
+    {
+      key: 'sample',
+      label: 'Sample Holdings',
+      icon: 'tabler:zoom-question',
+      url: '/dashboard/samples',
     },
     {
       key: 'config',

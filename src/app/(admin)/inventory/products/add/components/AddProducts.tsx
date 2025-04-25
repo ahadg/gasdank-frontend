@@ -313,7 +313,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
                             <option value="">Select unit</option>
                             <option value="per piece">Per Piece</option>
                             <option value="pound">Pound</option>
-                            <option value="kilo">Kilo</option>
+                            <option value="Kg">Kg</option>
                             <option value="gram">Gram</option>
                           </Form.Select>
                         )}
@@ -391,7 +391,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
                 <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
               </div> */}
               <div>
-                <strong>Total Amount: </strong>${totalAmount.toFixed(2)}
+                <strong>Total Amount: </strong>${totalAmount ? totalAmount.toFixed(2) : 0}
               </div>
             </div>
             <div className="mt-3 d-flex justify-content-end">

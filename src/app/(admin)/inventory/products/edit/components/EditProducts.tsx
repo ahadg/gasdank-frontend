@@ -161,7 +161,7 @@ const EditProduct = () => {
                         <option value="">Select unit</option>
                         <option value="per piece">Per Piece</option>
                         <option value="pound">Pound</option>
-                        <option value="kilo">Kilo</option>
+                        <option value="Kg">Kg</option>
                         <option value="gram">Gram</option>
                       </Form.Select>
                     )}
