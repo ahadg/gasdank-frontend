@@ -51,7 +51,7 @@ export default function AddExpensePage() {
       }
     }
     fetchUserCategories()
-  }, [user?._id, showNotification])
+  }, [user?._id])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)

@@ -102,6 +102,12 @@ const VerticalNavigationBar = () => {
         },
       ]
     },
+    {
+      key: 'profile',
+      label: 'Profile',
+      icon: 'material-symbols:person',
+      url: '/dashboard/profile',
+    },
     // Optionally include other items (e.g., logout) handled separately.
   ]
 

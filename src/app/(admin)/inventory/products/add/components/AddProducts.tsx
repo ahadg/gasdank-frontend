@@ -88,7 +88,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
       }
     }
     fetchAccounts()
-  }, [user?._id, showNotification])
+  }, [user?._id])
 
   // Filter accounts based on search query
   const filteredAccounts = accounts.filter((acc) =>
@@ -110,7 +110,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
       }
     }
     fetchUserCategories()
-  }, [user?._id, showNotification])
+  }, [user?._id])
 
   const measurementOptions = [
     { label: 'Full', value: 1 },

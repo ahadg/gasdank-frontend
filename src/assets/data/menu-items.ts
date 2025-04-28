@@ -95,6 +95,12 @@ export const MENU_ITEMS: MenuItemType[] = [
       },
     ]
   },
+  {
+    key: 'profile',
+    label: 'Profile',
+    icon: 'tabler:calendar',
+    url: '/dashboard/profile',
+  },
   // {
   //   key: 'logout',
   //   label: 'Logout',
