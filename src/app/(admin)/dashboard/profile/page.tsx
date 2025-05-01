@@ -89,6 +89,38 @@ export default function ProfilePage() {
       setSaving(false)
     }
   }
+
+  const handleCancelSubscription = async () => {
+    const confirm = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Your subscription will be canceled at the end of the current period.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, cancel it!',
+      cancelButtonText: 'Keep it',
+    });
+  
+    if (confirm.isConfirmed) {
+      setSaving(true);
+      try {
+        const res = await api.post('/api/stripe/cancel-subscription', {
+          user_id: user._id,
+        });
+  
+        showNotification({ message: 'Subscription cancelled. You will retain access until the end of the billing cycle.', variant: 'success' });
+  
+        // Optionally: Refresh the profile
+        const updated = await api.get('/api/users/me');
+        setUser(updated.data.user);
+      } catch (err: any) {
+        console.error('Cancel error:', err);
+        showNotification({ message: 'Failed to cancel subscription.', variant: 'danger' });
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+  
   
 
   return (
@@ -240,6 +272,17 @@ export default function ProfilePage() {
                   Upgrade My Plan 🚀
                 </Button>
             </div>
+            <div className="text-center mt-4">
+            <Button 
+            variant="outline-danger" 
+            size="lg" 
+            className="px-5 py-2 rounded-4 fw-bold mt-3"
+            onClick={handleCancelSubscription}
+            disabled={saving}
+          >
+            Cancel My Subscription ❌
+          </Button>
+          </div>
             </div>
           </div>
 

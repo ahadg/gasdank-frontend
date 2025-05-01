@@ -13,24 +13,23 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState('')
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [plansRes, userRes] = await Promise.all([
-          api.get('/api/systemsettings'),
-          api.get('/api/users/me')
-        ])
-        setPlans(plansRes.data.plans || [])
-        setUser(userRes.data.user)
-        setSelectedPlan(userRes.data.user.plan)
-      } catch (err: any) {
-        console.error('Failed to load plans or user', err)
-        showNotification({ message: 'Failed to load data.', variant: 'danger' })
-      } finally {
-        setLoading(false)
-      }
+  async function fetchData() {
+    try {
+      const [plansRes, userRes] = await Promise.all([
+        api.get('/api/systemsettings'),
+        api.get('/api/users/me')
+      ])
+      setPlans(plansRes.data.plans || [])
+      setUser(userRes.data.user)
+      setSelectedPlan(userRes.data.user.plan)
+    } catch (err: any) {
+      console.error('Failed to load plans or user', err)
+      showNotification({ message: 'Failed to load data.', variant: 'danger' })
+    } finally {
+      setLoading(false)
     }
+  }
+  useEffect(() => {
     fetchData()
   }, [])
 
@@ -51,8 +50,10 @@ export default function PlansPage() {
         plan : planName
       })
   
-      if (res.data?.url) {
-        window.location.href = res.data.url
+      if (res.data) {
+        showNotification({ message: 'Plan Updated Successfully.', variant: 'success' })
+        await fetchData()
+        //window.location.href = res.data.url
       } else {
         showNotification({ message: 'Failed to initiate Stripe checkout.', variant: 'danger' })
       }

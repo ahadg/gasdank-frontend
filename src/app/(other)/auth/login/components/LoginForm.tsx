@@ -93,7 +93,13 @@ const LoginPinPage = () => {
                   {loading ? 'Logging in...' : 'Continue'}
                 </Button>
               </div>
-{/* 
+              <p className="mb-4 text-center text-muted">
+                Don’t have an account?{' '}
+                <Link href="/auth/signup" className="link-primary fw-semibold text-decoration-underline">
+                  Sign up
+                </Link>
+              </p>
+             {/* 
               <p className="mb-3 text-center text-muted">
                 Didn't receive code?{' '}
                 <Link href="#" className="link-primary fw-semibold text-decoration-underline">
