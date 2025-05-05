@@ -245,7 +245,7 @@ const DashboardStats = () => {
                 <CardBody className="py-2">
                   <ReactApexChart 
                     height={220} 
-                    //options={barChartOpts} 
+                    options={barChartOpts as any} 
                     series={barChartOpts.series} 
                     type="bar" 
                     className="apex-charts" 
