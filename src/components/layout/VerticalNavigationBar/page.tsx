@@ -29,6 +29,13 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/sales',
     },
     {
+      key: 'analytics',
+      label: 'Analytics',
+      icon: 'tabler:file-analytics',
+      // badge: { text: "5", variant: "success" },
+      url: '/dashboard/analytics',
+    },
+    {
       key: 'sale',
       label: 'Sales',
       icon: 'tabler:shopping-bag-edit',
@@ -62,7 +69,13 @@ const VerticalNavigationBar = () => {
       key: 'sample',
       label: 'Sample Holdings',
       icon: 'tabler:zoom-question',
-      url: '/dashboard/samples',
+      url: '/dashboard/samplesholdings',
+    },
+    {
+      key: 'sampleviewing',
+      label: 'Sample Viewing Tool',
+      icon: 'tabler:eye-search',
+      url: '/dashboard/sampleviewing',
     },
     {
       key: 'config',

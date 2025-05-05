@@ -39,7 +39,7 @@ const SparkChart = () => {
               <ChangeChart3 />
             </Row>
           </CardBody>
-          <Row>
+          {/* <Row>
             <Col xs={12}>
               <div className="table-responsive">
                 <table className="table mb-0">
@@ -96,7 +96,7 @@ const SparkChart = () => {
                 </table>
               </div>
             </Col>
-          </Row>
+          </Row> */}
         </Card>
       </Col>
     </Row>

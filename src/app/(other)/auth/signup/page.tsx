@@ -66,18 +66,19 @@ const SignupPage = () => {
 
     setLoading(true)
     try {
-      const userres = await api.post('/api/users/signup', payload)
+      const userres = await api.post('/api/users/signup', {...payload,plan: selectedPlan})
       const checkoutRes = await api.post('/api/stripe/create-checkout-session', {
         priceId: plans.find(p => p.name === selectedPlan)?.stripePriceId,
         user_id: userres?.data?.user?.id,
         plan: selectedPlan,
       })
 
-      if (checkoutRes.data?.url) {
-        window.location.href = checkoutRes.data.url
-      } else {
-        showNotification({ message: 'Failed to initiate Stripe checkout.', variant: 'danger' })
-      }
+      // if (checkoutRes.data?.url) {
+      //   window.location.href = checkoutRes.data.url
+      // } else {
+      //   showNotification({ message: 'Failed to initiate Stripe checkout.', variant: 'danger' })
+      // }
+      window.location.href = '/auth/login'
     } catch (error: any) {
       console.error('Signup error:', error)
       showNotification({ message: error?.response?.data?.error || 'Signup failed', variant: 'danger' })

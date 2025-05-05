@@ -1,12 +1,11 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Metadata } from 'next'
 import { Row, Col, Card, CardBody, Button, Form } from 'react-bootstrap'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
-import { describe } from 'node:test'
 
 export const metadata: Metadata = { title: 'Dashboard Stats' }
 
@@ -28,6 +27,30 @@ function toLocalDateTimeString(date: Date) {
   return localDate.toISOString().slice(0, 16)
 }
 
+// Stats Loader Component
+const StatsLoader = () => {
+  const placeholders = Array(8).fill(0);
+  
+  return (
+    <Row className="row-cols-xxl-4 row-cols-md-2 row-cols-1 text-center">
+      {placeholders.map((_, idx) => (
+        <Col key={idx}>
+          <Card className="animate-pulse">
+            <CardBody>
+              <div className="bg-light rounded h-4 w-75 mx-auto mb-3"></div>
+              <div className="d-flex align-items-center justify-content-center gap-2 my-3 py-1">
+                <div className="avatar-title text-bg-light bg-opacity-50 rounded-circle" style={{ width: '48px', height: '48px' }}></div>
+                <div className="bg-light rounded h-8" style={{ width: '80px' }}></div>
+              </div>
+              <div className="bg-light rounded h-6 w-50 mx-auto mt-3"></div>
+            </CardBody>
+          </Card>
+        </Col>
+      ))}
+    </Row>
+  );
+};
+
 const Stat = () => {
   const user = useAuthStore((state) => state.user)
   const [startDate, setStartDate] = useState(() => {
@@ -47,8 +70,9 @@ const Stat = () => {
   const [editingBalance, setEditingBalance] = useState<string>('')
   const [newBalance, setNewBalance] = useState<string>('')
   const { showNotification } = useNotificationContext()
-  const [balance,setbalance] = useState<number>()
-  const [otherBalance,setotherBalance] = useState<any>({})
+  const [balance, setBalance] = useState<number>()
+  const [otherBalance, setOtherBalance] = useState<any>({})
+  
   const fetchStats = async () => {
     if (!user?._id) return
 
@@ -60,8 +84,8 @@ const Stat = () => {
       const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-      setbalance(data.loggedInUserTotalBalance)
-      setotherBalance(data.other_balance)
+      setBalance(data.loggedInUserTotalBalance)
+      setOtherBalance(data.other_balance)
       const stats: StatTypeExtended[] = [
         {
           title: 'Total Sales',
@@ -138,9 +162,7 @@ const Stat = () => {
       ]
 
       const userStats = user?.access?.dashboard_stats || {}
-      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true 
-      //  && Number(stat?.count) !== 0
-      )
+      const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
       setStatData(filteredStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
@@ -151,7 +173,6 @@ const Stat = () => {
 
   // Update user cash balance via PUT /api/users/{userId}
   const updateBalance = async (title) => {
-    console.log(title,newBalance,otherBalance)
     if (!newBalance) return
     try {
       let payment_method = ''
@@ -164,7 +185,7 @@ const Stat = () => {
             }
           } 
           payment_method = 'EFT'
-      }else if(title === "Crypto Balance") {
+      } else if(title === "Crypto Balance") {
         update_obj = {
           other_balance : {
             ...otherBalance,
@@ -172,13 +193,13 @@ const Stat = () => {
           }
         } 
         payment_method = 'Crypto'
-      } else  {
+      } else {
         update_obj = {
           cash_balance: balance + parseInt(newBalance)
         } 
         payment_method = 'Cash'
       }
-      console.log("update_obj",update_obj)
+      
       await api.put(`/api/users/${user._id}`, update_obj)
       await api.post(`/api/activity/${user._id}`, {
         page : 'dashboard',
@@ -234,7 +255,7 @@ const Stat = () => {
       </Form>
 
       {loading ? (
-        <p>Loading stats...</p>
+        <StatsLoader />
       ) : (
         <Row className="row-cols-xxl-4 row-cols-md-2 row-cols-1 text-center">
           {statData.map((item, idx) => (

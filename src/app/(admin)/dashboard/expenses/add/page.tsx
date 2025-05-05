@@ -79,7 +79,7 @@ export default function AddExpensePage() {
 
   return (
     <div className="container-fluid">
-      <h4 className="mb-4">Add Expense</h4>
+      <h4 className="mb-4"></h4>
       <Card>
         <CardHeader className="border-bottom border-light">
           <CardTitle as="h5" className="mb-0">Add Expense</CardTitle>
