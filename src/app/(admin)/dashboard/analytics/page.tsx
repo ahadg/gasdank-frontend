@@ -245,7 +245,7 @@ const DashboardStats = () => {
                 <CardBody className="py-2">
                   <ReactApexChart 
                     height={220} 
-                    options={barChartOpts} 
+                    //options={barChartOpts} 
                     series={barChartOpts.series} 
                     type="bar" 
                     className="apex-charts" 
@@ -274,7 +274,7 @@ const DashboardStats = () => {
                       { name: "Accessories", percentage: 35, color: "info", amount: "$6,710" },
                       { name: "Home & Kitchen", percentage: 27, color: "warning", amount: "$5,172" },
                       { name: "Books", percentage: 16, color: "danger", amount: "$3,061" }
-                    ].map((category, idx) => (
+                    ].map((category : any, idx) => (
                       <div key={idx} className="mb-2">
                         <div className="d-flex justify-content-between align-items-center mb-1">
                           <span className="small text-muted">{category.name}</span>
@@ -284,14 +284,15 @@ const DashboardStats = () => {
                           </div>
                         </div>
                         <div className="progress" style={{ height: "6px" }}>
-                          <div 
+                        <div
                             className={`progress-bar bg-${category.color}`} 
                             role="progressbar" 
                             style={{ width: `${category.percentage}%` }}
                             aria-valuenow={category.percentage} 
-                            aria-valuemin="0" 
-                            aria-valuemax="100"
-                          ></div>
+                            aria-valuemin={0} 
+                            aria-valuemax={100}
+                            />
+
                         </div>
                       </div>
                     ))}
@@ -377,7 +378,7 @@ const DashboardStats = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {salesProductData.slice(0, 5).map((item, idx) => (
+                        {salesProductData.slice(0, 5).map((item :any, idx) => (
                           <tr key={idx}>
                             <td className="py-1">
                               <div className="d-flex align-items-center">
