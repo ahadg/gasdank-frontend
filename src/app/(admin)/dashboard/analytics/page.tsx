@@ -9,6 +9,7 @@ import ComponentContainerCard from '@/components/ComponentContainerCard'
 import ReactApexChart from 'react-apexcharts'
 import { salesProductData } from '../sales/data'
 import Link from 'next/link'
+import PaymentTypesChart from './PaymentTypesChart' // Import the new component
 
 function toLocalDateTimeString(date) {
   const offsetMs = date.getTime() - date.getTimezoneOffset() * 60000
@@ -149,21 +150,7 @@ const DashboardStats = () => {
                     </Form.Select>
                   </Form.Group>
                 </Col>
-                <Col md={3}>
-                  <Form.Group>
-                    <Form.Label className="text-muted small mb-0">Product</Form.Label>
-                    <Form.Select
-                      value={product}
-                      onChange={(e) => setProduct(e.target.value)}
-                      className="border-0 bg-light form-control-sm"
-                    >
-                      <option value="">All Products</option>
-                      <option value="product1">Product One</option>
-                      <option value="product2">Product Two</option>
-                      <option value="product3">Product Three</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
+             
                 <Col md={3}>
                   <Form.Group>
                     <Form.Label className="text-muted small mb-0">Start Date</Form.Label>
@@ -219,9 +206,24 @@ const DashboardStats = () => {
         {/* SparkChart */}
         <Col lg={12} className="mb-2">
           <Card className="shadow-sm border-0">
-            <CardHeader className="bg-transparent py-2 border-0">
+            <CardHeader className="bg-transparent py-2 border-0  d-flex justify-content-between align-items-center">
               <h6 className="mb-0">Revenue Trends</h6>
+              <Col md={3}>
+                  <Form.Group>
+                    <Form.Select
+                      value={product}
+                      onChange={(e) => setProduct(e.target.value)}
+                      className="border-0 bg-light form-control-sm"
+                    >
+                      <option value="">All Products</option>
+                      <option value="product1">Product One</option>
+                      <option value="product2">Product Two</option>
+                      <option value="product3">Product Three</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
             </CardHeader>
+            
             <CardBody className="py-2">
               <SparkChart />
             </CardBody>
@@ -237,9 +239,24 @@ const DashboardStats = () => {
                 <CardHeader className="bg-transparent py-2 border-0 d-flex justify-content-between align-items-center">
                   <h6 className="mb-0">Monthly Revenue</h6>
                   <div>
-                    <Button variant="light" size="sm" className="btn-sm p-1">
+                  {/* <Col md={3}> */}
+                  <Form.Group>
+                    {/* <Form.Label className="text-muted small mb-0">Product</Form.Label> */}
+                    <Form.Select
+                      value={product}
+                      onChange={(e) => setProduct(e.target.value)}
+                      className="border-0 bg-light form-control-sm"
+                    >
+                      <option value="">All Products</option>
+                      <option value="product1">Product One</option>
+                      <option value="product2">Product Two</option>
+                      <option value="product3">Product Three</option>
+                    </Form.Select>
+                  </Form.Group>
+                {/* </Col> */}
+                    {/* <Button variant="light" size="sm" className="btn-sm p-1">
                       <IconifyIcon icon="tabler:download" width={16} />
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardHeader>
                 <CardBody className="py-2">
@@ -254,6 +271,15 @@ const DashboardStats = () => {
               </Card>
             </Col>
             
+            {/* Payment Types Chart - New Component */}
+            <Col lg={12} className="mb-2">
+              <PaymentTypesChart />
+            </Col>
+          </Row>
+        </Col>
+
+        <Col lg={6} md={12}>
+          <Row>
             {/* Top Categories */}
             <Col lg={12} className="mb-2">
               <Card className="shadow-sm border-0">
@@ -292,7 +318,6 @@ const DashboardStats = () => {
                             aria-valuemin={0} 
                             aria-valuemax={100}
                             />
-
                         </div>
                       </div>
                     ))}
@@ -300,12 +325,7 @@ const DashboardStats = () => {
                 </CardBody>
               </Card>
             </Col>
-          </Row>
-        </Col>
 
-        {/* Top Products Section */}
-        <Col lg={6} md={12}>
-          <Row>
             {/* Top Selling Products */}
             <Col lg={12} className="mb-2">
               <Card className="shadow-sm border-0">
@@ -363,9 +383,22 @@ const DashboardStats = () => {
                 <CardHeader className="bg-transparent py-2 border-0 d-flex justify-content-between align-items-center">
                   <h6 className="mb-0">Top Clients</h6>
                   <div>
-                    <Button variant="light" size="sm" className="btn-sm p-1">
+                  <Form.Group>
+                    {/* <Form.Label className="text-muted small mb-0">Product</Form.Label> */}
+                    <Form.Select
+                      value={product}
+                      onChange={(e) => setProduct(e.target.value)}
+                      className="border-0 bg-light form-control-sm"
+                    >
+                      <option value="">All Products</option>
+                      <option value="product1">Product One</option>
+                      <option value="product2">Product Two</option>
+                      <option value="product3">Product Three</option>
+                    </Form.Select>
+                  </Form.Group>
+                    {/* <Button variant="light" size="sm" className="btn-sm p-1">
                       <IconifyIcon icon="tabler:eye" width={16} />
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardHeader>
                 <CardBody className="p-0">
