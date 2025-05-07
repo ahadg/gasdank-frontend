@@ -13,6 +13,7 @@ import IconifyIcon from '@/components/wrappers/IconifyIcon'
 export default function SampleHoldingPage() {
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const [samples, setSamples] = useState([])
   const [confirmModal, setConfirmModal] = useState({ show: false, id: null })
@@ -135,6 +136,26 @@ export default function SampleHoldingPage() {
   }
 
   const handleAddSample = async () => {
+    const errors = []
+  
+    if (!newSample.buyer_id) {
+      errors.push('Please select a buyer.')
+    }
+  
+    newSample.products.forEach((p, index) => {
+      if (!p.name) errors.push(`Product ${index + 1}: Name is required.`)
+      if (!p.qty || Number(p.qty) <= 0) errors.push(`Product ${index + 1}: Quantity must be a positive number.`)
+      if (!p.unit) errors.push(`Product ${index + 1}: Unit is required.`)
+      if (!p.price  || Number(p.price) < 0) errors.push(`Product ${index + 1}: Price must be a valid number.`)
+      if (p.shippingCost === ''  || Number(p.shippingCost) < 0) errors.push(`Product ${index + 1}: Shipping cost must be a valid number.`)
+    })
+  
+    if (errors.length > 0) {
+      // setValidationErrors(errors)
+      showNotification({ message: 'Please input or select required fields before submitting.', variant: 'danger' })
+      return
+    }
+  
     try {
       const products = newSample.products.map(p => ({
         ...p,
@@ -153,10 +174,12 @@ export default function SampleHoldingPage() {
       showNotification({ message: 'Sample added to holding area', variant: 'success' })
       resetAndCloseModal()
       fetchSamples()
+      setValidationErrors([]) // clear errors
     } catch (err) {
       showNotification({ message: 'Failed to add sample', variant: 'danger' })
     }
   }
+  
 
   const [historyModal, setHistoryModal] = useState(false)
 const [historySamples, setHistorySamples] = useState([])
