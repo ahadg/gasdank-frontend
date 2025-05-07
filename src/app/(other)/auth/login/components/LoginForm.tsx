@@ -74,7 +74,7 @@ const LoginPinPage = () => {
                     <Form.Control
                       key={i}
                       id={`pin-${i}`}
-                      type="text"
+                      type="password"
                       maxLength={1}
                       inputMode="numeric"
                       className="text-center fs-4 fw-bold rounded-3 shadow-sm border border-secondary-subtle"

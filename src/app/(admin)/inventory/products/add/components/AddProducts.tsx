@@ -172,6 +172,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
     setLoading(true)
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
     const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
+    const total_price = data.products.reduce((sum, currval) => sum + (Number(currval.qty) * Number(currval.price)), 0)
     try {
       let products: any[] = []
       const calls = data.products.map(async (prod) => {

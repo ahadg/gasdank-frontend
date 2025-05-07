@@ -8,15 +8,18 @@ import { useAuthStore } from '@/store/authStore'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Modal from 'react-bootstrap/Modal'
 
-
 export default function SampleViewingToolPage() {
   const { showNotification } = useNotificationContext()
   const [products, setProducts] = useState<any[]>([])
   const [selectedItems, setSelectedItems] = useState<any[]>([])
   const [workers, setWorkers] = useState<any[]>([])
-  const [clientName, setClientName] = useState('')
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [buyerId, setBuyerId] = useState('')
   const [workerId, setWorkerId] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [historySessions, setHistorySessions] = useState<any[]>([])
+
   const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -24,21 +27,31 @@ export default function SampleViewingToolPage() {
       try {
         const [productRes, workerRes] = await Promise.all([
           api.get(`/api/inventory/${user?._id}`),
-          api.get('/api/users')
+          api.get('/api/users'),
         ])
         setProducts(productRes.data.products || [])
         setWorkers(workerRes.data || [])
       } catch (err: any) {
-        console.log("error",err)
+        console.log("error", err)
         showNotification({ message: 'Failed to load data.', variant: 'danger' })
       }
     }
+
+    const fetchAccounts = async () => {
+      try {
+        const response = await api.get(`/api/buyers?user_id=${user._id}`)
+        setAccounts(response.data)
+      } catch (error: any) {
+        showNotification({
+          message: error?.response?.data?.error || 'Error fetching accounts',
+          variant: 'danger'
+        })
+      }
+    }
+
     fetchData()
-  }, [])
-
-  const [showHistory, setShowHistory] = useState(false)
-  const [historySessions, setHistorySessions] = useState<any[]>([])
-
+    fetchAccounts()
+  }, [user._id])
 
   const handleAddItem = (product: any) => {
     if (!selectedItems.find(item => item._id === product._id)) {
@@ -59,16 +72,16 @@ export default function SampleViewingToolPage() {
   }
 
   const handleSubmit = async () => {
-    if (!clientName || !workerId || selectedItems.length === 0) {
+    if (!buyerId || !workerId || selectedItems.length === 0) {
       showNotification({ message: 'Please fill all fields.', variant: 'danger' })
       return
     }
-  
+
     try {
       setLoading(true)
       const payload = {
-        clientName,
-        userId: workerId, // renamed field expected by backend
+        buyer_id: buyerId,
+        user_id: workerId,
         items: selectedItems.map(item => ({
           productId: item._id,
           name: item.name,
@@ -77,11 +90,11 @@ export default function SampleViewingToolPage() {
           price: item.price,
         })),
       }
-      console.log("payload",payload)
+      console.log("payload", payload)
       await api.post('/api/sampleviewingclient', payload)
-  
+
       showNotification({ message: 'Sample viewing session created.', variant: 'success' })
-      setClientName('')
+      setBuyerId('')
       setWorkerId('')
       setSelectedItems([])
     } catch (err: any) {
@@ -91,43 +104,52 @@ export default function SampleViewingToolPage() {
       setLoading(false)
     }
   }
-  
 
   return (
     <div className="container py-5">
-      {/* <h3 className="fw-bold mb-4">Sample Viewing Tool</h3> */}
       <div className="mb-3 text-end">
-        <Button className="mb-3 text-end" variant="outline-primary" onClick={async () => {
-                try {
-                setShowHistory(true)
-                const res = await api.get(`/api/sampleviewingclient?createdBy=${user?._id}`)
-                setHistorySessions(res.data || [])
-                } catch {
-                showNotification({ message: 'Failed to fetch history.', variant: 'danger' })
-                }
-            }}>
-            <IconifyIcon icon='tabler:x' /> View History
+        <Button
+          className="mb-3 text-end"
+          variant="outline-primary"
+          onClick={async () => {
+            try {
+              setShowHistory(true)
+              const res = await api.get(`/api/sampleviewingclient?createdBy=${user?._id}`)
+              console.log("setHistorySessions",res)
+              setHistorySessions(res.data || [])
+            } catch {
+              showNotification({ message: 'Failed to fetch history.', variant: 'danger' })
+            }
+          }}
+        >
+          <IconifyIcon icon='tabler:x' /> View History
         </Button>
-     </div>
+      </div>
 
       <Row className="mb-4">
         <Col md={4}>
           <Form.Group>
-            <Form.Label>Client Name</Form.Label>
-            <Form.Control
-              value={clientName}
-              onChange={e => setClientName(e.target.value)}
-              placeholder="Enter client name"
-            />
+            <Form.Label>Select Buyer</Form.Label>
+            <Form.Select value={buyerId} onChange={e => setBuyerId(e.target.value)}>
+              <option value="">Select a buyer</option>
+              {accounts.map((buyer: any) => (
+                <option key={buyer._id} value={buyer._id}>
+                  {buyer.name || `${buyer.firstName} ${buyer.lastName}`}
+                </option>
+              ))}
+            </Form.Select>
           </Form.Group>
         </Col>
+
         <Col md={4}>
           <Form.Group>
             <Form.Label>Select Worker</Form.Label>
             <Form.Select value={workerId} onChange={e => setWorkerId(e.target.value)}>
               <option value="">Select a worker</option>
               {workers.map(worker => (
-                <option key={worker._id} value={worker._id}>{worker.firstName} {worker.lastName}</option>
+                <option key={worker._id} value={worker._id}>
+                  {worker.firstName} {worker.lastName}
+                </option>
               ))}
             </Form.Select>
           </Form.Group>
@@ -207,52 +229,50 @@ export default function SampleViewingToolPage() {
           {loading ? <Spinner animation="border" size="sm" /> : 'Send Sample List'}
         </Button>
       </div>
+
       <Modal show={showHistory} onHide={() => setShowHistory(false)} size="lg">
-  <Modal.Header closeButton>
-    <Modal.Title>Sample Viewing History</Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    {historySessions.length === 0 ? (
-      <p className="text-muted">No sample sessions yet.</p>
-    ) : (
-      <Table bordered responsive className="small">
-        <thead className="table-light">
-          <tr>
-            <th>Client</th>
-            <th>Date</th>
-            <th>Items</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {historySessions.map((session: any) => (
-            <tr key={session._id}>
-              <td>{session.clientName}</td>
-              <td>{new Date(session.sentAt).toLocaleString()}</td>
-              <td>
-                {session.items.map((item: any) => (
-                  <div key={item.productId} className="d-flex justify-content-between">
-                    <span>{item.name} ({item.qty})</span>
-                    <span className={`text-${item.status === 'accepted' ? 'success' : item.status === 'rejected' ? 'danger' : 'warning'}`}>
-                      {item.status}
-                    </span>
-                  </div>
+        <Modal.Header closeButton>
+          <Modal.Title>Sample Viewing History</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {historySessions.length === 0 ? (
+            <p className="text-muted">No sample sessions yet.</p>
+          ) : (
+            <Table bordered responsive className="small">
+              <thead className="table-light">
+                <tr>
+                  <th>Buyer</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historySessions.map((session: any) => (
+                  <tr key={session._id}>
+                    <td>{session.buyer_id?.firstName || session.buyer_id?.firstName || 'N/A'}</td>
+                    <td>{new Date(session.sentAt).toLocaleString()}</td>
+                    <td>
+                      {session.items.map((item: any) => (
+                        <div key={item.productId} className="d-flex justify-content-between">
+                          <span>{item.name} ({item.qty})</span>
+                          <span className={`text-${item.status === 'accepted' ? 'success' : item.status === 'rejected' ? 'danger' : 'warning'}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                      ))}
+                    </td>
+                    <td className="text-capitalize">{session.viewingStatus}</td>
+                  </tr>
                 ))}
-              </td>
-              <td className="text-capitalize">{session.viewingStatus}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    )}
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowHistory(false)}>Close</Button>
-  </Modal.Footer>
-</Modal>
-
+              </tbody>
+            </Table>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowHistory(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
-
-    
   )
 }

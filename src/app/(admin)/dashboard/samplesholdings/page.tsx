@@ -1,86 +1,93 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Table, Button, Card, CardHeader, CardBody, CardTitle, Modal, Form, Row, Col, Spinner } from 'react-bootstrap'
+import { 
+  Table, Button, Card, CardHeader, CardBody, CardTitle, Modal, 
+  Form, Row, Col, Spinner, Badge, InputGroup
+} from 'react-bootstrap'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import IconifyIcon from '@/components/wrappers/IconifyIcon'
 
 export default function SampleHoldingPage() {
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
-  const [samples, setSamples] = useState<any[]>([])
-  const [confirmModal, setConfirmModal] = useState<{ show: boolean, id: string | null }>({ show: false, id: null })
+
+  const [samples, setSamples] = useState([])
+  const [confirmModal, setConfirmModal] = useState({ show: false, id: null })
   const [showAddModal, setShowAddModal] = useState(false)
   const [newSample, setNewSample] = useState({
-    name: '',
-    qty: '',
-    unit: '',
-    measurement: 1,
-    price: '',
-    shippingCost: '',
-    category_id: '',
-    buyer_id: ''
+    buyer_id: '',
+    products: [
+      {
+        name: '',
+        qty: '',
+        unit: '',
+        measurement: 1,
+        price: '',
+        shippingCost: '',
+        category_id: ''
+      }
+    ]
   })
-  const unitOptions = ['kg', 'pound', 'per piece', 'gram']
-  const [userCategories, setUserCategories] = useState<any[]>([])
-  const [accounts, setAccounts] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const fetchSamples = async () => {
-    try {
-      const res = await api.get(`/api/sample?user_id=${user._id}`)
-      setSamples(res.data)
-    } catch (err: any) {
-      showNotification({ message: 'Failed to load samples', variant: 'danger' })
-    }
-  }
-  useEffect(() => {
-    fetchSamples()
-  }, [user._id, 
-   // showNotification
-  ])
 
+  const unitOptions = ['kg', 'pound', 'per piece', 'gram']
   const measurementOptions = [
     { label: 'Full', value: 1 },
     { label: 'Half', value: 0.5 },
-    { label: 'Quarter', value: 0.25 },
+    { label: 'Quarter', value: 0.25 }
   ]
 
+  const [userCategories, setUserCategories] = useState([])
+  const [accounts, setAccounts] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selectedBuyer, setSelectedBuyer] = useState(null)
+
+  const fetchSamples = async () => {
+    try {
+      setLoading(true)
+      const res = await api.get(`/api/sample?user_id=${user._id}`)
+      setSamples(res.data)
+    } catch (err) {
+      showNotification({ message: 'Failed to load samples', variant: 'danger' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchSamples()
+  }, [user._id])
 
   useEffect(() => {
     async function fetchUserCategories() {
-      if (user?._id) {
-        try {
-          const response = await api.get(`/api/categories/${user._id}`)
-          setUserCategories(response.data)
-        } catch (error) {
-          showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
-        }
+      try {
+        const response = await api.get(`/api/categories/${user._id}`)
+        setUserCategories(response.data)
+      } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
       }
     }
     fetchUserCategories()
-  }, [user?._id, 
-  //  showNotification
-  ])
+  }, [user._id])
 
   useEffect(() => {
     async function fetchAccounts() {
-      if (user?._id) {
-        setLoading(true)
-        try {
-          const response = await api.get(`/api/buyers?user_id=${user._id}`)
-          setAccounts(response.data)
-        } catch (error) {
-          showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
-        } finally {
-          setLoading(false)
-        }
+      setLoading(true)
+      try {
+        const response = await api.get(`/api/buyers?user_id=${user._id}`)
+        setAccounts(response.data)
+      } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
+      } finally {
+        setLoading(false)
       }
     }
     fetchAccounts()
-  }, [user?._id])
+  }, [user._id])
 
-  const handleAccept = async (id: string) => {
+  const handleAccept = async (id) => {
     try {
       await api.post(`/api/sample/${id}/accept`)
       showNotification({ message: 'Sample moved to inventory', variant: 'success' })
@@ -90,7 +97,7 @@ export default function SampleHoldingPage() {
     }
   }
 
-  const handleReturn = async (id: string) => {
+  const handleReturn = async (id) => {
     try {
       await api.post(`/api/sample/${id}/return`)
       showNotification({ message: 'Sample returned to sender', variant: 'info' })
@@ -100,188 +107,449 @@ export default function SampleHoldingPage() {
     }
   }
 
+  const handleProductChange = (index, field, value) => {
+    const updated = [...newSample.products]
+    updated[index][field] = value
+    setNewSample({ ...newSample, products: updated })
+  }
+
+  const addProductRow = () => {
+    setNewSample({
+      ...newSample,
+      products: [...newSample.products, {
+        name: '',
+        qty: '',
+        unit: '',
+        measurement: 1,
+        price: '',
+        shippingCost: '',
+        category_id: ''
+      }]
+    })
+  }
+
+  const removeProductRow = (index) => {
+    const updated = [...newSample.products]
+    updated.splice(index, 1)
+    setNewSample({ ...newSample, products: updated })
+  }
+
   const handleAddSample = async () => {
     try {
-      const avgShipping = Number(newSample.qty) > 0 ? Number(newSample?.shippingCost) / Number(newSample.qty) : 0
-
+      const products = newSample.products.map(p => ({
+        ...p,
+        qty: Number(p.qty),
+        price: Number(p.price),
+        shippingCost: Number(p.shippingCost),
+        measurement: Number(p.measurement)
+      }))
       const payload = {
-        ...newSample,
-        qty: Number(newSample.qty),
-        measurement: Number(newSample.measurement),
         user_id: user._id,
-        price : Number(newSample?.price),
-        shippingCost : avgShipping.toFixed(2),
+        buyer_id: newSample.buyer_id,
+        products,
         status: 'holding'
       }
-      console.log("payload",payload)
       await api.post('/api/sample', payload)
       showNotification({ message: 'Sample added to holding area', variant: 'success' })
-      setShowAddModal(false)
-      setNewSample({ name: '', qty: '', unit: '',shippingCost : '', price : '', measurement: 1, category_id: '', buyer_id: '' })
+      resetAndCloseModal()
       fetchSamples()
     } catch (err) {
       showNotification({ message: 'Failed to add sample', variant: 'danger' })
     }
   }
 
+  const [historyModal, setHistoryModal] = useState(false)
+const [historySamples, setHistorySamples] = useState([])
+
+const fetchHistory = async () => {
+  try {
+    const res = await api.get(`/api/sample?user_id=${user._id}&status=history`)
+    setHistorySamples(res.data)
+    setHistoryModal(true)
+  } catch (err) {
+    showNotification({ message: 'Failed to load history', variant: 'danger' })
+  }
+}
+
+
+  const resetAndCloseModal = () => {
+    setShowAddModal(false)
+    setNewSample({
+      buyer_id: '',
+      products: [{ name: '', qty: '', unit: '', price: '', shippingCost: '', measurement: 1, category_id: '' }]
+    })
+    setSelectedBuyer(null)
+  }
+
+  const handleBuyerSelect = (e) => {
+    const buyerId = e.target.value
+    setNewSample({ ...newSample, buyer_id: buyerId })
+    const selected = accounts.find(acc => acc._id === buyerId)
+    setSelectedBuyer(selected)
+  }
+
   return (
-    <div className="container-fluid">
-      <h4 className="mb-4"></h4>
-      <div className="mb-3 text-end">
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>+ Add Sample</Button>
+    <div className="container-fluid py-4">
+     <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="mb-0">Sample Holding Area</h4>
+        <div className="d-flex gap-2">
+          <Button 
+            variant="primary" 
+            onClick={() => setShowAddModal(true)}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-plus-circle me-2"></i> Add Sample
+          </Button>
+          <Button 
+            variant="outline-secondary" 
+            onClick={fetchHistory}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-clock-history me-2"></i> History
+          </Button>
+        </div>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle as="h5">Samples Waiting for Approval</CardTitle>
+
+      <Card className="shadow-sm">
+        <CardHeader className="bg-white">
+          <div className="d-flex justify-content-between align-items-center">
+            <CardTitle as="h5" className="mb-0">Samples Waiting for Approval</CardTitle>
+            {loading && <Spinner animation="border" size="sm" />}
+          </div>
         </CardHeader>
         <CardBody>
-          <Table bordered responsive>
-            <thead className="table-light">
+          <Table hover responsive className="align-middle">
+            <thead>
               <tr>
-                <th>Name</th>
-                <th>Qty</th>
-                <th>Unit</th>
-                <th>Measurement</th>
-                <th>Price</th>
-                <th>Shipping Cost</th>
-                <th>Action</th>
+                <th>Buyer</th>
+                <th>Products</th>
+                <th className="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
               {samples.length > 0 ? samples.map((sample) => (
                 <tr key={sample._id}>
-                  <td>{sample.name}</td>
-                  <td>{sample.qty}</td>
-                  <td>{sample.unit}</td>
-                  <td>{sample.measurement}</td>
-                  <td>{sample.price}</td>
-                  <td>{sample.shippingCost}</td>
+                  <td className="align-middle" style={{ width: "20%" }}>
+                    <div className="d-flex flex-column">
+                      <span className="fw-medium">{sample.buyer_id?.firstName ? `${sample.buyer_id?.firstName} ${sample.buyer_id?.lastName}` : 'Unknown Buyer'}</span>
+                      <small className="text-muted">{sample.company_name || ''}</small>
+                    </div>
+                  </td>
                   <td>
-                    <Button variant="success" className="me-2" onClick={() => handleAccept(sample._id)}>
-                      Accept
+                    <div>
+                      {sample.products.map((product, i) => (
+                        <div key={i} className="border-bottom pb-2 mb-2">
+                          <div className="d-flex justify-content-between">
+                            <div className="me-3">
+                              <span className="fw-medium">{product.name}</span>
+                              <div className="d-flex align-items-center mt-1">
+                                <Badge bg="light" text="dark" className="me-2">
+                                  {product.qty} {product.unit} 
+                                  {product.measurement !== 1 && ` (${product.measurement * 100}%)`}
+                                </Badge>
+                                {product.category_name && 
+                                  <Badge bg="secondary" className="bg-opacity-25 text-dark">
+                                    {product.category_name}
+                                  </Badge>
+                                }
+                              </div>
+                            </div>
+                            <div className="text-end">
+                              <div className="fw-medium">${Number(product.price).toFixed(2)}</div>
+                              <small className="text-muted">+${Number(product.shippingCost).toFixed(2)} shipping</small>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="mt-1 text-muted">
+                        <small>{sample.products.length} product{sample.products.length !== 1 ? 's' : ''} total</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="text-end align-middle">
+                    <Button variant="success" size="sm" className="me-2" onClick={() => handleAccept(sample._id)}>
+                      <i className="bi bi-check2 me-1"></i> Accept
                     </Button>
-                    <Button variant="outline-danger" onClick={() => setConfirmModal({ show: true, id: sample._id })}>
-                      Return
+                    <Button variant="outline-danger" size="sm" onClick={() => setConfirmModal({ show: true, id: sample._id })}>
+                      <i className="bi bi-arrow-return-left me-1"></i> Return
                     </Button>
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="text-center text-muted">No samples in holding area</td></tr>
+                <tr>
+                  <td colSpan={3} className="text-center py-4">
+                    <div className="text-muted">
+                      <i className="bi bi-inbox fs-3 d-block mb-2"></i>
+                      <p className="mb-0">No samples in holding area</p>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </Table>
         </CardBody>
       </Card>
 
-      {/* Return Confirmation Modal */}
+      {/* Confirm Return Modal */}
       <Modal show={confirmModal.show} onHide={() => setConfirmModal({ show: false, id: null })}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Return</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Are you sure you want to return this sample? A message will be sent to the sender.</Modal.Body>
+        <Modal.Body className="text-center py-4">
+          <div className="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style={{ width: '70px', height: '70px' }}>
+            <i className="bi bi-arrow-return-left text-danger fs-3"></i>
+          </div>
+          <h5>Return this Sample?</h5>
+          <p className="text-muted">This action will notify the sender that you've returned their sample.</p>
+        </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setConfirmModal({ show: false, id: null })}>Cancel</Button>
-          <Button variant="danger" onClick={() => { if (confirmModal.id) handleReturn(confirmModal.id); setConfirmModal({ show: false, id: null }) }}>Return Sample</Button>
+          <Button variant="outline-secondary" onClick={() => setConfirmModal({ show: false, id: null })}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={() => { 
+              if (confirmModal.id) handleReturn(confirmModal.id); 
+              setConfirmModal({ show: false, id: null }) 
+            }}
+          >
+            Return Sample
+          </Button>
         </Modal.Footer>
       </Modal>
 
+      <Modal 
+  show={historyModal} 
+  onHide={() => setHistoryModal(false)}
+  size="lg"
+>
+  <Modal.Header closeButton>
+    <Modal.Title>Sample History</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {historySamples.length > 0 ? (
+      <Table responsive hover className="align-middle">
+        <thead>
+          <tr>
+            <th>Buyer</th>
+            <th>Status</th>
+            <th>Products</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {historySamples.map(sample => (
+            <tr key={sample._id}>
+              <td>
+                <strong>{sample.buyer_id?.firstName ? `${sample.buyer_id?.firstName} ${sample.buyer_id?.lastName}` : 'Unknown Buyer'}</strong><br />
+                <small className="text-muted">{sample.company_name || ''}</small>
+              </td>
+              <td>
+                <Badge bg={sample.status === 'accepted' ? 'success' : 'danger'}>
+                  {sample.status.toUpperCase()}
+                </Badge>
+              </td>
+              <td>
+                {sample.products.map((p, i) => (
+                  <div key={i} className="mb-1">
+                    <span>{p.name}</span> – {p.qty} {p.unit} 
+                    {p.measurement !== 1 && ` (${p.measurement * 100}%)`}<br />
+                    <small className="text-muted">${p.price} + ${p.shippingCost} shipping</small>
+                  </div>
+                ))}
+              </td>
+              <td>
+                <small>{new Date(sample.created_at).toLocaleDateString()}</small>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    ) : (
+      <div className="text-center text-muted py-4">
+        <i className="bi bi-inbox fs-3 d-block mb-3"></i>
+        <p>No history found yet.</p>
+      </div>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setHistoryModal(false)}>Close</Button>
+  </Modal.Footer>
+</Modal>
+
+
       {/* Add Sample Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal 
+        show={showAddModal} 
+        onHide={resetAndCloseModal}
+        size="lg"
+        backdrop="static"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Add New Sample</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form>
+        <Modal.Body className="p-4">
+          <div className="mb-4">
+            {/* <div className="d-flex align-items-center mb-3">
+              <div className="bg-light rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px' }}>
+                <i className="bi bi-person fs-5"></i>
+              </div>
+              <h5 className="mb-0 ms-2">Select Buyer</h5>
+            </div> */}
+            
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control value={newSample.name} onChange={(e) => setNewSample({ ...newSample, name: e.target.value })} />
-            </Form.Group>
-            {/* <Form.Group className="mb-3">
-              <Form.Label>Sender Phone</Form.Label>
-              <Form.Control value={newSample.sender_phone} onChange={(e) => setNewSample({ ...newSample, sender_phone: e.target.value })} />
-            </Form.Group> */}
-            <Row>
-              <Col>
-                <Form.Group className="mb-3">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control type="number" value={newSample.qty} onChange={(e) => setNewSample({ ...newSample, qty: e.target.value })} />
-                </Form.Group>
-              </Col>
-              <Col>
-              <Form.Group className="mb-3">
-                <Form.Label>Unit</Form.Label>
-                    <Form.Select
-                    value={newSample.unit}
-                    onChange={(e) => setNewSample({ 
-                      ...newSample, 
-                      unit: e.target.value
-                    })}
-                    >
-                      <option value="">Select unit</option>
-                      {unitOptions.map((unit) => (
-                        <option key={unit} value={unit}>
-                          {unit}
-                        </option>
-                      ))}
-                    </Form.Select>
-              </Form.Group>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <Form.Group className="mb-3">
-                  <Form.Label>Price</Form.Label>
-                  <Form.Control type="number" value={newSample.price} onChange={(e) => setNewSample({ ...newSample, price: e.target.value })} />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group className="mb-3">
-                  <Form.Label>Shipping Cost</Form.Label>
-                  <Form.Control type="number" value={newSample.shippingCost} onChange={(e) => setNewSample({ ...newSample, shippingCost: e.target.value })} />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Measurement</Form.Label>
-              <Form.Select
-                value={newSample.measurement}
-                onChange={(e) => setNewSample({ 
-                  ...newSample, 
-                  measurement: parseFloat(e.target.value) 
-                })}
+              <Form.Select 
+                value={newSample.buyer_id} 
+                onChange={handleBuyerSelect}
               >
-                <option value="">Select measurement</option>
-                {measurementOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                <option value="">-- Select Buyer --</option>
+                {accounts.map((acc) => (
+                  <option key={acc._id} value={acc._id}>
+                    {acc.firstName} {acc.lastName} {acc.company ? `(${acc.company})` : ''}
                   </option>
                 ))}
               </Form.Select>
             </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Select value={newSample.category_id} onChange={(e) => setNewSample({ ...newSample, category_id: e.target.value })}>
-                <option value="">Select Category</option>
-                {userCategories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Buyer</Form.Label>
-              <Form.Select value={newSample.buyer_id} onChange={(e) => setNewSample({ ...newSample, buyer_id: e.target.value })}>
-                <option value="">Select Buyer</option>
-                {accounts.map((acc) => (
-                  <option key={acc._id} value={acc._id}>{acc.firstName} {acc.lastName}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Form>
+          </div>
+          
+          <div className="mb-3">
+            <div className="d-flex align-items-center mb-3">
+              {/* <div className="bg-light rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px' }}>
+                <i className="bi bi-box fs-5"></i>
+              </div> */}
+              <h5 className="mb-0 ms-2">Products</h5>
+            </div>
+            
+            {newSample.products.map((product, index) => (
+              <Card key={index} className="mb-3 shadow-sm">
+                <CardHeader className="bg-light py-2">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0">Product {index + 1}</h6>
+                    {newSample.products.length > 1 && (
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm" 
+                        onClick={() => removeProductRow(index)}
+                        className="btn-icon"
+                      >
+                         <IconifyIcon icon='tabler:x' />
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <Row className="mb-3">
+                    <Col xs={12}>
+                      <Form.Label>Product Name</Form.Label>
+                      <Form.Control 
+                        placeholder="Enter product name"
+                        value={product.name} 
+                        onChange={(e) => handleProductChange(index, 'name', e.target.value)} 
+                      />
+                    </Col>
+                  </Row>
+                  
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <Form.Label>Category</Form.Label>
+                      <Form.Select 
+                        value={product.category_id} 
+                        onChange={(e) => handleProductChange(index, 'category_id', e.target.value)}
+                      >
+                        <option value="">Select Category</option>
+                        {userCategories.map((cat) => (
+                          <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label>Measurement</Form.Label>
+                      <Form.Select 
+                        value={product.measurement} 
+                        onChange={(e) => handleProductChange(index, 'measurement', parseFloat(e.target.value))}
+                      >
+                        {measurementOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                  </Row>
+                  
+                  <Row className="mb-3">
+                    <Col md={6}>
+                      <Form.Label>Quantity</Form.Label>
+                      <InputGroup>
+                        <Form.Control 
+                          type="number" 
+                          placeholder="0"
+                          value={product.qty} 
+                          onChange={(e) => handleProductChange(index, 'qty', e.target.value)} 
+                        />
+                        <Form.Select 
+                          value={product.unit} 
+                          onChange={(e) => handleProductChange(index, 'unit', e.target.value)}
+                        >
+                          <option value="">Unit</option>
+                          {unitOptions.map((unit) => (
+                            <option key={unit}>{unit}</option>
+                          ))}
+                        </Form.Select>
+                      </InputGroup>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label>Price</Form.Label>
+                      <InputGroup>
+                        <InputGroup.Text>$</InputGroup.Text>
+                        <Form.Control 
+                          type="number" 
+                          placeholder="0.00"
+                          value={product.price} 
+                          onChange={(e) => handleProductChange(index, 'price', e.target.value)} 
+                        />
+                      </InputGroup>
+                    </Col>
+                  </Row>
+                  
+                  <Row>
+                    <Col>
+                      <Form.Label>Shipping Cost</Form.Label>
+                      <InputGroup>
+                        <InputGroup.Text>$</InputGroup.Text>
+                        <Form.Control 
+                          type="number" 
+                          placeholder="0.00"
+                          value={product.shippingCost} 
+                          onChange={(e) => handleProductChange(index, 'shippingCost', e.target.value)} 
+                        />
+                      </InputGroup>
+                    </Col>
+                  </Row>
+                </CardBody>
+              </Card>
+            ))}
+            
+            <div className="mb-3">
+              <Button 
+                onClick={addProductRow} 
+                variant="outline-primary"
+                className="d-flex align-items-center"
+              >
+                <i className="bi bi-plus-circle me-2"></i> Add Another Product
+              </Button>
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleAddSample}>Add Sample</Button>
+          <Button variant="secondary" onClick={resetAndCloseModal}>
+            Cancel
+          </Button>
+          <Button 
+            variant="success" 
+            onClick={handleAddSample}
+            disabled={!newSample.buyer_id}
+          >
+            <i className="bi bi-check2 me-1"></i> Add to Holding
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

@@ -54,8 +54,8 @@ const VerticalNavigationBar = () => {
       url: '/inventory/products',
     },
     {
-      key: 'acivitylogs',
-      label: 'Acivity logs',
+      key: 'activitylogs',
+      label: 'Activity logs',
       icon: 'tabler:calendar',
       url: '/dashboard/activitylogs',
     },
