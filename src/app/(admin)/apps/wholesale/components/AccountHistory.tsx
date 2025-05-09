@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect, useRef, ChangeEvent, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Metadata } from 'next'
-import { Row, Col, Card, CardBody, Button, Form, Table } from 'react-bootstrap'
+import { Row, Col, Card, CardBody, Button, Form, Table, ButtonGroup } from 'react-bootstrap'
 import { useParams } from 'next/navigation'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
@@ -14,8 +14,8 @@ interface ITransactionItem {
   transactionitem_id: {
     sale_price: number;
     _id: string;
-    shippingCost : number;
-    shipping : number;
+    shippingCost: number;
+    shipping: number;
     inventory_id: {
       name: string;
     };
@@ -49,31 +49,99 @@ interface ITransaction {
   };
 }
 
+interface DateRange {
+  startDateTime: string; // YYYY-MM-DDTHH:mm format
+  endDateTime: string;  // YYYY-MM-DDTHH:mm format
+}
+
 const AccountHistory = () => {
   const contentRef = useRef<HTMLDivElement>(null)
-  const reactToPrintFn = useReactToPrint({  contentRef })
+  const reactToPrintFn = useReactToPrint({ contentRef })
   const [transactions, setTransactions] = useState<ITransaction[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const { id } = useParams() // buyer id from route parameter
   const user = useAuthStore((state) => state.user)
 
+  // New state for date range selection with single inputs
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
+    endDateTime: moment().endOf('day').format('YYYY-MM-DDTHH:mm')
+  })
+
   // New state: if true, exclude shipping cost from totals.
   const [excludeShipping, setExcludeShipping] = useState<boolean>(false)
-  // State for additional shipping payment (if needed)
-  const [additionalShippingPayment, setAdditionalShippingPayment] = useState<number>(0)
+
+  const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  // Quick filter options
+  const applyQuickFilter = (period: string) => {
+    let start, end;
+    const now = moment();
+    
+    switch(period) {
+      case 'today':
+        start = now.clone().startOf('day');
+        end = now.clone().endOf('day');
+        break;
+      case 'yesterday':
+        start = now.clone().subtract(1, 'day').startOf('day');
+        end = now.clone().subtract(1, 'day').endOf('day');
+        break;
+      case 'thisWeek':
+        start = now.clone().startOf('week');
+        end = now.clone().endOf('day');
+        break;
+      case 'lastWeek':
+        start = now.clone().subtract(1, 'week').startOf('week');
+        end = now.clone().subtract(1, 'week').endOf('week');
+        break;
+      case 'thisMonth':
+        start = now.clone().startOf('month');
+        end = now.clone().endOf('day');
+        break;
+      case 'lastMonth':
+        start = now.clone().subtract(1, 'month').startOf('month');
+        end = now.clone().subtract(1, 'month').endOf('month');
+        break;
+      default:
+        return;
+    }
+
+    setDateRange({
+      startDateTime: start.format('YYYY-MM-DDTHH:mm'),
+      endDateTime: end.format('YYYY-MM-DDTHH:mm')
+    });
+    
+    // Automatically fetch when quick filter is applied
+    fetchHistory(start.format('YYYY-MM-DDTHH:mm:00'), end.format('YYYY-MM-DDTHH:mm:00'));
+  }
+
+  const fetchHistory = async (start?: string, end?: string) => {
+    setLoading(true)
+    try {
+      // Use provided parameters or fallback to state values
+      const startDateTime = start || `${dateRange.startDateTime}:00`
+      const endDateTime = end || `${dateRange.endDateTime}:00`
+      
+      const response = await api.get(
+        `/api/transaction/history/${id}/${user?._id}`,
+        { params: { startDateTime, endDateTime } }
+      )
+      setTransactions(response.data)
+    } catch (error) {
+      console.error('Error fetching transaction history:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function fetchHistory() {
-      setLoading(true)
-      try {
-        const response = await api.get(`/api/transaction/history/${id}/${user?._id}`)
-        setTransactions(response.data)
-      } catch (error) {
-        console.error('Error fetching transaction history:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
     if (id && user?._id) {
       fetchHistory()
     }
@@ -120,7 +188,7 @@ const AccountHistory = () => {
           return sum + ((tx?.price || 0))
         }
       }, 0)
-  }, [transactions,excludeShipping])
+  }, [transactions, excludeShipping])
 
   // Final amount due is calculated differently based on the checkbox.
   const finalAmountDue = useMemo(() => {
@@ -129,8 +197,8 @@ const AccountHistory = () => {
       return totalsaleAmount - totalPaymentReceived 
     }
     // Otherwise, include total shipping and any additional shipping payment.
-    return (totalsaleAmount + totalShipping) - (totalPaymentReceived + totalShipping_client )
-  }, [totalPaymentReceived, totalsaleAmount, excludeShipping,totalShipping_client])
+    return (totalsaleAmount + totalShipping) - (totalPaymentReceived + totalShipping_client)
+  }, [totalPaymentReceived, totalsaleAmount, excludeShipping, totalShipping, totalShipping_client])
 
   const formatCurrency = (value: number) =>
     `$${value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -159,7 +227,7 @@ const AccountHistory = () => {
                   : txItem.measurement === '0.25'
                   ? 'Quarter'
                   : txItem.measurement
-              return ( 
+              return ( 
                 <div key={index}>
                   {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)}) {!excludeShipping && ('+ (🚚' + " " +(formatCurrency(txItem.shipping * txItem.qty)) + ")")}
                 </div>
@@ -176,23 +244,109 @@ const AccountHistory = () => {
   return (
     <div>
       <h5 className="mb-3 mt-2">
-        Transaction History ({moment().format('MMMM Do YYYY')})
-        <Row className="mt-2">
-              <Col>
-                <Form.Check
-                  type="checkbox"
-                  id="excludeShipping"
-                  label="Exclude Shipping Cost"
-                  checked={excludeShipping}
-                  onChange={(e) => setExcludeShipping(e.target.checked)}
-                />
-              </Col>
-            </Row>
+        Transaction History
       </h5>
+      
+      <Card className="mb-3">
+        <CardBody>
+          <Row className="mb-3">
+            <Col md={12}>
+              <ButtonGroup className="w-100">
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('today')}
+                  className="flex-grow-1"
+                >
+                  Today
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('yesterday')}
+                  className="flex-grow-1"
+                >
+                  Yesterday
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('thisWeek')}
+                  className="flex-grow-1"
+                >
+                  This Week
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('lastWeek')}
+                  className="flex-grow-1"
+                >
+                  Last Week
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('thisMonth')}
+                  className="flex-grow-1"
+                >
+                  This Month
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => applyQuickFilter('lastMonth')}
+                  className="flex-grow-1"
+                >
+                  Last Month
+                </Button>
+              </ButtonGroup>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={5}>
+              <Form.Group>
+                <Form.Label>Start Date & Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="startDateTime"
+                  value={dateRange.startDateTime}
+                  onChange={handleDateRangeChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={5}>
+              <Form.Group>
+                <Form.Label>End Date & Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="endDateTime"
+                  value={dateRange.endDateTime}
+                  onChange={handleDateRangeChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={2} className="d-flex align-items-end">
+              <Button onClick={() => fetchHistory()} variant="primary" className="bg-gradient w-100">
+                Search
+              </Button>
+            </Col>
+          </Row>
+          <Row className="mt-3">
+            <Col md={12}>
+              <Form.Check
+                type="checkbox"
+                id="excludeShipping"
+                label="Exclude Shipping Cost"
+                checked={excludeShipping}
+                onChange={(e) => setExcludeShipping(e.target.checked)}
+              />
+            </Col>
+          </Row>
+        </CardBody>
+      </Card>
+      
       {loading ? (
         <p>Loading transactions...</p>
       ) : (
         <div ref={contentRef} className="table-responsive">
+          <div className="mb-2">
+            <strong>Showing transactions from:</strong> {moment(dateRange.startDateTime).format('MMM DD, YYYY HH:mm')} to {moment(dateRange.endDateTime).format('MMM DD, YYYY HH:mm')}
+          </div>
           <Table className="table table-nowrap mb-0">
             <thead className="bg-light-subtle">
               <tr>
@@ -208,7 +362,7 @@ const AccountHistory = () => {
               {transactions.length > 0 ? (
                 transactions.map((tx, idx) => (
                   <tr key={idx}>
-                    <td>{new Date(tx.created_at).toLocaleDateString()}</td>
+                    <td>{moment(tx.created_at).format('MM/DD/YYYY HH:mm')}</td>
                     <td>{getDetailsContent(tx)}</td>
                     <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type}</td>
                     <td>{tx.notes}</td>
@@ -264,7 +418,6 @@ const AccountHistory = () => {
               </Col>
               <Col md={8}>{formatCurrency(finalAmountDue)}</Col>
             </Row>
-           
           </div>
         </div>
       )}
