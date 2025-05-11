@@ -80,6 +80,7 @@ const ProductsPage = () => {
               <table className="table table-nowrap mb-0">
                 <thead className="bg-light-subtle">
                   <tr>
+                    <th>Prod Id</th>
                     <th>Name</th>
                     <th>Quantity</th>
                     <th>Unit</th>
@@ -98,6 +99,7 @@ const ProductsPage = () => {
                   ) : filteredProducts.length > 0 ? (
                     filteredProducts.map((item, idx) => (
                       <tr key={idx}>
+                        <td>{item.product_id}</td>
                         <td>{item.name}</td>
                         <td>{item.qty}</td>
                         <td>{item.unit}</td>
