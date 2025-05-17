@@ -88,39 +88,26 @@ const LoginPinPage = () => {
                 {errors.pin && <div className="text-danger small mt-2">{errors.pin.message}</div>}
               </Form.Group>
 
-              <div className="mb-4 d-grid">
+              <div className="mb-3 d-grid">
                 <Button type="submit" className="btn btn-primary py-2 fw-semibold" disabled={loading}>
                   {loading ? 'Logging in...' : 'Continue'}
                 </Button>
               </div>
-              <p className="mb-4 text-center text-muted">
-                Don’t have an account?{' '}
-                <Link href="/auth/signup" className="link-primary fw-semibold text-decoration-underline">
-                  Sign up
-                </Link>
-              </p>
-             {/* 
-              <p className="mb-3 text-center text-muted">
-                Didn't receive code?{' '}
-                <Link href="#" className="link-primary fw-semibold text-decoration-underline">
-                  Send Again
-                </Link>
-              </p> */}
+              
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <p className="mb-0 text-muted small">
+                  <Link href="/auth/forgot-password" className="link-primary fw-semibold text-decoration-underline">
+                    Forgot PIN?
+                  </Link>
+                </p>
+                <p className="mb-0 text-muted small">
+                  Don't have an account?{' '}
+                  <Link href="/auth/signup" className="link-primary fw-semibold text-decoration-underline">
+                    Sign up
+                  </Link>
+                </p>
+              </div>
             </Form>
-
-            {/* <p className="text-danger fs-14 mb-4">
-              Back To{' '}
-              <Link href="/" className="fw-semibold text-dark ms-1">
-                Home
-              </Link>
-            </p>
-
-            <p className="mt-auto mb-0 text-muted small">
-              {currentYear} © Osen — Developed by{' '}
-              <span className="fw-bold text-decoration-underline text-uppercase text-reset fs-12">
-                {developedBy}
-              </span>
-            </p> */}
           </Card>
         </Col>
       </Row>
