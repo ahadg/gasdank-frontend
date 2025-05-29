@@ -104,7 +104,7 @@ const ProductsPage = () => {
                         <td>{item.qty}</td>
                         <td>{item.unit}</td>
                         <td>{item.category?.name}</td>
-                        <td>${(item.price + item.shippingCost).toLocaleString(2)}</td>
+                        <td>${(item.price).toLocaleString(2)}</td>
                         {/* <td>${item.shippingCost.toLocaleString()}</td> */}
                         <td>{item.notes}</td>
                         <td className="text-center">

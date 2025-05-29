@@ -4,8 +4,10 @@ import PageTitle from "@/components/PageTitle"
 import IconifyIcon from "@/components/wrappers/IconifyIcon"
 import Image from "next/image"
 import Link from "next/link"
-import { Button, Card, CardFooter, CardHeader, Col, Row, Form } from "react-bootstrap"
+import { Button, Card, CardFooter, CardHeader, Col, Row, Form, Badge } from "react-bootstrap"
 import Paginations from "./component/Paginations"
+import EditInveortyTransactionModal from "./component/EditInventoryModal"
+import EditedTransactionsModal from "./component/ViewEditTransactionsModal"
 import moment from "moment"
 import { Metadata } from "next"
 import api from "@/utils/axiosInstance"
@@ -53,7 +55,7 @@ const ActivityLogsPage = () => {
   const { showNotification } = useNotificationContext()
   // State for logs, pagination and loading indicator
   const [activityData, setActivityData] = useState<any[]>([])
-  
+  console.log("activityData",activityData)
   // Set default start date to three days in the past
   const [startDate, setStartDate] = useState(() => {
     const threeDaysPast = new Date()
@@ -75,9 +77,18 @@ const ActivityLogsPage = () => {
   const [loading, setLoading] = useState(false)
   const limit = 10 // default limit per page
 
+  // Edit Modal States
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
+  console.log("editingTransactionId",editingTransactionId)
+  // History Modal States
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [viewingTransactionId, setViewingTransactionId] = useState<string | null>(null)
+
+  // State to track edited transactions
+  const [editedTransactions, setEditedTransactions] = useState<Set<string>>(new Set())
+
   const user = useAuthStore((state) => state.user)
-  // Replace with your actual user id or get it from auth context if needed
-  // const userId = "67cf4bb808facf7a76f9f229"
 
   const fetchActivityData = async () => {
     setLoading(true)
@@ -87,6 +98,15 @@ const ActivityLogsPage = () => {
       )
       setActivityData(res.data.logs)
       setTotalLogs(res.data.totallogs)
+      
+      // Check which transactions are edited
+      const transactionIds = res.data.logs
+        .filter((log: any) => log.transaction_id)
+        .map((log: any) => log.transaction_id)
+      
+      if (transactionIds.length > 0) {
+        checkEditedTransactions(transactionIds)
+      }
     } catch (error: any) {
       console.log("err", error.response)
       showNotification({ message: error?.response?.data?.error || 'Error fetching activity logs', variant: 'danger' })
@@ -95,14 +115,70 @@ const ActivityLogsPage = () => {
     setLoading(false)
   }
 
+  const checkEditedTransactions = async (transactionIds: string[]) => {
+    try {
+      // You might want to create a batch endpoint for this, but for now we'll check individually
+      const editedSet = new Set<string>()
+      
+      // For demonstration, we'll check a few transactions
+      // In production, you might want to add an endpoint that returns edited status for multiple transactions
+      const promises = transactionIds.slice(0, 5).map(async (id) => {
+        try {
+          const res = await api.get(`/api/transaction/${id}`)
+          if (res.data.edited) {
+            editedSet.add(id)
+          }
+        } catch (err) {
+          // Transaction might not exist or access denied, ignore
+        }
+      })
+      
+      await Promise.all(promises)
+      setEditedTransactions(editedSet)
+    } catch (error) {
+      console.error('Error checking edited transactions:', error)
+    }
+  }
+
+  const handleEditClick = (activityItem: any) => {
+    if ( (activityItem.type === 'inventory_addition'  || activityItem.type === 'sale') && activityItem.transaction_id) {
+      console.log("activityItem.transaction_id",activityItem.transaction_id[0]?._id)
+      setEditingTransactionId(activityItem.transaction_id[0]?._id)
+      setShowEditModal(true)
+    } else {
+      showNotification({ 
+        message: 'This activity cannot be edited or missing transaction ID', 
+        variant: 'warning' 
+      })
+    }
+  }
+
+  const handleViewHistoryClick = (activityItem: any) => {
+    if (activityItem.transaction_id) {
+      setViewingTransactionId(activityItem.transaction_id[0]?._id)
+      setShowHistoryModal(true)
+    }
+  }
+
+  const handleModalClose = () => {
+    setShowEditModal(false)
+    setEditingTransactionId(null)
+  }
+
+  const handleHistoryModalClose = () => {
+    setShowHistoryModal(false)
+    setViewingTransactionId(null)
+  }
+
+  const handleTransactionUpdated = () => {
+    // Refresh the activity data after successful update
+    fetchActivityData()
+  }
+
   useEffect(() => {
     fetchActivityData()
   }, [page, startDate, endDate, activityType])
   
-
-  // const getNameBytype = () => {
-  //   if()
-  // }
 
   return (
     <>
@@ -167,6 +243,8 @@ const ActivityLogsPage = () => {
                       <th>Type</th>
                       <th>Description</th>
                       <th>Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,11 +276,45 @@ const ActivityLogsPage = () => {
                             {item.notes && <div className="text-muted small">Note: {item.notes}</div>}
                           </td>
                           <td>{moment(item.date).format('MMM DD, YYYY')}</td>
+                          <td>
+                            {item.transaction_id?.[0]?.edited && (
+                              <Badge bg="warning" className="me-1">
+                                <IconifyIcon icon="solar:pen-2-line-duotone" className="me-1" />
+                                Edited
+                              </Badge>
+                            )}
+                            {!item.transaction_id && <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            <div className="d-flex gap-1">
+                              {(item.type === 'inventory_addition' || item.type === 'sale') && item.transaction_id && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => handleEditClick(item)}
+                                >
+                                  <IconifyIcon icon="solar:pen-2-line-duotone" className="me-1" />
+                                  Edit
+                                </Button>
+                              )}
+                              
+                              {item.transaction_id?.[0]?.edited && (
+                                <Button
+                                  variant="outline-info"
+                                  size="sm"
+                                  onClick={() => handleViewHistoryClick(item)}
+                                >
+                                  <IconifyIcon icon="solar:history-line-duotone" className="me-1" />
+                                  History
+                                </Button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="text-center">
+                        <td colSpan={7} className="text-center">
                           No activity logs found
                         </td>
                       </tr>
@@ -222,6 +334,21 @@ const ActivityLogsPage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Edit Transaction Modal */}
+      <EditInveortyTransactionModal
+        show={showEditModal}
+        onHide={handleModalClose}
+        transactionId={editingTransactionId}
+        onTransactionUpdated={handleTransactionUpdated}
+      />
+
+      {/* View Transaction History Modal */}
+      <EditedTransactionsModal
+        show={showHistoryModal}
+        onHide={handleHistoryModalClose}
+        transactionId={viewingTransactionId}
+      />
     </>
   )
 }

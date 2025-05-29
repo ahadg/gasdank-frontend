@@ -135,7 +135,7 @@ const DashboardStats = () => {
           <Row className="align-items-center">
             <Col lg={9}>
               <Row className="g-2">
-                <Col md={3}>
+                {/* <Col md={3}>
                   <Form.Group>
                     <Form.Label className="text-muted small mb-0">Client</Form.Label>
                     <Form.Select
@@ -149,7 +149,7 @@ const DashboardStats = () => {
                       <option value="client3">Client Three</option>
                     </Form.Select>
                   </Form.Group>
-                </Col>
+                </Col> */}
              
                 <Col md={3}>
                   <Form.Group>
