@@ -1,8 +1,31 @@
-import React from 'react'
-import { Row, Col, Card, CardBody } from 'react-bootstrap'
-import ReactApexChart from 'react-apexcharts'
+'use client'
 
-const SparkChart = ({ sparklineData }) => {
+import React, { useState, useEffect } from 'react'
+import { Row, Col, Card, CardBody } from 'react-bootstrap'
+import dynamic from 'next/dynamic'
+
+// Dynamically import ReactApexChart with no SSR
+const ReactApexChart = dynamic(() => import('react-apexcharts'), {
+  ssr: false,
+  loading: () => <div style={{ width: 120, height: 60, background: '#f0f0f0', borderRadius: '4px' }} />
+})
+
+interface SparkChartProps {
+  sparklineData?: {
+    sales: { data: number[]; total: number };
+    profit: { data: number[]; total: number };
+    expenses: { data: number[]; total: number };
+  };
+}
+
+const SparkChart = ({ sparklineData }: SparkChartProps) => {
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure component only renders charts on client side
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Default data if no sparklineData is provided
   const defaultData = {
     sales: { data: [12, 14, 2, 47, 42, 15, 47, 75, 65, 19, 14], total: 0 },
@@ -34,7 +57,7 @@ const SparkChart = ({ sparklineData }) => {
       },
       y: {
         title: {
-          formatter: function (seriesName) {
+          formatter: function (seriesName: string) {
             return ''
           }
         }
@@ -59,19 +82,21 @@ const SparkChart = ({ sparklineData }) => {
                 </h4>
               </div>
               <div className="text-end">
-                <ReactApexChart
-                  options={{
-                    ...sparklineOptions,
-                    colors: ['#3e60d5']
-                  }}
-                  series={[{
-                    name: 'Sales',
-                    data: data.sales.data
-                  }]}
-                  type="line"
-                  height={60}
-                  width={120}
-                />
+                {isClient && (
+                  <ReactApexChart
+                    options={{
+                      ...sparklineOptions,
+                      colors: ['#3e60d5']
+                    }}
+                    series={[{
+                      name: 'Sales',
+                      data: data.sales.data
+                    }]}
+                    type="line"
+                    height={60}
+                    width={120}
+                  />
+                )}
               </div>
             </div>
             <div className="d-flex align-items-center">
@@ -96,19 +121,21 @@ const SparkChart = ({ sparklineData }) => {
                 </h4>
               </div>
               <div className="text-end">
-                <ReactApexChart
-                  options={{
-                    ...sparklineOptions,
-                    colors: ['#47ad77']
-                  }}
-                  series={[{
-                    name: 'Profit',
-                    data: data.profit.data
-                  }]}
-                  type="line"
-                  height={60}
-                  width={120}
-                />
+                {isClient && (
+                  <ReactApexChart
+                    options={{
+                      ...sparklineOptions,
+                      colors: ['#47ad77']
+                    }}
+                    series={[{
+                      name: 'Profit',
+                      data: data.profit.data
+                    }]}
+                    type="line"
+                    height={60}
+                    width={120}
+                  />
+                )}
               </div>
             </div>
             <div className="d-flex align-items-center">
@@ -133,19 +160,21 @@ const SparkChart = ({ sparklineData }) => {
                 </h4>
               </div>
               <div className="text-end">
-                <ReactApexChart
-                  options={{
-                    ...sparklineOptions,
-                    colors: ['#ffbc00']
-                  }}
-                  series={[{
-                    name: 'Expenses',
-                    data: data.expenses.data
-                  }]}
-                  type="line"
-                  height={60}
-                  width={120}
-                />
+                {isClient && (
+                  <ReactApexChart
+                    options={{
+                      ...sparklineOptions,
+                      colors: ['#ffbc00']
+                    }}
+                    series={[{
+                      name: 'Expenses',
+                      data: data.expenses.data
+                    }]}
+                    type="line"
+                    height={60}
+                    width={120}
+                  />
+                )}
               </div>
             </div>
             <div className="d-flex align-items-center">
