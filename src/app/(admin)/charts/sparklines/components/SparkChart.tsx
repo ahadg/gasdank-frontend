@@ -15,14 +15,14 @@ const SparkChart = ({ sparklineData }) => {
   // Sparkline chart options
   const sparklineOptions = {
     chart: {
-      type: 'line',
+      type: 'line' as const,
       height: 80,
       sparkline: {
         enabled: true
       }
     },
     stroke: {
-      curve: 'smooth',
+      curve: 'smooth' as const,
       width: 2
     },
     tooltip: {
