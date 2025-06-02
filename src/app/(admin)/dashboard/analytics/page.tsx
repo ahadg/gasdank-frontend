@@ -9,7 +9,9 @@ import ComponentContainerCard from '@/components/ComponentContainerCard'
 import ReactApexChart from 'react-apexcharts'
 import { salesProductData } from '../sales/data'
 import Link from 'next/link'
-import PaymentTypesChart from './PaymentTypesChart' // Import the new component
+import PaymentTypesChart from './PaymentTypesChart'
+import api from '@/utils/axiosInstance'
+import ForecastingSection from './ForecastingSection'
 
 function toLocalDateTimeString(date) {
   const offsetMs = date.getTime() - date.getTimezoneOffset() * 60000
@@ -21,7 +23,7 @@ const DashboardStats = () => {
   const user = useAuthStore((state) => state.user)
   const [startDate, setStartDate] = useState(() => {
     const today = new Date()
-    today.setMonth(today.getMonth() - 1) // Default to last 30 days
+    today.setMonth(today.getMonth() - 1)
     today.setHours(0, 0, 0, 0)
     return toLocalDateTimeString(today)
   })
@@ -33,13 +35,23 @@ const DashboardStats = () => {
   const [clientName, setClientName] = useState("")
   const [product, setProduct] = useState("")
   const [timeRange, setTimeRange] = useState("30d")
+  const [loading, setLoading] = useState(false)
   const { showNotification } = useNotificationContext()
 
-  // Sample chart options
+  // State for API data
+  const [dashboardData, setDashboardData] = useState({
+    topClients: [],
+    topProducts: [],
+    topCategories: [],
+    monthlyRevenue: { data: [], chartData: [], categories: [] },
+    sparklineData: { sales: { data: [], total: 0 }, profit: { data: [], total: 0 }, expenses: { data: [], total: 0 } }
+  })
+
+  // Dynamic chart options based on API data
   const barChartOpts = {
     chart: {
       height: 380,
-      type: 'bar',
+      type: 'bar' as const,
       toolbar: {
         show: false
       }
@@ -60,7 +72,9 @@ const DashboardStats = () => {
       show: false
     },
     xaxis: {
-      categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+      categories: dashboardData.monthlyRevenue.categories.length > 0 
+        ? dashboardData.monthlyRevenue.categories 
+        : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
       axisBorder: {
         show: false
       },
@@ -89,10 +103,69 @@ const DashboardStats = () => {
     colors: ['#3e60d5', '#47ad77', '#fa5c7c', '#6c757d', '#39afd1', '#2b908f', '#ffbc00', '#f2726f', '#8d6e63', '#1de9b6'],
     series: [{
       name: 'Revenue',
-      data: [44, 55, 41, 64, 22, 43, 36, 52, 38, 71]
+      data: dashboardData.monthlyRevenue.chartData.length > 0 
+        ? dashboardData.monthlyRevenue.chartData 
+        : [44, 55, 41, 64, 22, 43, 36, 52, 38, 71]
     }],
   }
 
+  const fetchdata = async () => {
+    try {
+      setLoading(true);
+      
+      // Build query parameters
+      const params = {
+        startDate,
+        endDate,
+        ...(product && product !== '' && { product })
+      };
+
+      // Fetch all data in parallel
+      const [
+        topClientResponse,
+        topProductsResponse,
+        topCategoriesResponse,
+        monthlyRevenueResponse,
+        sparklineResponse
+      ] = await Promise.all([
+        api.get('/api/dashboard/top-clients', { params }),
+        api.get('/api/dashboard/top-products', { params }),
+        api.get('/api/dashboard/top-categories', { params }),
+        api.get('/api/dashboard/monthly-revenue', { params }),
+        api.get('/api/dashboard/sparkline-data')
+      ]);
+
+      // Update state with fetched data
+      setDashboardData({
+        topClients: topClientResponse.data.clients || [],
+        topProducts: topProductsResponse.data.products || [],
+        topCategories: topCategoriesResponse.data.categories || [],
+        monthlyRevenue: monthlyRevenueResponse.data || { data: [], chartData: [], categories: [] },
+        sparklineData: sparklineResponse.data || { sales: { data: [], total: 0 }, profit: { data: [], total: 0 }, expenses: { data: [], total: 0 } }
+      });
+
+      console.log("fetchdata", {
+        topClients: topClientResponse.data,
+        topProducts: topProductsResponse.data,
+        topCategories: topCategoriesResponse.data,
+        monthlyRevenue: monthlyRevenueResponse.data,
+        sparklineData: sparklineResponse.data
+      });
+    
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showNotification({ 
+        message: error?.response?.data?.error || 'Error fetching dashboard data', 
+        variant: 'danger' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchdata()
+  }, [])
 
   // Handle time range selection
   const handleTimeRangeChange = (range) => {
@@ -121,36 +194,26 @@ const DashboardStats = () => {
     setEndDate(toLocalDateTimeString(now))
   }
 
+  // Handle update button click
+  const handleUpdate = () => {
+    fetchdata()
+  }
+
   useEffect(() => {
-    // Fetch stats data here
-  }, [user, startDate, endDate, clientName, product])
+    // Fetch stats data when filters change
+    if (user) {
+      fetchdata()
+    }
+  }, [user, startDate, endDate, product])
 
   return (
     <div className="dashboard-container">
-
-
       {/* Filters */}
       <Card className="shadow-sm border-0 mb-2 mt-3">
         <CardBody className="py-2">
           <Row className="align-items-center">
             <Col lg={9}>
               <Row className="g-2">
-                {/* <Col md={3}>
-                  <Form.Group>
-                    <Form.Label className="text-muted small mb-0">Client</Form.Label>
-                    <Form.Select
-                      value={clientName}
-                      onChange={(e) => setClientName(e.target.value)}
-                      className="border-0 bg-light form-control-sm"
-                    >
-                      <option value="">All Clients</option>
-                      <option value="client1">Client One</option>
-                      <option value="client2">Client Two</option>
-                      <option value="client3">Client Three</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col> */}
-             
                 <Col md={3}>
                   <Form.Group>
                     <Form.Label className="text-muted small mb-0">Start Date</Form.Label>
@@ -191,41 +254,48 @@ const DashboardStats = () => {
                     <Dropdown.Item onClick={() => handleTimeRangeChange("ytd")}>Year to Date</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
-                <Button variant="primary" size="sm" className="shadow-sm">
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  className="shadow-sm"
+                  onClick={handleUpdate}
+                  disabled={loading}
+                >
                   <IconifyIcon icon="tabler:refresh" className="me-1" />
-                  Update
+                  {loading ? 'Loading...' : 'Update'}
                 </Button>
               </div>
             </Col>
           </Row>
         </CardBody>
       </Card>
-
+      
+      <ForecastingSection startDate={startDate} endDate={endDate}/>
       {/* Charts & Data Section */}
       <Row className="g-2">
         {/* SparkChart */}
         <Col lg={12} className="mb-2">
           <Card className="shadow-sm border-0">
-            <CardHeader className="bg-transparent py-2 border-0  d-flex justify-content-between align-items-center">
+            <CardHeader className="bg-transparent py-2 border-0 d-flex justify-content-between align-items-center">
               <h6 className="mb-0">Revenue Trends</h6>
               <Col md={3}>
-                  <Form.Group>
-                    <Form.Select
-                      value={product}
-                      onChange={(e) => setProduct(e.target.value)}
-                      className="border-0 bg-light form-control-sm"
-                    >
-                      <option value="">All Products</option>
-                      <option value="product1">Product One</option>
-                      <option value="product2">Product Two</option>
-                      <option value="product3">Product Three</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
+                <Form.Group>
+                  <Form.Select
+                    value={product}
+                    onChange={(e) => setProduct(e.target.value)}
+                    className="border-0 bg-light form-control-sm"
+                  >
+                    <option value="">All Products</option>
+                    {dashboardData.topProducts.map((prod) => (
+                      <option key={prod._id} value={prod._id}>{prod.name}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
             </CardHeader>
             
             <CardBody className="py-2">
-              <SparkChart />
+              <SparkChart sparklineData={dashboardData.sparklineData} />
             </CardBody>
           </Card>
         </Col>
@@ -239,41 +309,43 @@ const DashboardStats = () => {
                 <CardHeader className="bg-transparent py-2 border-0 d-flex justify-content-between align-items-center">
                   <h6 className="mb-0">Monthly Revenue</h6>
                   <div>
-                  {/* <Col md={3}> */}
-                  <Form.Group>
-                    {/* <Form.Label className="text-muted small mb-0">Product</Form.Label> */}
-                    <Form.Select
-                      value={product}
-                      onChange={(e) => setProduct(e.target.value)}
-                      className="border-0 bg-light form-control-sm"
-                    >
-                      <option value="">All Products</option>
-                      <option value="product1">Product One</option>
-                      <option value="product2">Product Two</option>
-                      <option value="product3">Product Three</option>
-                    </Form.Select>
-                  </Form.Group>
-                {/* </Col> */}
-                    {/* <Button variant="light" size="sm" className="btn-sm p-1">
-                      <IconifyIcon icon="tabler:download" width={16} />
-                    </Button> */}
+                    <Form.Group>
+                      <Form.Select
+                        value={product}
+                        onChange={(e) => setProduct(e.target.value)}
+                        className="border-0 bg-light form-control-sm"
+                      >
+                        <option value="">All Products</option>
+                        {dashboardData.topProducts.map((prod) => (
+                          <option key={prod._id} value={prod._id}>{prod.name}</option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
                   </div>
                 </CardHeader>
                 <CardBody className="py-2">
-                  <ReactApexChart 
-                    height={220} 
-                    options={barChartOpts as any} 
-                    series={barChartOpts.series} 
-                    type="bar" 
-                    className="apex-charts" 
-                  />
+                  {loading ? (
+                    <div className="text-center p-4">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <ReactApexChart 
+                      height={220} 
+                      options={barChartOpts} 
+                      series={barChartOpts.series} 
+                      type="bar" 
+                      className="apex-charts" 
+                    />
+                  )}
                 </CardBody>
               </Card>
             </Col>
             
-            {/* Payment Types Chart - New Component */}
+            {/* Payment Types Chart */}
             <Col lg={12} className="mb-2">
-              <PaymentTypesChart />
+              <PaymentTypesChart startDate={startDate} endDate={endDate}/>
             </Col>
           </Row>
         </Col>
@@ -292,36 +364,40 @@ const DashboardStats = () => {
                   </div>
                 </CardHeader>
                 <CardBody className="py-2">
-                  {/* Category Progress Bars */}
-                  <div>
-                    {[
-                      { name: "Electronics", percentage: 65, color: "primary", amount: "$12,490" },
-                      { name: "Clothing", percentage: 48, color: "success", amount: "$9,238" },
-                      { name: "Accessories", percentage: 35, color: "info", amount: "$6,710" },
-                      { name: "Home & Kitchen", percentage: 27, color: "warning", amount: "$5,172" },
-                      { name: "Books", percentage: 16, color: "danger", amount: "$3,061" }
-                    ].map((category : any, idx) => (
-                      <div key={idx} className="mb-2">
-                        <div className="d-flex justify-content-between align-items-center mb-1">
-                          <span className="small text-muted">{category.name}</span>
-                          <div className="d-flex align-items-center">
-                            <span className="small fw-bold me-2">{category.amount}</span>
-                            <span className="text-muted small">{category.percentage}%</span>
+                  {loading ? (
+                    <div className="text-center p-3">
+                      <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                  ) : (
+                    <div>
+                      {dashboardData.topCategories.map((category, idx) => (
+                        <div key={category._id} className="mb-2">
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <span className="small text-muted">{category.name}</span>
+                            <div className="d-flex align-items-center">
+                              <span className="small fw-bold me-2">${category.revenue.toLocaleString()}</span>
+                              <span className="text-muted small">{category.percentage}%</span>
+                            </div>
+                          </div>
+                          <div className="progress" style={{ height: "6px" }}>
+                            <div
+                              className={`progress-bar bg-${['primary', 'success', 'info', 'warning', 'danger'][idx % 5]}`} 
+                              role="progressbar" 
+                              style={{ width: `${category.percentage}%` }}
+                              aria-valuenow={category.percentage} 
+                              aria-valuemin={0} 
+                              aria-valuemax={100}
+                            />
                           </div>
                         </div>
-                        <div className="progress" style={{ height: "6px" }}>
-                        <div
-                            className={`progress-bar bg-${category.color}`} 
-                            role="progressbar" 
-                            style={{ width: `${category.percentage}%` }}
-                            aria-valuenow={category.percentage} 
-                            aria-valuemin={0} 
-                            aria-valuemax={100}
-                            />
+                      ))}
+                      {dashboardData.topCategories.length === 0 && (
+                        <div className="text-center text-muted p-3">
+                          <p>No category data available</p>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </CardBody>
               </Card>
             </Col>
@@ -347,29 +423,43 @@ const DashboardStats = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {salesProductData.slice(0, 5).map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="py-1">
-                              <div className="d-flex align-items-center">
-                                <div className="flex-shrink-0 me-2">
-                                  <div className={`avatar avatar-xs bg-soft-${['primary', 'success', 'info', 'warning', 'danger'][idx % 5]} rounded text-${['primary', 'success', 'info', 'warning', 'danger'][idx % 5]}`}>
-                                    <span className="avatar-title small">{item.name.charAt(0)}</span>
-                                  </div>
-                                </div>
-                                <div className="flex-grow-1">
-                                  <span className="small">
-                                    <Link href="/e-commerce/product-details" className="text-reset">
-                                      {item.name}
-                                    </Link>
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-end py-1">
-                              <span className="small fw-bold">${item.amount}</span>
+                        {loading ? (
+                          <tr>
+                            <td colSpan={2} className="text-center py-3">
+                              <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
                             </td>
                           </tr>
-                        ))}
+                        ) : dashboardData.topProducts.length > 0 ? (
+                          dashboardData.topProducts.slice(0, 5).map((item, idx) => (
+                            <tr key={item._id}>
+                              <td className="py-1">
+                                <div className="d-flex align-items-center">
+                                  <div className="flex-shrink-0 me-2">
+                                    <div className={`avatar avatar-xs bg-soft-${['primary', 'success', 'info', 'warning', 'danger'][idx % 5]} rounded text-${['primary', 'success', 'info', 'warning', 'danger'][idx % 5]}`}>
+                                      <span className="avatar-title small">{item.name?.charAt(0)}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex-grow-1">
+                                    <span className="small">
+                                      <Link href="/e-commerce/product-details" className="text-reset">
+                                        {item?.name}
+                                      </Link>
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="text-end py-1">
+                                <span className="small fw-bold">${item.revenue.toLocaleString()}</span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={2} className="text-center text-muted py-3">
+                              No product data available
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -383,22 +473,18 @@ const DashboardStats = () => {
                 <CardHeader className="bg-transparent py-2 border-0 d-flex justify-content-between align-items-center">
                   <h6 className="mb-0">Top Clients</h6>
                   <div>
-                  <Form.Group>
-                    {/* <Form.Label className="text-muted small mb-0">Product</Form.Label> */}
-                    <Form.Select
-                      value={product}
-                      onChange={(e) => setProduct(e.target.value)}
-                      className="border-0 bg-light form-control-sm"
-                    >
-                      <option value="">All Products</option>
-                      <option value="product1">Product One</option>
-                      <option value="product2">Product Two</option>
-                      <option value="product3">Product Three</option>
-                    </Form.Select>
-                  </Form.Group>
-                    {/* <Button variant="light" size="sm" className="btn-sm p-1">
-                      <IconifyIcon icon="tabler:eye" width={16} />
-                    </Button> */}
+                    <Form.Group>
+                      <Form.Select
+                        value={product}
+                        onChange={(e) => setProduct(e.target.value)}
+                        className="border-0 bg-light form-control-sm"
+                      >
+                        <option value="">All Products</option>
+                        {dashboardData.topProducts.map((prod) => (
+                          <option key={prod._id} value={prod._id}>{prod.name}</option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
                   </div>
                 </CardHeader>
                 <CardBody className="p-0">
@@ -411,27 +497,49 @@ const DashboardStats = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {salesProductData.slice(0, 5).map((item :any, idx) => (
-                          <tr key={idx}>
-                            <td className="py-1">
-                              <div className="d-flex align-items-center">
-                                <div className="flex-shrink-0 me-2">
-                                  <div className={`avatar avatar-xs bg-soft-${['warning', 'danger', 'primary', 'success', 'info'][idx % 5]} rounded text-${['warning', 'danger', 'primary', 'success', 'info'][idx % 5]}`}>
-                                    <span className="avatar-title small">
-                                      {['A', 'B', 'C', 'D', 'E'][idx % 5]}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex-grow-1">
-                                  <span className="small">Client {idx + 1}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-end py-1">
-                              <span className="small fw-bold">${(item.amount * 1.2).toFixed(2)}</span>
+                        {loading ? (
+                          <tr>
+                            <td colSpan={2} className="text-center py-3">
+                              <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
                             </td>
                           </tr>
-                        ))}
+                        ) : dashboardData.topClients.length > 0 ? (
+                          dashboardData.topClients.slice(0, 5).map((client, idx) => (
+                            <tr key={client._id}>
+                              <td className="py-1">
+                                <div className="d-flex align-items-center">
+                                  <div className="flex-shrink-0 me-2">
+                                    <div className={`avatar avatar-xs bg-soft-${['warning', 'danger', 'primary', 'success', 'info'][idx % 5]} rounded text-${['warning', 'danger', 'primary', 'success', 'info'][idx % 5]}`}>
+                                      <span className="avatar-title small">
+                                        {client.name?.charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex-grow-1">
+                                    <span className="small">{client.name}</span>
+                                    {client.email && (
+                                      <div className="text-muted" style={{ fontSize: '10px' }}>
+                                        {client.email}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="text-end py-1">
+                                <span className="small fw-bold">${client.sales.toLocaleString()}</span>
+                                <div className="text-muted" style={{ fontSize: '10px' }}>
+                                  {client.transactionCount} orders
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={2} className="text-center text-muted py-3">
+                              No client data available
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
