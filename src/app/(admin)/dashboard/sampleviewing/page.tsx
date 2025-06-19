@@ -80,6 +80,7 @@ export default function SampleViewingToolPage() {
     try {
       setLoading(true)
       const payload = {
+        id : user?._id,
         buyer_id: buyerId,
         user_id: workerId,
         items: selectedItems.map(item => ({
@@ -114,7 +115,7 @@ export default function SampleViewingToolPage() {
           onClick={async () => {
             try {
               setShowHistory(true)
-              const res = await api.get(`/api/sampleviewingclient?createdBy=${user?._id}`)
+              const res = await api.get(`/api/sampleviewingclient?user_created_by=${user?._id}`)
               console.log("setHistorySessions",res)
               setHistorySessions(res.data || [])
             } catch {

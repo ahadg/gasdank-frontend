@@ -78,6 +78,18 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/sampleviewing',
     },
     {
+      key: 'sampleviewingmanagement',
+      label: 'Sample Viewing Management',
+      icon: 'tabler:eye-search',
+      url: '/dashboard/sampleviewingworker',
+    },
+    {
+      key: 'notifications',
+      label: 'Notifications',
+      icon: 'clarity:notification-line',
+      url: '/dashboard/notifications',
+    },
+    {
       key: 'config',
       label: 'Config',
       icon: 'tabler:medical-cross',

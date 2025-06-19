@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Metadata } from 'next'
-import { Row, Col, Card, CardBody, Button, Form, Table, ButtonGroup } from 'react-bootstrap'
+import { Row, Col, Card, CardBody, Button, Form, Table, ButtonGroup, Modal, Alert, Spinner } from 'react-bootstrap'
 import { useParams } from 'next/navigation'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
@@ -54,6 +54,19 @@ interface DateRange {
   endDateTime: string;  // YYYY-MM-DDTHH:mm format
 }
 
+interface SMSResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  data?: {
+    recipient: string;
+    phone: string;
+    sms_sid: string;
+    notification_id: string;
+    message_preview: string;
+  };
+}
+
 const AccountHistory = () => {
   const contentRef = useRef<HTMLDivElement>(null)
   const reactToPrintFn = useReactToPrint({ contentRef })
@@ -61,6 +74,12 @@ const AccountHistory = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const { id } = useParams() // buyer id from route parameter
   const user = useAuthStore((state) => state.user)
+
+  // SMS Modal states
+  const [showSMSModal, setShowSMSModal] = useState<boolean>(false)
+  const [smsLoading, setSmsLoading] = useState<boolean>(false)
+  const [smsMessage, setSmsMessage] = useState<string>('')
+  const [smsResult, setSmsResult] = useState<SMSResponse | null>(null)
 
   // New state for date range selection with single inputs
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -202,6 +221,64 @@ const AccountHistory = () => {
 
   const formatCurrency = (value: number) =>
     `$${value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+
+  // SMS Functions
+  const handleShowSMSModal = () => {
+    // Generate default message
+    const dateRangeText = `${moment(dateRange.startDateTime).format('MMM DD, YYYY')} to ${moment(dateRange.endDateTime).format('MMM DD, YYYY')}`;
+    
+    const defaultMessage = `Invoice Summary:\n` +
+      `Period: ${dateRangeText}\n` +
+      `Transactions: ${transactions.length}\n` +
+      `Total Sales: ${formatCurrency(totalsaleAmount)}\n` +
+      `Amount ${finalAmountDue > 0 ? 'Due' : finalAmountDue < 0 ? 'Credit' : 'Paid'}: ${formatCurrency(Math.abs(finalAmountDue))}\n\n` +
+      `Please contact us for any questions regarding your account.`;
+    
+    setSmsMessage(defaultMessage);
+    setSmsResult(null);
+    setShowSMSModal(true);
+  }
+
+  const handleSendSMS = async () => {
+    if (!smsMessage.trim()) {
+      alert('Please enter a message');
+      return;
+    }
+
+    setSmsLoading(true);
+    setSmsResult(null);
+
+    try {
+      const dateRangeText = `${moment(dateRange.startDateTime).format('MMM DD, YYYY')} to ${moment(dateRange.endDateTime).format('MMM DD, YYYY')}`;
+      
+      const response = await api.post(`/api/notification/send-invoice/${id}`, {
+        customMessage: smsMessage,
+        totalAmount: totalsaleAmount,
+        dueAmount: finalAmountDue,
+        transactionCount: transactions.length,
+        dateRange: dateRangeText
+      });
+
+      setSmsResult(response.data);
+    } catch (error: any) {
+      console.error('SMS Error:', error);
+      console.error('SMS Error:error.response', error.response);
+      console.error('SMS Error:error.response?.data', error.response?.data);
+      console.error('SMS Error:error.message', error.message);
+      setSmsResult({
+        success: false,
+        error: error.response?.data?.error || error.message || 'Failed to send SMS'
+      });
+    } finally {
+      setSmsLoading(false);
+    }
+  }
+
+  const handleCloseSMSModal = () => {
+    setShowSMSModal(false);
+    setSmsMessage('');
+    setSmsResult(null);
+  }
 
   // Build detailed content for the Details column.
   const getDetailsContent = (tx: ITransaction) => {
@@ -421,11 +498,98 @@ const AccountHistory = () => {
           </div>
         </div>
       )}
-      <div className="mt-3 d-flex justify-content-end">
+      
+      <div className="mt-3 d-flex justify-content-end gap-2">
+        <Button 
+          onClick={handleShowSMSModal} 
+          variant="success" 
+          className="bg-gradient"
+          disabled={transactions.length === 0}
+        >
+          📱 SEND INVOICE SMS
+        </Button>
         <Button onClick={() => reactToPrintFn()} variant="secondary" className="bg-gradient">
-          EXPORT TO PDF
+          📄 EXPORT TO PDF
         </Button>
       </div>
+
+      {/* SMS Modal */}
+      <Modal show={showSMSModal} onHide={handleCloseSMSModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Send Invoice SMS</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {smsResult && (
+            <Alert variant={smsResult.success ? 'success' : 'danger'} className="mb-3">
+              {smsResult.success ? (
+                <div>
+                  <strong>SMS Sent Successfully!</strong>
+                  <br />
+                  To: {smsResult.data?.recipient} ({smsResult.data?.phone})
+                  <br />
+                  Message ID: {smsResult.data?.sms_sid}
+                </div>
+              ) : (
+                <div>
+                  <strong>Failed to Send SMS</strong>
+                  <br />
+                  Error: {smsResult.error}
+                </div>
+              )}
+            </Alert>
+          )}
+          
+          <Form.Group className="mb-3">
+            <Form.Label>
+              <strong>Invoice Summary</strong>
+            </Form.Label>
+            <div className="p-2 bg-light rounded mb-2">
+              <small>
+                Period: {moment(dateRange.startDateTime).format('MMM DD, YYYY')} to {moment(dateRange.endDateTime).format('MMM DD, YYYY')}<br/>
+                Transactions: {transactions.length}<br/>
+                Total Sales: {formatCurrency(totalsaleAmount)}<br/>
+                Amount {finalAmountDue > 0 ? 'Due' : finalAmountDue < 0 ? 'Credit' : 'Paid'}: {formatCurrency(Math.abs(finalAmountDue))}
+              </small>
+            </div>
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>
+              <strong>SMS Message</strong>
+            </Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={8}
+              value={smsMessage}
+              onChange={(e) => setSmsMessage(e.target.value)}
+              placeholder="Enter your custom message or use the default invoice summary..."
+              disabled={smsLoading}
+            />
+            <Form.Text className="text-muted">
+              Character count: {smsMessage.length}/1600 (SMS limit)
+            </Form.Text>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseSMSModal} disabled={smsLoading}>
+            Cancel
+          </Button>
+          <Button 
+            variant="success" 
+            onClick={handleSendSMS} 
+            disabled={smsLoading || !smsMessage.trim()}
+          >
+            {smsLoading ? (
+              <>
+                <Spinner as="span" animation="border" size="sm" role="status" className="me-2" />
+                Sending...
+              </>
+            ) : (
+              '📱 Send SMS'
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }
