@@ -21,6 +21,28 @@ export default function WholesaleNotificationsPage() {
   const [notificationMessage, setNotificationMessage] = useState<string>('')
   const [sendingNotification, setSendingNotification] = useState<boolean>(false)
   const { showNotification } = useNotificationContext()
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]) // Change from selectedProduct to selectedProducts
+const [communicationMethod, setCommunicationMethod] = useState<string>('sms') // New state for communication method
+// Update the handleProductSelection function (add this new function)
+const handleProductSelection = (productId: string) => {
+  const product = products.find(p => p._id === productId)
+  if (product) {
+    setSelectedProducts(prev => 
+      prev.find(p => p._id === productId)
+        ? prev.filter(p => p._id !== productId)
+        : [...prev, product]
+    )
+  }
+}
+
+const selectAllProducts = () => {
+  if (selectedProducts.length === products.length) {
+    setSelectedProducts([])
+  } else {
+    setSelectedProducts([...products])
+  }
+}
+
 
   // Fetch buyers and products for the current user
   useEffect(() => {
@@ -74,63 +96,67 @@ export default function WholesaleNotificationsPage() {
     setSelectedBuyers(accountsWithOutstanding.map(acc => acc._id))
   }
 
-  // Send notifications
-  const sendNotifications = async (type: 'outstanding' | 'product') => {
-    if (selectedBuyers.length === 0) {
-      showNotification({ message: 'Please select at least one buyer', variant: 'warning' })
-      return
-    }
-
-    if (type === 'product' && !selectedProduct) {
-      showNotification({ message: 'Please select a product', variant: 'warning' })
-      return
-    }
-
-    setSendingNotification(true)
-    try {
-      const selectedAccountsData = accounts.filter(acc => selectedBuyers.includes(acc._id))
-      
-      let message = ''
-      if (type === 'outstanding') {
-        message = notificationMessage || 'Reminder: You have an outstanding balance that needs to be paid.'
-      } else {
-        message = notificationMessage || `New product available: ${selectedProduct?.name || 'Product'}`
-      }
-
-      // API call to send notifications
-      await api.post('/api/notification/send', {
-        recipients: selectedAccountsData.map(acc => ({
-          id: acc._id,
-          email: acc.email,
-          name: `${acc.firstName} ${acc.lastName}`,
-          balance: acc.currentBalance,
-          phone : acc?.phone
-        })),
-        type,
-        message,
-        product: type === 'product' ? selectedProduct : null
-      })
-
-      showNotification({ 
-        message: `Notifications sent to ${selectedBuyers.length} buyer(s)`, 
-        variant: 'success' 
-      })
-      
-      // Reset form
-      setSelectedBuyers([])
-      setSelectedProduct(null)
-      setNotificationMessage('')
-      setActiveModal(null)
-      
-    } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Failed to send notifications', 
-        variant: 'danger' 
-      })
-    } finally {
-      setSendingNotification(false)
-    }
+  // Update the sendNotifications function call for product type
+const sendNotifications = async (type: 'outstanding' | 'product') => {
+  if (selectedBuyers.length === 0) {
+    showNotification({ message: 'Please select at least one buyer', variant: 'warning' })
+    return
   }
+
+  if (type === 'product' && selectedProducts.length === 0) { // Changed from selectedProduct to selectedProducts
+    showNotification({ message: 'Please select at least one product', variant: 'warning' })
+    return
+  }
+
+  setSendingNotification(true)
+  try {
+    const selectedAccountsData = accounts.filter(acc => selectedBuyers.includes(acc._id))
+    
+    let message = ''
+    if (type === 'outstanding') {
+      message = notificationMessage || 'Reminder: You have an outstanding balance that needs to be paid.'
+    } else {
+      const productNames = selectedProducts.map(p => p.name).join(', ')
+      message = notificationMessage || `New products available: ${productNames}`
+    }
+
+    // API call to send notifications
+    await api.post('/api/notification/send', {
+      recipients: selectedAccountsData.map(acc => ({
+        id: acc._id,
+        email: acc.email,
+        name: `${acc.firstName} ${acc.lastName}`,
+        balance: acc.currentBalance,
+        phone: acc?.phone
+      })),
+      type,
+      message,
+      products: type === 'product' ? selectedProducts : null, // Changed from product to products
+      communicationMethod // Add communication method to API call
+    })
+
+    showNotification({ 
+      message: `Notifications sent to ${selectedBuyers.length} buyer(s) via ${communicationMethod.toUpperCase()}`, 
+      variant: 'success' 
+    })
+    
+    // Reset form
+    setSelectedBuyers([])
+    setSelectedProducts([]) // Changed from setSelectedProduct(null)
+    setNotificationMessage('')
+    setCommunicationMethod('sms')
+    setActiveModal(null)
+    
+  } catch (error: any) {
+    showNotification({ 
+      message: error?.response?.data?.error || 'Failed to send notifications', 
+      variant: 'danger' 
+    })
+  } finally {
+    setSendingNotification(false)
+  }
+}
+
 
   return (
     <div className="container-fluid">
@@ -389,157 +415,315 @@ export default function WholesaleNotificationsPage() {
       )}
 
       {/* Product Notification Modal */}
-      {activeModal === 'product' && (
-        <Modal show={true} onHide={() => setActiveModal(null)} size="lg">
-          <Modal.Header closeButton className="bg-info text-white">
-            <Modal.Title>
-              <IconifyIcon icon="tabler:shopping-bag" className="me-2" />
-              Product Announcement
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="p-4">
-            <Alert variant="info" className="mb-4">
-              <small>
-                <IconifyIcon icon="tabler:info-circle" className="me-1" />
-                Select a product and choose which buyers should receive the announcement.
-              </small>
-            </Alert>
+      // Replace the entire Product Notification Modal JSX with this updated version:
+{activeModal === 'product' && (
+  <Modal show={true} onHide={() => setActiveModal(null)} size="xl">
+    <Modal.Header closeButton className="bg-info text-white">
+      <Modal.Title>
+        <IconifyIcon icon="tabler:shopping-bag" className="me-2" />
+        Product Announcement
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body className="p-4">
+      <Alert variant="info" className="mb-4">
+        <small>
+          <IconifyIcon icon="tabler:info-circle" className="me-1" />
+          Select products and choose which buyers should receive the announcement.
+        </small>
+      </Alert>
 
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-medium">
-                <IconifyIcon icon="tabler:package" className="me-1" />
-                Select Product
-              </Form.Label>
-              <Form.Select
-                value={selectedProduct?._id || ''}
-                onChange={(e) => {
-                  const product = products.find(p => p._id === e.target.value)
-                  setSelectedProduct(product)
-                }}
-                className="form-select-lg"
-              >
-                <option value="">Choose a product to announce...</option>
-                {products.map((product) => (
-                  <option key={product._id} value={product._id}>
-                    {product.name} - ${product.price}
-                  </option>
-                ))}
-              </Form.Select>
-              {selectedProduct && (
-                <div className="mt-2 p-3 bg-light rounded">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong>{selectedProduct.name}</strong>
-                      <div className="small text-muted">{selectedProduct.description}</div>
-                    </div>
-                    <div className="text-end">
-                      <div className="fs-5 fw-bold text-success">${selectedProduct.price}</div>
-                    </div>
+      {/* Communication Method Selection */}
+      <Form.Group className="mb-4">
+        <Form.Label className="fw-medium">
+          <IconifyIcon icon="tabler:message-circle" className="me-1" />
+          Communication Method
+        </Form.Label>
+        <div className="border rounded p-3">
+          <Row>
+            <Col md={6}>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="communicationMethod"
+                  id="sms"
+                  checked={communicationMethod === 'sms'}
+                  onChange={() => setCommunicationMethod('sms')}
+                />
+                <label className="form-check-label d-flex align-items-center" htmlFor="sms">
+                  <IconifyIcon icon="tabler:message" className="me-2 text-success" />
+                  <div>
+                    <strong>SMS</strong>
+                    <div className="small text-muted">Send via text message</div>
+                  </div>
+                </label>
+              </div>
+            </Col>
+            <Col md={6}>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="communicationMethod"
+                  id="email"
+                  checked={communicationMethod === 'email'}
+                  onChange={() => setCommunicationMethod('email')}
+                />
+                <label className="form-check-label d-flex align-items-center" htmlFor="email">
+                  <IconifyIcon icon="tabler:mail" className="me-2 text-primary" />
+                  <div>
+                    <strong>Email</strong>
+                    <div className="small text-muted">Send via email</div>
+                  </div>
+                </label>
+              </div>
+            </Col>
+          </Row>
+          {/* <Row className="mt-3">
+            <Col md={4}>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="communicationMethod"
+                  id="whatsapp"
+                  disabled
+                />
+                <label className="form-check-label d-flex align-items-center opacity-50" htmlFor="whatsapp">
+                  <IconifyIcon icon="tabler:brand-whatsapp" className="me-2 text-muted" />
+                  <div>
+                    <strong>WhatsApp</strong>
+                    <div className="small text-muted">Coming soon</div>
+                  </div>
+                </label>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="communicationMethod"
+                  id="signal"
+                  disabled
+                />
+                <label className="form-check-label d-flex align-items-center opacity-50" htmlFor="signal">
+                  <IconifyIcon icon="tabler:message-circle-2" className="me-2 text-muted" />
+                  <div>
+                    <strong>Signal</strong>
+                    <div className="small text-muted">Coming soon</div>
+                  </div>
+                </label>
+              </div>
+            </Col>
+            <Col md={4}>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="communicationMethod"
+                  id="wechat"
+                  disabled
+                />
+                <label className="form-check-label d-flex align-items-center opacity-50" htmlFor="wechat">
+                  <IconifyIcon icon="tabler:brand-wechat" className="me-2 text-muted" />
+                  <div>
+                    <strong>WeChat</strong>
+                    <div className="small text-muted">Coming soon</div>
+                  </div>
+                </label>
+              </div>
+            </Col>
+          </Row> */}
+        </div>
+      </Form.Group>
+
+      {/* Product Selection */}
+      <Form.Group className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <Form.Label className="fw-medium">
+            <IconifyIcon icon="tabler:package" className="me-1" />
+            Select Products
+          </Form.Label>
+          <Button 
+            variant="outline-primary" 
+            size="sm"
+            onClick={selectAllProducts}
+          >
+            <IconifyIcon icon="tabler:check-all" className="me-1" />
+            {selectedProducts.length === products.length ? 'Deselect All' : 'Select All'}
+          </Button>
+        </div>
+        
+        <div className="border rounded p-3" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+          {products.length === 0 ? (
+            <div className="text-center text-muted py-4">
+              <IconifyIcon icon="tabler:package-off" className="fs-1 mb-2" />
+              <div>No products found</div>
+            </div>
+          ) : (
+            products.map((product) => (
+              <div key={product._id} className="form-check d-flex justify-content-between align-items-center p-2 mb-2 rounded border">
+                <div className="d-flex align-items-center">
+                  <input
+                    className="form-check-input me-3"
+                    type="checkbox"
+                    checked={selectedProducts.some(p => p._id === product._id)}
+                    onChange={() => handleProductSelection(product._id)}
+                  />
+                  <div>
+                    <label className="form-check-label fw-medium">
+                      {product.name}
+                    </label>
+                    {product.description && (
+                      <div className="small text-muted">{product.description}</div>
+                    )}
                   </div>
                 </div>
-              )}
-            </Form.Group>
-
-            <div className="mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <Form.Label className="fw-medium">
-                  <IconifyIcon icon="tabler:users" className="me-1" />
-                  Select Recipients
-                </Form.Label>
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                  onClick={selectAllBuyers}
-                >
-                  <IconifyIcon icon="tabler:check-all" className="me-1" />
-                  {selectedBuyers.length === accounts.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              
-              <div className="border rounded p-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {accounts.length === 0 ? (
-                  <div className="text-center text-muted py-4">
-                    <IconifyIcon icon="tabler:users-off" className="fs-1 mb-2" />
-                    <div>No buyers found</div>
-                  </div>
-                ) : (
-                  accounts.map((acc) => (
-                    <div key={acc._id} className="form-check p-2 mb-2">
-                      <input
-                        className="form-check-input me-3"
-                        type="checkbox"
-                        checked={selectedBuyers.includes(acc._id)}
-                        onChange={() => handleBuyerSelection(acc._id)}
-                      />
-                      <label className="form-check-label">
-                        <div className="fw-medium">{acc.firstName} {acc.lastName}</div>
-                        {acc.email && (
-                          <div className="small text-muted">{acc.email}</div>
-                        )}
-                      </label>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-medium">
-                <IconifyIcon icon="tabler:message" className="me-1" />
-                Custom Message (Optional)
-              </Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={4}
-                value={notificationMessage}
-                onChange={(e) => setNotificationMessage(e.target.value)}
-                placeholder="Add additional details about the product or special offer..."
-                className="form-control-lg"
-              />
-              <Form.Text className="text-muted">
-                Default: "New product available: [Product Name]"
-              </Form.Text>
-            </Form.Group>
-
-            <div className="bg-light p-3 rounded">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="fw-medium">Selected Recipients:</span>
-                <Badge bg="primary" className="fs-6">{selectedBuyers.length}</Badge>
-              </div>
-              {selectedProduct && (
-                <div className="small text-muted">
-                  <IconifyIcon icon="tabler:package" className="me-1" />
-                  Product: {selectedProduct.name} - ${selectedProduct.price}
+                <div className="text-end">
+                  <span className="fw-bold text-success">${product.price}</span>
                 </div>
-              )}
+              </div>
+            ))
+          )}
+        </div>
+        
+        {selectedProducts.length > 0 && (
+          <div className="mt-3 p-3 bg-light rounded">
+            <div className="fw-medium mb-2">Selected Products ({selectedProducts.length}):</div>
+            <div className="d-flex flex-wrap gap-2">
+              {selectedProducts.map((product) => (
+                <Badge key={product._id} bg="info" className="p-2">
+                  {product.name} - ${product.price}
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white ms-2"
+                    style={{ fontSize: '0.6em' }}
+                    onClick={() => handleProductSelection(product._id)}
+                  />
+                </Badge>
+              ))}
             </div>
-          </Modal.Body>
-          <Modal.Footer className="bg-light">
-            <Button variant="outline-secondary" onClick={() => setActiveModal(null)}>
-              <IconifyIcon icon="tabler:x" className="me-1" />
-              Cancel
-            </Button>
-            <Button 
-              variant="info" 
-              onClick={() => sendNotifications('product')}
-              disabled={sendingNotification || selectedBuyers.length === 0 || !selectedProduct}
-              className="px-4"
-            >
-              {sendingNotification ? (
-                <>
-                  <div className="spinner-border spinner-border-sm me-2" role="status" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <IconifyIcon icon="tabler:send" className="me-1" />
-                  Send Announcement ({selectedBuyers.length})
-                </>
-              )}
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
+          </div>
+        )}
+      </Form.Group>
+
+      {/* Buyer Selection */}
+      <div className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <Form.Label className="fw-medium">
+            <IconifyIcon icon="tabler:users" className="me-1" />
+            Select Recipients
+          </Form.Label>
+          <Button 
+            variant="outline-primary" 
+            size="sm"
+            onClick={selectAllBuyers}
+          >
+            <IconifyIcon icon="tabler:check-all" className="me-1" />
+            {selectedBuyers.length === accounts.length ? 'Deselect All' : 'Select All'}
+          </Button>
+        </div>
+        
+        <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          {accounts.length === 0 ? (
+            <div className="text-center text-muted py-4">
+              <IconifyIcon icon="tabler:users-off" className="fs-1 mb-2" />
+              <div>No buyers found</div>
+            </div>
+          ) : (
+            accounts.map((acc) => (
+              <div key={acc._id} className="form-check p-2 mb-2">
+                <input
+                  className="form-check-input me-3"
+                  type="checkbox"
+                  checked={selectedBuyers.includes(acc._id)}
+                  onChange={() => handleBuyerSelection(acc._id)}
+                />
+                <label className="form-check-label">
+                  <div className="fw-medium">{acc.firstName} {acc.lastName}</div>
+                  <div className="small text-muted">
+                    {communicationMethod === 'email' && acc.email && (
+                      <span><IconifyIcon icon="tabler:mail" className="me-1" />{acc.email}</span>
+                    )}
+                    {communicationMethod === 'sms' && acc.phone && (
+                      <span><IconifyIcon icon="tabler:phone" className="me-1" />{acc.phone}</span>
+                    )}
+                    {communicationMethod === 'email' && !acc.email && (
+                      <span className="text-warning">No email available</span>
+                    )}
+                    {communicationMethod === 'sms' && !acc.phone && (
+                      <span className="text-warning">No phone available</span>
+                    )}
+                  </div>
+                </label>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Custom Message */}
+      <Form.Group className="mb-3">
+        <Form.Label className="fw-medium">
+          <IconifyIcon icon="tabler:message" className="me-1" />
+          Custom Message (Optional)
+        </Form.Label>
+        <Form.Control
+          as="textarea"
+          rows={4}
+          value={notificationMessage}
+          onChange={(e) => setNotificationMessage(e.target.value)}
+          placeholder="Add additional details about the products or special offer..."
+          className="form-control-lg"
+        />
+        <Form.Text className="text-muted">
+          Default: "New products available: [Product Names]"
+        </Form.Text>
+      </Form.Group>
+
+      {/* Summary */}
+      <div className="bg-light p-3 rounded">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <span className="fw-medium">Selected Recipients:</span>
+          <Badge bg="primary" className="fs-6">{selectedBuyers.length}</Badge>
+        </div>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <span className="fw-medium">Selected Products:</span>
+          <Badge bg="info" className="fs-6">{selectedProducts.length}</Badge>
+        </div>
+        <div className="d-flex justify-content-between align-items-center">
+          <span className="fw-medium">Communication Method:</span>
+          <Badge bg="success" className="fs-6">{communicationMethod.toUpperCase()}</Badge>
+        </div>
+      </div>
+    </Modal.Body>
+    <Modal.Footer className="bg-light">
+      <Button variant="outline-secondary" onClick={() => setActiveModal(null)}>
+        <IconifyIcon icon="tabler:x" className="me-1" />
+        Cancel
+      </Button>
+      <Button 
+        variant="info" 
+        onClick={() => sendNotifications('product')}
+        disabled={sendingNotification || selectedBuyers.length === 0 || selectedProducts.length === 0}
+        className="px-4"
+      >
+        {sendingNotification ? (
+          <>
+            <div className="spinner-border spinner-border-sm me-2" role="status" />
+            Sending...
+          </>
+        ) : (
+          <>
+            <IconifyIcon icon="tabler:send" className="me-1" />
+            Send via {communicationMethod.toUpperCase()} ({selectedBuyers.length})
+          </>
+        )}
+      </Button>
+    </Modal.Footer>
+  </Modal>
+  )}
     </div>
   )
 }

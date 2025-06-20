@@ -306,7 +306,8 @@ const AccountHistory = () => {
                   : txItem.measurement
               return ( 
                 <div key={index}>
-                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(txItem.sale_price || txItem?.price)}) {!excludeShipping && ('+ (🚚' + " " +(formatCurrency(txItem.shipping * txItem.qty)) + ")")}
+                  {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency((txItem.sale_price || txItem?.price ) + txItem.shipping * txItem.qty)}) 
+                  {/* {!excludeShipping && ('+ (🚚' + " " +(formatCurrency(txItem.shipping * txItem.qty)) + ")")} */}
                 </div>
               )
             })}
@@ -403,7 +404,7 @@ const AccountHistory = () => {
               </Button>
             </Col>
           </Row>
-          <Row className="mt-3">
+          {/* <Row className="mt-3">
             <Col md={12}>
               <Form.Check
                 type="checkbox"
@@ -413,7 +414,7 @@ const AccountHistory = () => {
                 onChange={(e) => setExcludeShipping(e.target.checked)}
               />
             </Col>
-          </Row>
+          </Row> */}
         </CardBody>
       </Card>
       
@@ -481,14 +482,14 @@ const AccountHistory = () => {
               </Col>
               <Col md={8}>{formatCurrency(totalPaymentReceived + totalShipping_client)}</Col>
             </Row>
-            {!excludeShipping && (
+            {/* {!excludeShipping && (
               <Row>
                 <Col md={4}>
                   <strong>Total Shipping Cost:</strong>
                 </Col>
                 <Col md={8}>{formatCurrency(totalShipping)}</Col>
               </Row>
-            )}
+            )} */}
             <Row className="mt-2">
               <Col md={4}>
                 <strong>Final Amount Due:</strong>

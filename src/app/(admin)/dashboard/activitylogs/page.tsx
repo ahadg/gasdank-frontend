@@ -272,7 +272,7 @@ const ActivityLogsPage = () => {
                           </td>
                           <td>{item.type?.split("_").length < 2 ? item?.type : item.type?.split("_")[0] + ' ' + item.type?.split("_")?.[1]}</td>
                           <td>
-                            <div className="mb-1">{item?.description}</div>
+                            <div className="mb-1">{item?.description} - {item?.type == "expense_created" && "@" + item?.amount + "$ "}</div>
                             {item.notes && <div className="text-muted small">Note: {item.notes}</div>}
                           </td>
                           <td>{moment(item.date).format('MMM DD, YYYY')}</td>

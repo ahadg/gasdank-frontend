@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { useChatStore } from '../../store/chatStore'
+import { useAuthStore } from '@/store/authStore'
 //import 'bootstrap/dist/css/bootstrap.min.css'
 
 const ChatWidget = () => {
@@ -16,6 +17,7 @@ const ChatWidget = () => {
   const [hasNewMessage, setHasNewMessage] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const user = useAuthStore((state) => state.user)
 
   const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9)
 
@@ -37,7 +39,11 @@ const ChatWidget = () => {
     try {
       const { data } = await axios.post(
         'https://n8n.manapnl.com/webhook/72897415-faa9-4227-932a-292052948481',
-        { sessionID, userMessage },
+        { 
+          sessionID, 
+          userMessage, 
+          userid : user?._id 
+        },
         {
           headers: {
             Authorization: 'SMA8LwzAXiqdFhlb0wHT',

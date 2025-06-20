@@ -20,6 +20,7 @@ export default function SampleHoldingPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newSample, setNewSample] = useState({
     buyer_id: '',
+    shippingCost: '', // Single shipping cost for all products
     products: [
       {
         name: '',
@@ -27,7 +28,6 @@ export default function SampleHoldingPage() {
         unit: '',
         measurement: 1,
         price: '',
-        shippingCost: '',
         category_id: ''
       }
     ]
@@ -123,7 +123,6 @@ export default function SampleHoldingPage() {
         unit: '',
         measurement: 1,
         price: '',
-        shippingCost: '',
         category_id: ''
       }]
     })
@@ -135,71 +134,88 @@ export default function SampleHoldingPage() {
     setNewSample({ ...newSample, products: updated })
   }
 
+  // Calculate shipping cost per unit for each product
+  const calculateShippingPerUnit = () => {
+    const totalQuantity = newSample.products.reduce((sum, product) => {
+      return sum + (Number(product.qty) || 0)
+    }, 0)
+    
+    if (totalQuantity === 0 || !newSample.shippingCost) return 0
+    
+    return Number(newSample.shippingCost) / totalQuantity
+  }
+
   const handleAddSample = async () => {
     const errors = []
   
     if (!newSample.buyer_id) {
       errors.push('Please select a buyer.')
     }
+
+    if (!newSample.shippingCost || Number(newSample.shippingCost) < 0) {
+      errors.push('Shipping cost must be a valid number.')
+    }
   
     newSample.products.forEach((p, index) => {
       if (!p.name) errors.push(`Product ${index + 1}: Name is required.`)
       if (!p.qty || Number(p.qty) <= 0) errors.push(`Product ${index + 1}: Quantity must be a positive number.`)
       if (!p.unit) errors.push(`Product ${index + 1}: Unit is required.`)
-      if (!p.price  || Number(p.price) < 0) errors.push(`Product ${index + 1}: Price must be a valid number.`)
-      if (p.shippingCost === ''  || Number(p.shippingCost) < 0) errors.push(`Product ${index + 1}: Shipping cost must be a valid number.`)
+      if (!p.price || Number(p.price) < 0) errors.push(`Product ${index + 1}: Price must be a valid number.`)
     })
   
     if (errors.length > 0) {
-      // setValidationErrors(errors)
       showNotification({ message: 'Please input or select required fields before submitting.', variant: 'danger' })
       return
     }
   
     try {
+      const shippingPerUnit = calculateShippingPerUnit().toFixed(2)
+      
       const products = newSample.products.map(p => ({
         ...p,
         qty: Number(p.qty),
-        price: Number(p.price),
-        shippingCost: Number(p.shippingCost),
+        price: Number(p.price).toFixed(2),
+        shippingCost: Number(shippingPerUnit), // Calculated shipping per unit
         measurement: Number(p.measurement)
       }))
+      
       const payload = {
         user_id: user._id,
         buyer_id: newSample.buyer_id,
         products,
+        totalShippingCost: Number(newSample.shippingCost).toFixed(2), // Store total shipping cost
         status: 'holding'
       }
+      
       await api.post('/api/sample', payload)
       showNotification({ message: 'Sample added to holding area', variant: 'success' })
       resetAndCloseModal()
       fetchSamples()
-      setValidationErrors([]) // clear errors
+      setValidationErrors([])
     } catch (err) {
       showNotification({ message: 'Failed to add sample', variant: 'danger' })
     }
   }
   
-
   const [historyModal, setHistoryModal] = useState(false)
-const [historySamples, setHistorySamples] = useState([])
+  const [historySamples, setHistorySamples] = useState([])
 
-const fetchHistory = async () => {
-  try {
-    const res = await api.get(`/api/sample?user_id=${user._id}&status=history`)
-    setHistorySamples(res.data)
-    setHistoryModal(true)
-  } catch (err) {
-    showNotification({ message: 'Failed to load history', variant: 'danger' })
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get(`/api/sample?user_id=${user._id}&status=history`)
+      setHistorySamples(res.data)
+      setHistoryModal(true)
+    } catch (err) {
+      showNotification({ message: 'Failed to load history', variant: 'danger' })
+    }
   }
-}
-
 
   const resetAndCloseModal = () => {
     setShowAddModal(false)
     setNewSample({
       buyer_id: '',
-      products: [{ name: '', qty: '', unit: '', price: '', shippingCost: '', measurement: 1, category_id: '' }]
+      shippingCost: '',
+      products: [{ name: '', qty: '', unit: '', price: '', measurement: 1, category_id: '' }]
     })
     setSelectedBuyer(null)
   }
@@ -278,14 +294,17 @@ const fetchHistory = async () => {
                               </div>
                             </div>
                             <div className="text-end">
-                              <div className="fw-medium">${Number(product.price).toFixed(2)}</div>
-                              <small className="text-muted">+${Number(product.shippingCost).toFixed(2)} shipping</small>
+                              <div className="fw-medium">${Number((product.price) + product.shippingCost).toFixed(2)}</div>
+                              {/* <small className="text-muted">+${Number(product.shippingCost || 0).toFixed(2)}/unit shipping</small> */}
                             </div>
                           </div>
                         </div>
                       ))}
-                      <div className="mt-1 text-muted">
-                        <small>{sample.products.length} product{sample.products.length !== 1 ? 's' : ''} total</small>
+                      <div className="mt-1 d-flex justify-content-between">
+                        <small className="text-muted">{sample.products.length} product{sample.products.length !== 1 ? 's' : ''} total</small>
+                        {/* {sample.totalShippingCost && (
+                          <small className="text-muted">Total shipping: ${Number(sample.totalShippingCost).toFixed(2)}</small>
+                        )} */}
                       </div>
                     </div>
                   </td>
@@ -342,64 +361,66 @@ const fetchHistory = async () => {
       </Modal>
 
       <Modal 
-  show={historyModal} 
-  onHide={() => setHistoryModal(false)}
-  size="lg"
->
-  <Modal.Header closeButton>
-    <Modal.Title>Sample History</Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    {historySamples.length > 0 ? (
-      <Table responsive hover className="align-middle">
-        <thead>
-          <tr>
-            <th>Buyer</th>
-            <th>Status</th>
-            <th>Products</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {historySamples.map(sample => (
-            <tr key={sample._id}>
-              <td>
-                <strong>{sample.buyer_id?.firstName ? `${sample.buyer_id?.firstName} ${sample.buyer_id?.lastName}` : 'Unknown Buyer'}</strong><br />
-                <small className="text-muted">{sample.company_name || ''}</small>
-              </td>
-              <td>
-                <Badge bg={sample.status === 'accepted' ? 'success' : 'danger'}>
-                  {sample.status.toUpperCase()}
-                </Badge>
-              </td>
-              <td>
-                {sample.products.map((p, i) => (
-                  <div key={i} className="mb-1">
-                    <span>{p.name}</span> – {p.qty} {p.unit} 
-                    {p.measurement !== 1 && ` (${p.measurement * 100}%)`}<br />
-                    <small className="text-muted">${p.price} + ${p.shippingCost} shipping</small>
-                  </div>
+        show={historyModal} 
+        onHide={() => setHistoryModal(false)}
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Sample History</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {historySamples.length > 0 ? (
+            <Table responsive hover className="align-middle">
+              <thead>
+                <tr>
+                  <th>Buyer</th>
+                  <th>Status</th>
+                  <th>Products</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historySamples.map(sample => (
+                  <tr key={sample._id}>
+                    <td>
+                      <strong>{sample.buyer_id?.firstName ? `${sample.buyer_id?.firstName} ${sample.buyer_id?.lastName}` : 'Unknown Buyer'}</strong><br />
+                      <small className="text-muted">{sample.company_name || ''}</small>
+                    </td>
+                    <td>
+                      <Badge bg={sample.status === 'accepted' ? 'success' : 'danger'}>
+                        {sample.status.toUpperCase()}
+                      </Badge>
+                    </td>
+                    <td>
+                      {sample.products.map((p, i) => (
+                        <div key={i} className="mb-1">
+                          <span>{p.name}</span> – {p.qty} {p.unit} 
+                          {p.measurement !== 1 && ` (${p.measurement * 100}%)`}<br />
+                          <small className="text-muted">${p.price} + ${(p.shippingCost || 0).toFixed(2)}/unit shipping</small>
+                        </div>
+                      ))}
+                      {sample.totalShippingCost && (
+                        <div><small className="text-muted">Total shipping: ${sample.totalShippingCost}</small></div>
+                      )}
+                    </td>
+                    <td>
+                      <small>{new Date(sample.created_at).toLocaleDateString()}</small>
+                    </td>
+                  </tr>
                 ))}
-              </td>
-              <td>
-                <small>{new Date(sample.created_at).toLocaleDateString()}</small>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    ) : (
-      <div className="text-center text-muted py-4">
-        <i className="bi bi-inbox fs-3 d-block mb-3"></i>
-        <p>No history found yet.</p>
-      </div>
-    )}
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setHistoryModal(false)}>Close</Button>
-  </Modal.Footer>
-</Modal>
-
+              </tbody>
+            </Table>
+          ) : (
+            <div className="text-center text-muted py-4">
+              <i className="bi bi-inbox fs-3 d-block mb-3"></i>
+              <p>No history found yet.</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setHistoryModal(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Add Sample Modal */}
       <Modal 
@@ -413,13 +434,6 @@ const fetchHistory = async () => {
         </Modal.Header>
         <Modal.Body className="p-4">
           <div className="mb-4">
-            {/* <div className="d-flex align-items-center mb-3">
-              <div className="bg-light rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px' }}>
-                <i className="bi bi-person fs-5"></i>
-              </div>
-              <h5 className="mb-0 ms-2">Select Buyer</h5>
-            </div> */}
-            
             <Form.Group className="mb-3">
               <Form.Select 
                 value={newSample.buyer_id} 
@@ -434,12 +448,37 @@ const fetchHistory = async () => {
               </Form.Select>
             </Form.Group>
           </div>
+
+          {/* Single Shipping Cost Input */}
+          <div className="mb-4">
+            <Card className="shadow-sm">
+              <CardHeader className="bg-light py-2">
+                <h6 className="mb-0">Shipping Information</h6>
+              </CardHeader>
+              <CardBody>
+                <Form.Group>
+                  <Form.Label>Total Shipping Cost</Form.Label>
+                  <InputGroup>
+                    <InputGroup.Text>$</InputGroup.Text>
+                    <Form.Control 
+                      type="number" 
+                      placeholder="0.00"
+                      value={newSample.shippingCost} 
+                      onChange={(e) => setNewSample({ ...newSample, shippingCost: e.target.value })} 
+                    />
+                  </InputGroup>
+                  {newSample.shippingCost && newSample.products.some(p => p.qty) && (
+                    <small className="text-muted">
+                      Shipping per unit: ${calculateShippingPerUnit().toFixed(2)}
+                    </small>
+                  )}
+                </Form.Group>
+              </CardBody>
+            </Card>
+          </div>
           
           <div className="mb-3">
             <div className="d-flex align-items-center mb-3">
-              {/* <div className="bg-light rounded-circle d-inline-flex justify-content-center align-items-center" style={{ width: '40px', height: '40px' }}>
-                <i className="bi bi-box fs-5"></i>
-              </div> */}
               <h5 className="mb-0 ms-2">Products</h5>
             </div>
             
@@ -528,21 +567,6 @@ const fetchHistory = async () => {
                           placeholder="0.00"
                           value={product.price} 
                           onChange={(e) => handleProductChange(index, 'price', e.target.value)} 
-                        />
-                      </InputGroup>
-                    </Col>
-                  </Row>
-                  
-                  <Row>
-                    <Col>
-                      <Form.Label>Shipping Cost</Form.Label>
-                      <InputGroup>
-                        <InputGroup.Text>$</InputGroup.Text>
-                        <Form.Control 
-                          type="number" 
-                          placeholder="0.00"
-                          value={product.shippingCost} 
-                          onChange={(e) => handleProductChange(index, 'shippingCost', e.target.value)} 
                         />
                       </InputGroup>
                     </Col>

@@ -24,7 +24,7 @@ interface StatTypeExtended extends StatType {
 function toLocalDateTimeString(date: Date) {
   const offsetMs = date.getTime() - date.getTimezoneOffset() * 60000
   const localDate = new Date(offsetMs)
-  return localDate.toISOString().slice(0, 16)
+  return localDate.toISOString().slice(0, 19)
 }
 
 // Stats Loader Component
