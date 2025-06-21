@@ -190,7 +190,7 @@ const saleTransactionsPage = () => {
                     }
                   />
                 </th>
-                <th>PRODUCT NAME</th>
+                <th>PRODUCT ID</th>
                 <th>CATEGORY</th>
                 <th>Available Quantity</th>
                 <th>Unit</th>
@@ -215,6 +215,7 @@ const saleTransactionsPage = () => {
                         onChange={(e) => handleCheckboxChange(prod, e.target.checked)}
                       />
                     </td>
+                    <td>{prod.product_id}</td>
                     <td>{prod.name}</td>
                     <td>{prod?.category?.name}</td>
                     <td>{prod.qty}</td>

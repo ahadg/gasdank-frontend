@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Metadata } from 'next'
 import { Row, Col, Card, CardBody, CardHeader, CardTitle, Button, Form, Table } from 'react-bootstrap'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import api from '@/utils/axiosInstance'
@@ -32,15 +32,15 @@ const multipleProductSchema = yup.object({
 
 type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
 
- function AddProductsPage() {
+function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
 
-  const { control, handleSubmit, watch } = useForm<MultipleProductFormData>({
+  const { control, handleSubmit, getValues } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ name: '', unit: 'pound', category: '', measurement: 1 }],
+      products: [{ name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
       shippingCost: 0,
     },
   })
@@ -50,22 +50,49 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
     name: 'products',
   })
 
-  // Watch form values
-  const productsData = watch('products')
-  const shippingCost = watch('shippingCost')
+  // Use useWatch for real-time updates
+  const productsData = useWatch({
+    control,
+    name: 'products',
+    defaultValue: [{ name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }]
+  })
 
-  const totalProductsAmount = productsData.reduce(
-    (sum: number, item: any) => sum + Number(item.qty) * Number(item.price) * Number(item.measurement),
-    0
-  )
-  const totalAmount = totalProductsAmount + Number(shippingCost)
+  const shippingCost = useWatch({
+    control,
+    name: 'shippingCost',
+    defaultValue: 0
+  })
 
-  // Calculate total quantity and average shipping per unit
+  // Calculate total quantity
   const totalQuantity = useMemo(
-    () => productsData.reduce((sum: number, item: any) => sum + Number(item.qty), 0),
+    () => productsData.reduce((sum, item) => sum + Number(item?.qty || 0), 0),
     [productsData]
   )
-  const avgShipping = totalQuantity > 0 ? Number(shippingCost) / totalQuantity : 0
+
+  // Calculate average shipping per unit
+  const avgShipping = useMemo(
+    () => (totalQuantity > 0 ? Number(shippingCost || 0) / totalQuantity : 0),
+    [shippingCost, totalQuantity]
+  )
+
+  // Calculate total amount correctly: qty * (price + avgShipping) for each product
+  // Calculate total amount correctly: qty * (price + avgShipping) for each product
+const totalAmount = useMemo(() => {
+  const productsTotal = productsData.reduce((sum, item) => {
+    const qty = Number(item?.qty || 0);
+    const price = Number(item?.price || 0);
+
+    // Calculate avg_shipping per item (as number, rounded to 2 decimals)
+    let avg_shipping = totalQuantity > 0 ? Number(shippingCost || 0) / totalQuantity : 0;
+    avg_shipping = Math.round(avg_shipping * 100) / 100; // Round to 2 decimal places
+
+    const itemTotal = qty * (price + avg_shipping);
+    return sum + itemTotal;
+  }, 0);
+
+  return productsTotal;
+}, [productsData, shippingCost, totalQuantity]);
+
 
   // State for account (buyer) selector
   const [accounts, setAccounts] = useState<any[]>([])
@@ -81,7 +108,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
         try {
           const response = await api.get(`/api/buyers?user_id=${user._id}`)
           setAccounts(response.data)
-        } catch (error) {
+        } catch (error: any) {
           showNotification({ message: error?.response?.data?.error || 'Error fetching accounts', variant: 'danger' })
           console.error('Error fetching accounts:', error)
         }
@@ -103,7 +130,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
         try {
           const response = await api.get(`/api/categories/${user._id}`)
           setUserCategories(response.data)
-        } catch (error) {
+        } catch (error: any) {
           showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
           console.error('Error fetching user categories:', error)
         }
@@ -131,23 +158,31 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
   // Additional transaction production function
   const produce_transaction = async (data: any[], avg_shipping: number, shippingCost: number) => {
     try {
-      console.log("data",data)
+      console.log("data", data)
       setLoading(true)
       const transformedItems = data.map((item) => ({
         inventory_id: item._id,
         qty: Number(item.qty),
         measurement: item.measurement,
-        name : item?.name,
+        name: item?.name,
         unit: item.unit,
         price: item.price,
         shipping: avg_shipping.toFixed(2),
       }))
 
+      const productsTotal = productsData.reduce((sum, item) => {
+        const qty = Number(item?.qty || 0);
+        const price = Number(item?.price || 0);
+    
+        const itemTotal = qty * (price);
+        return sum + itemTotal;
+      }, 0);
+
       const payload = {
         user_id: user._id,
         buyer_id: selectedAccount._id,
         items: transformedItems,
-        price: totalProductsAmount,
+        price: productsTotal.toFixed(2),
         total_shipping: Number(shippingCost),
         type: 'inventory_addition',
       }
@@ -170,14 +205,22 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
       return
     }
     setLoading(true)
+    
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
     const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
-    const total_price = data.products.reduce((sum, currval) => sum + (Number(currval.qty) * Number(currval.price)), 0)
+    
+    console.log("Calculation details:", {
+      avg_shipping,
+      total_quantity,
+      shippingCost,
+      totalAmount
+    })
+    
     try {
       let products: any[] = []
       const calls = data.products.map(async (prod) => {
         const the_category = userCategories.find((cat) => cat.name === prod.category)
-        console.log('prod',prod)
+        console.log('prod', prod)
         const res = await api.post('/api/inventory', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
@@ -190,7 +233,7 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
           status: "",
           notes: "",
         })
-        products.push({...res.data,measurement : prod.measurement, qty: prod.qty})
+        products.push({...res.data, measurement: prod.measurement, qty: prod.qty})
       })
       await Promise.all(calls)
       console.log('Created products =>', products)
@@ -204,9 +247,6 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
       setLoading(false)
     }
   }
-
-  // Calculate average shipping per unit using useMemo
-  const avgShippingDisplay = totalQuantity > 0 ? Number(shippingCost) / totalQuantity : 0
 
   return (
     <div className="container-fluid">
@@ -362,7 +402,11 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
                       />
                     </td>
                     <td>
-                      <Button variant="danger" onClick={() => remove(index)}>
+                      <Button 
+                        variant="danger" 
+                        onClick={() => remove(index)}
+                        disabled={fields.length === 1}
+                      >
                         REMOVE
                       </Button>
                     </td>
@@ -388,11 +432,14 @@ type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
               </Col>
             </Row>
             <div className="mt-3">
-              {/* <div>
-                <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
-              </div> */}
               <div>
-                <strong>Total Amount: </strong>${totalAmount ? totalAmount.toFixed(2) : 0}
+                <strong>Total Quantity: </strong>{totalQuantity}
+              </div>
+              <div>
+                <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
+              </div>
+              <div>
+                <strong>Total Amount (including shipping): </strong>${totalAmount.toFixed(2)}
               </div>
             </div>
             <div className="mt-3 d-flex justify-content-end">

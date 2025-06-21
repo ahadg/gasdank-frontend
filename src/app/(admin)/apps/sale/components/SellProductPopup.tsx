@@ -141,6 +141,12 @@ export default function SellMultipleProductsModal({
       0
     )
 
+    const org_price_with_shipping = items.reduce(
+      (sum: number, item: any) =>
+        sum + Number(item.quantity) * Number(item.measurement) * (Number(item.price) + item?.shipping),
+      0
+    )
+
     const totalsale_price_amount = items.reduce(
       (sum: number, item: any) =>
         sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price)  ,
@@ -154,7 +160,7 @@ export default function SellMultipleProductsModal({
       items: transformedItems,
       price: org_price,
       sale_price: totalsale_price_amount,
-      profit: totalsale_price_amount - org_price,
+      profit: totalsale_price_amount - org_price_with_shipping,
       //total_shipping: 0,
       total_shipping:totalShipping,
       notes: data.notes,
