@@ -38,11 +38,11 @@ const ChatWidget = () => {
 
     try {
       const { data } = await axios.post(
-        'https://n8n.manapnl.com/webhook/72897415-faa9-4227-932a-292052948481',
+        'https://n8n.manapnl.com/webhook/d92b342a-4f9a-42cf-b56c-70afa0f4821f',
         { 
           sessionID, 
           userMessage, 
-          userid : user?._id 
+          userId: user?._id 
         },
         {
           headers: {
@@ -52,16 +52,19 @@ const ChatWidget = () => {
           timeout: 15000,
         }
       )
-
+      console.log("dataaa",data)
+      // If data is a string, parse it
+      const match = data.match(/"response"\s*:\s*"([^"]+)"/)
+      const responseText = match ? match[1] : '❌ No response found.'
       const botResponse = { 
-        content: data.response || '❌ No response received.', 
+        content: responseText, 
         from: 'bot' as const, 
         timestamp: new Date(),
         id: generateId()
       }
-      
+    
       setMessages(prev => [...prev, botResponse])
-      
+    
       if (!isOpen) {
         setHasNewMessage(true)
       }

@@ -56,9 +56,10 @@ export default function WorkerSampleManagementPage() {
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [saleNotes, setSaleNotes] = useState('')
   const [saleLoading, setSaleLoading] = useState(false)
+  const [savingSession, setSavingSession] = useState<string | null>(null)
 
   const user = useAuthStore((state) => state.user)
-  console.log("user",user)
+
   useEffect(() => {
     fetchSampleSessions()
   }, [user._id])
@@ -66,7 +67,6 @@ export default function WorkerSampleManagementPage() {
   const fetchSampleSessions = async () => {
     try {
       setLoading(true)
-      console.log("user",user)
       const response = await api.get(`/api/sampleviewingclient/worker?user_id=${user._id}`)
       setSampleSessions(response.data || [])
     } catch (error: any) {
@@ -81,6 +81,8 @@ export default function WorkerSampleManagementPage() {
 
   const updateItemStatus = async (sessionId: string, items: SampleItem[]) => {
     try {
+      setSavingSession(sessionId)
+      
       const payload = {
         items: items.map(item => ({
           productId: item.productId,
@@ -88,9 +90,9 @@ export default function WorkerSampleManagementPage() {
         }))
       }
       
-      await api.patch(`/api/sampleviewingclient/${sessionId}/items`, payload)
+      const response = await api.patch(`/api/sampleviewingclient/${sessionId}/items`, payload)
       
-      // Update local state
+      // Update local state to mark as viewed
       setSampleSessions(prev => 
         prev.map(session => 
           session._id === sessionId 
@@ -100,7 +102,7 @@ export default function WorkerSampleManagementPage() {
       )
       
       showNotification({
-        message: 'Item statuses updated successfully',
+        message: 'Sample session updated successfully and marked as viewed',
         variant: 'success'
       })
     } catch (error: any) {
@@ -108,6 +110,8 @@ export default function WorkerSampleManagementPage() {
         message: error?.response?.data?.error || 'Failed to update item statuses',
         variant: 'danger'
       })
+    } finally {
+      setSavingSession(null)
     }
   }
 
@@ -200,7 +204,7 @@ export default function WorkerSampleManagementPage() {
 
       const payload = {
         worker_id: user._id,
-        user_id : user?.created_by,
+        user_id: user?.created_by,
         buyer_id: selectedSession.buyer_id._id,
         items: transformedItems,
         price: orgPrice,
@@ -237,8 +241,12 @@ export default function WorkerSampleManagementPage() {
     switch (status) {
       case 'accepted': return 'success'
       case 'rejected': return 'danger'
-      default: return 'warning'
+      default: return 'secondary'
     }
+  }
+
+  const hasChanges = (session: SampleSession) => {
+    return session.items.some(item => item.status !== 'pending')
   }
 
   if (loading) {
@@ -250,118 +258,131 @@ export default function WorkerSampleManagementPage() {
   }
 
   return (
-    <div className="container py-5">
+    <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Sample Viewing Sessions</h2>
-        <Button variant="outline-primary" onClick={fetchSampleSessions}>
-          <IconifyIcon icon="tabler:refresh" /> Refresh
+        <h3>Sample Sessions</h3>
+        <Button variant="outline-primary" onClick={fetchSampleSessions} disabled={loading}>
+          <IconifyIcon icon="tabler:refresh" className="me-1" />
+          Refresh
         </Button>
       </div>
 
       {sampleSessions.length === 0 ? (
-        <Alert variant="info">
-          <IconifyIcon icon="tabler:info-circle" className="me-2" />
-          No sample viewing sessions assigned to you yet.
+        <Alert variant="info" className="text-center">
+          <h5>No Sample Sessions</h5>
+          <p className="mb-0">No sample viewing sessions assigned to you yet.</p>
         </Alert>
       ) : (
         <Row>
-          {sampleSessions.map((session) => (
-            <Col lg={12} className="mb-4" key={session._id}>
-              <Card className="shadow-sm">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 className="mb-1">
-                      Buyer: {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
-                    </h5>
-                    <small className="text-muted">
-                      Sent by: {session.user_created_by?.firstName} {session.user_created_by?.lastName} | 
-                      Date: {new Date(session.sentAt).toLocaleDateString()}
-                    </small>
-                  </div>
-                  <div className="d-flex gap-2">
-                    <Badge bg={session.viewingStatus === 'viewed' ? 'success' : 'warning'}>
-                      {session.viewingStatus}
-                    </Badge>
-                    {session.items.some(item => item.status === 'accepted') && (
-                      <Button
-                        variant="success"
-                        size="sm"
-                        onClick={() => prepareSaleModal(session)}
-                      >
-                        <IconifyIcon icon="tabler:shopping-cart" /> Create Sale
-                      </Button>
+          {sampleSessions.map((session) => {
+            const isChanged = hasChanges(session)
+            const acceptedCount = session.items.filter(item => item.status === 'accepted').length
+            
+            return (
+              <Col lg={12} className="mb-4" key={session._id}>
+                <Card>
+                  <Card.Header className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 className="mb-1">
+                        {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
+                      </h5>
+                      <small className="text-muted">
+                        {new Date(session.sentAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      {session.viewingStatus === 'viewed' && (
+                        <Badge bg="success">Viewed</Badge>
+                      )}
+                      {acceptedCount > 0 && (
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={() => prepareSaleModal(session)}
+                        >
+                          Create Sale ({acceptedCount})
+                        </Button>
+                      )}
+                    </div>
+                  </Card.Header>
+                  
+                  <Card.Body>
+                    {session.notes && (
+                      <Alert variant="info" className="mb-3">
+                        <strong>Notes:</strong> {session.notes}
+                      </Alert>
                     )}
-                  </div>
-                </Card.Header>
-                <Card.Body>
-                  {session.notes && (
-                    <Alert variant="info" className="mb-3">
-                      <strong>Notes:</strong> {session.notes}
-                    </Alert>
-                  )}
-                  
-                  <Table responsive bordered className="mb-3">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {session.items.map((item, index) => (
-                        <tr key={item.productId}>
-                          <td>{item.name}</td>
-                          <td>{item.qty}</td>
-                          <td>{item.unit}</td>
-                          <td>₹{item.price}</td>
-                          <td>
-                            <Badge bg={getStatusBadgeVariant(item.status)}>
-                              {item.status}
-                            </Badge>
-                          </td>
-                          <td>
-                            <Form.Select
-                              size="sm"
-                              value={item.status}
-                              onChange={(e) => handleStatusChange(session._id, index, e.target.value)}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="accepted">Accept</option>
-                              <option value="rejected">Reject</option>
-                            </Form.Select>
-                          </td>
+                    
+                    <Table striped>
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Qty</th>
+                          <th>Unit</th>
+                          <th>Price</th>
+                          <th>Status</th>
+                          <th>Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                  
-                  <div className="text-end">
-                    <Button
-                      variant="primary"
-                      onClick={() => handleSaveSession(session)}
-                    >
-                      <IconifyIcon icon="tabler:device-floppy" /> Save Changes
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
+                      </thead>
+                      <tbody>
+                        {session.items.map((item, index) => (
+                          <tr key={item.productId}>
+                            <td>{item.name}</td>
+                            <td>{item.qty}</td>
+                            <td>{item.unit}</td>
+                            <td>₹{item.price.toFixed(2)}</td>
+                            <td>
+                              <Badge bg={getStatusBadgeVariant(item.status)}>
+                                {item.status}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Form.Select
+                                size="sm"
+                                value={item.status}
+                                onChange={(e) => handleStatusChange(session._id, index, e.target.value)}
+                                style={{ width: '120px' }}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="accepted">Accept</option>
+                                <option value="rejected">Reject</option>
+                              </Form.Select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                    
+                    <div className="d-flex justify-content-end mt-3">
+                      <Button
+                        variant={isChanged ? "primary" : "outline-secondary"}
+                        onClick={() => handleSaveSession(session)}
+                        disabled={savingSession === session._id}
+                        size="sm"
+                      >
+                        {savingSession === session._id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <IconifyIcon icon="tabler:check" />
+                        )}
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            )
+          })}
         </Row>
       )}
 
       {/* Sale Modal */}
-      <Modal show={showSaleModal} onHide={() => setShowSaleModal(false)} size="lg">
+      <Modal show={showSaleModal} onHide={() => setShowSaleModal(false)} size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Create Sale - {selectedSession?.buyer_id?.name || `${selectedSession?.buyer_id?.firstName} ${selectedSession?.buyer_id?.lastName}`}</Modal.Title>
+          <Modal.Title>Create Sale</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Table responsive bordered>
-            <thead className="table-light">
+          <Table striped>
+            <thead>
               <tr>
                 <th>Product</th>
                 <th>Qty</th>
@@ -382,6 +403,7 @@ export default function WorkerSampleManagementPage() {
                       min="1"
                       value={item.quantity}
                       onChange={(e) => handleSaleItemChange(index, 'quantity', Number(e.target.value))}
+                      size="sm"
                     />
                   </td>
                   <td>
@@ -390,6 +412,7 @@ export default function WorkerSampleManagementPage() {
                       min="1"
                       value={item.measurement}
                       onChange={(e) => handleSaleItemChange(index, 'measurement', Number(e.target.value))}
+                      size="sm"
                     />
                   </td>
                   <td>{item.unit}</td>
@@ -400,6 +423,7 @@ export default function WorkerSampleManagementPage() {
                       step="0.01"
                       value={item.price}
                       onChange={(e) => handleSaleItemChange(index, 'price', Number(e.target.value))}
+                      size="sm"
                     />
                   </td>
                   <td>
@@ -409,6 +433,7 @@ export default function WorkerSampleManagementPage() {
                       step="0.01"
                       value={item.sale_price}
                       onChange={(e) => handleSaleItemChange(index, 'sale_price', Number(e.target.value))}
+                      size="sm"
                     />
                   </td>
                   <td>
@@ -418,6 +443,7 @@ export default function WorkerSampleManagementPage() {
                       step="0.01"
                       value={item.shipping}
                       onChange={(e) => handleSaleItemChange(index, 'shipping', Number(e.target.value))}
+                      size="sm"
                     />
                   </td>
                 </tr>
@@ -425,21 +451,21 @@ export default function WorkerSampleManagementPage() {
             </tbody>
           </Table>
 
-          <Row className="mt-3">
+          <Row className="mt-4">
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Notes</Form.Label>
+                <Form.Label>Sale Notes</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
                   value={saleNotes}
                   onChange={(e) => setSaleNotes(e.target.value)}
-                  placeholder="Add any notes for this sale..."
+                  placeholder="Add notes for this sale..."
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
-              <div className="border p-3 rounded">
+              <div className="border rounded p-3">
                 <h6>Sale Summary</h6>
                 <div className="d-flex justify-content-between">
                   <span>Cost Price:</span>
@@ -454,11 +480,11 @@ export default function WorkerSampleManagementPage() {
                   <span>₹{calculateTotals().totalShipping.toFixed(2)}</span>
                 </div>
                 <hr />
-                <div className="d-flex justify-content-between fw-bold">
-                  <span>Profit:</span>
-                  <span className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
+                <div className="d-flex justify-content-between">
+                  <strong>Profit:</strong>
+                  <strong className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
                     ₹{calculateTotals().profit.toFixed(2)}
-                  </span>
+                  </strong>
                 </div>
               </div>
             </Col>
@@ -473,7 +499,14 @@ export default function WorkerSampleManagementPage() {
             onClick={handleSaleSubmit}
             disabled={saleLoading || saleItems.length === 0}
           >
-            {saleLoading ? <Spinner animation="border" size="sm" /> : 'Process Sale'}
+            {saleLoading ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Processing...
+              </>
+            ) : (
+              'Process Sale'
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
