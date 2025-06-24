@@ -14,7 +14,8 @@ interface SampleItem {
   qty: number
   unit: string
   price: number
-  status: 'pending' | 'accepted' | 'rejected'
+  status: 'pending' | 'accepted' | 'rejected',
+  shippingCost: number
 }
 
 interface SampleSession {
@@ -57,7 +58,7 @@ export default function WorkerSampleManagementPage() {
   const [saleNotes, setSaleNotes] = useState('')
   const [saleLoading, setSaleLoading] = useState(false)
   const [savingSession, setSavingSession] = useState<string | null>(null)
-
+  console.log("selectedSession",selectedSession)
   const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -92,19 +93,15 @@ export default function WorkerSampleManagementPage() {
       
       const response = await api.patch(`/api/sampleviewingclient/${sessionId}/items`, payload)
       
-      // Update local state to mark as viewed
+      // Remove the session from state after successful update
       setSampleSessions(prev => 
-        prev.map(session => 
-          session._id === sessionId 
-            ? { ...session, items: items, viewingStatus: 'viewed' }
-            : session
-        )
+        prev.filter(session => session._id !== sessionId)
       )
       
-      showNotification({
-        message: 'Sample session updated successfully and marked as viewed',
-        variant: 'success'
-      })
+      // showNotification({
+      //   message: 'Sample session updated successfully and removed from list',
+      //   variant: 'success'
+      // })
     } catch (error: any) {
       showNotification({
         message: error?.response?.data?.error || 'Failed to update item statuses',
@@ -201,7 +198,7 @@ export default function WorkerSampleManagementPage() {
       }))
 
       const { orgPrice, totalSalePrice, totalShipping, profit } = calculateTotals()
-
+      const caltotalShipping = selectedSession?.items?.reduce((sum, item) => sum + Number(item?.shippingCost), 0)
       const payload = {
         worker_id: user._id,
         user_id: user?.created_by,
@@ -210,7 +207,7 @@ export default function WorkerSampleManagementPage() {
         price: orgPrice,
         sale_price: totalSalePrice,
         profit: profit,
-        total_shipping: totalShipping,
+        total_shipping: caltotalShipping,
         notes: saleNotes,
         type: "sale",
       }
@@ -390,7 +387,7 @@ export default function WorkerSampleManagementPage() {
                 <th>Unit</th>
                 <th>Cost Price</th>
                 <th>Sale Price</th>
-                <th>Shipping</th>
+                {/* <th>Shipping</th> */}
               </tr>
             </thead>
             <tbody>
@@ -400,18 +397,18 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      min="1"
+                      // min="1"
                       value={item.quantity}
-                      onChange={(e) => handleSaleItemChange(index, 'quantity', Number(e.target.value))}
+                      onChange={(e) => handleSaleItemChange(index, 'quantity', (e.target.value))}
                       size="sm"
                     />
                   </td>
                   <td>
                     <Form.Control
                       type="number"
-                      min="1"
+                      // min="1"
                       value={item.measurement}
-                      onChange={(e) => handleSaleItemChange(index, 'measurement', Number(e.target.value))}
+                      onChange={(e) => handleSaleItemChange(index, 'measurement', (e.target.value))}
                       size="sm"
                     />
                   </td>
@@ -419,33 +416,33 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      min="0"
-                      step="0.01"
+                      // min="0"
+                      // step="0.01"
                       value={item.price}
-                      onChange={(e) => handleSaleItemChange(index, 'price', Number(e.target.value))}
+                      onChange={(e) => handleSaleItemChange(index, 'price', (e.target.value))}
                       size="sm"
                     />
                   </td>
                   <td>
                     <Form.Control
                       type="number"
-                      min="0"
-                      step="0.01"
+                      // min="0"
+                      // step="0.01"
                       value={item.sale_price}
-                      onChange={(e) => handleSaleItemChange(index, 'sale_price', Number(e.target.value))}
+                      onChange={(e) => handleSaleItemChange(index, 'sale_price', (e.target.value))}
                       size="sm"
                     />
                   </td>
-                  <td>
+                  {/* <td>
                     <Form.Control
                       type="number"
-                      min="0"
-                      step="0.01"
+                      // min="0"
+                      // step="0.01"
                       value={item.shipping}
-                      onChange={(e) => handleSaleItemChange(index, 'shipping', Number(e.target.value))}
+                      onChange={(e) => handleSaleItemChange(index, 'shipping', (e.target.value))}
                       size="sm"
                     />
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
@@ -469,21 +466,21 @@ export default function WorkerSampleManagementPage() {
                 <h6>Sale Summary</h6>
                 <div className="d-flex justify-content-between">
                   <span>Cost Price:</span>
-                  <span>₹{calculateTotals().orgPrice.toFixed(2)}</span>
+                  <span>${calculateTotals().orgPrice.toFixed(2)}</span>
                 </div>
                 <div className="d-flex justify-content-between">
                   <span>Sale Price:</span>
-                  <span>₹{calculateTotals().totalSalePrice.toFixed(2)}</span>
+                  <span>${calculateTotals().totalSalePrice.toFixed(2)}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+                {/* <div className="d-flex justify-content-between">
                   <span>Shipping:</span>
-                  <span>₹{calculateTotals().totalShipping.toFixed(2)}</span>
-                </div>
+                  <span>${calculateTotals().totalShipping.toFixed(2)}</span>
+                </div> */}
                 <hr />
                 <div className="d-flex justify-content-between">
                   <strong>Profit:</strong>
                   <strong className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
-                    ₹{calculateTotals().profit.toFixed(2)}
+                    ${calculateTotals().profit.toFixed(2)}
                   </strong>
                 </div>
               </div>

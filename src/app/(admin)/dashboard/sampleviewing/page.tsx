@@ -121,7 +121,8 @@ export default function SampleViewingToolPage() {
       setSelectedItems([...selectedItems, { 
         ...product, 
         price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(), 
-        qty: 1 
+        qty: 1,
+        shippingCost :  product.shippingCost
       }])
     }
   }
@@ -166,6 +167,7 @@ export default function SampleViewingToolPage() {
           unit: item.unit,
           qty: item.qty,
           price: item.price,
+          shippingCost: item.shippingCost
         })),
       }
       console.log("payload", payload)
