@@ -39,7 +39,7 @@ const ChatWidget = () => {
     try {
       // Use your backend proxy instead of direct N8N call
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.manapnl.com'}/api/webhook-proxy/n8n-chat`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://manapnl.com'}/api/webhook-proxy/n8n-chat`,
         { 
           sessionID, 
           userMessage, 
