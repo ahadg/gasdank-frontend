@@ -35,10 +35,11 @@ const ChatWidget = () => {
     setMessages(prev => [...prev, newUserMessage])
     setInput('')
     setIsLoading(true)
-
+  
     try {
+      // Use your backend proxy instead of direct N8N call
       const { data } = await axios.post(
-        'https://n8n.manapnl.com/webhook/d92b342a-4f9a-42cf-b56c-70afa0f4821f',
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.manapnl.com'}/api/webhook-proxy/n8n-chat`,
         { 
           sessionID, 
           userMessage, 
@@ -46,16 +47,19 @@ const ChatWidget = () => {
         },
         {
           headers: {
-            Authorization: 'SMA8LwzAXiqdFhlb0wHT',
             'Content-Type': 'application/json',
+            // Add any authentication headers your backend requires
           },
           timeout: 15000,
         }
       )
-      console.log("dataaa",data)
+      
+      console.log("dataaa", data)
+      
       // If data is a string, parse it
-      const match = data.match(/"response"\s*:\s*"([^"]+)"/)
-      const responseText = match ? match[1] : '❌ No response found.'
+      const match = data.match ? data.match(/"response"\s*:\s*"([^"]+)"/) : null
+      const responseText = match ? match[1] : (data.response || data.message || '❌ No response found.')
+      
       const botResponse = { 
         content: responseText, 
         from: 'bot' as const, 
