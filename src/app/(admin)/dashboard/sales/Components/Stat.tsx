@@ -54,9 +54,10 @@ const StatsLoader = () => {
 const Stat = () => {
   const user = useAuthStore((state) => state.user)
   const [startDate, setStartDate] = useState(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return toLocalDateTimeString(today)
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    oneWeekAgo.setHours(0, 0, 0, 0)
+    return toLocalDateTimeString(oneWeekAgo)
   })
   const [endDate, setEndDate] = useState(() => {
     const now = new Date()
