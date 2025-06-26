@@ -120,7 +120,8 @@ export default function SampleViewingToolPage() {
     if (!selectedItems.find(item => item._id === product._id)) {
       setSelectedItems([...selectedItems, { 
         ...product, 
-        price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(), 
+        price  : ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(), 
+        sale_price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(), 
         qty: 1,
         shippingCost :  product.shippingCost
       }])
@@ -140,7 +141,7 @@ export default function SampleViewingToolPage() {
   }
 
   const calculateItemTotal = (item: any) => {
-    const price = parseFloat(item.price) || 0
+    const price = parseFloat(item.sale_price) || 0
     const qty = parseFloat(item.qty) || 0
     return price * qty
   }
@@ -167,6 +168,7 @@ export default function SampleViewingToolPage() {
           unit: item.unit,
           qty: item.qty,
           price: item.price,
+          sale_price : item?.sale_price,
           shippingCost: item.shippingCost
         })),
       }
@@ -354,7 +356,7 @@ export default function SampleViewingToolPage() {
                   <th>Name</th>
                   <th>Qty</th>
                   <th>Unit</th>
-                  <th>Price</th>
+                  <th>Sale Price</th>
                   <th>Total</th>
                   <th>Action</th>
                 </tr>
@@ -366,9 +368,9 @@ export default function SampleViewingToolPage() {
                     <td>
                       <Form.Control
                         type="number"
-                        min="1"
+                        // min="1"
                         value={item.qty}
-                        onChange={e => handleUpdateItem(index, 'qty', parseFloat(e.target.value) || 1)}
+                        onChange={e => handleUpdateItem(index, 'qty', (e.target.value) || 1)}
                         style={{ width: '80px' }}
                       />
                     </td>
@@ -376,10 +378,10 @@ export default function SampleViewingToolPage() {
                     <td>
                       <Form.Control
                         type="number"
-                        step="0.01"
-                        min="0"
-                        value={item.price}
-                        onChange={e => handleUpdateItem(index, 'price', parseFloat(e.target.value) || 0)}
+                        // step="0.01"
+                        // min="0"
+                        value={item.sale_price}
+                        onChange={e => handleUpdateItem(index, 'sale_price', (e.target.value) || 0)}
                         style={{ width: '120px' }}
                       />
                     </td>
@@ -456,7 +458,7 @@ export default function SampleViewingToolPage() {
                     </td>
                     <td className="fw-bold">
                       ${session.items.reduce((total: number, item: any) => 
-                        total + ((parseFloat(item.price) || 0) + (parseFloat(item.shippingCost) || 0)) * (parseFloat(item.qty) || 1), 0
+                        total + ((parseFloat(item.sale_price) || 0) + (parseFloat(item.shippingCost) || 0)) * (parseFloat(item.qty) || 1), 0
                       ).toFixed(2)}
                     </td>
                     <td className="text-capitalize">{session.viewingStatus}</td>

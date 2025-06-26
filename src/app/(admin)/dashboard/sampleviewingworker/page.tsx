@@ -15,7 +15,8 @@ interface SampleItem {
   unit: string
   price: number
   status: 'pending' | 'accepted' | 'rejected',
-  shippingCost: number
+  shippingCost: number,
+  sale_price : number
 }
 
 interface SampleSession {
@@ -147,7 +148,7 @@ export default function WorkerSampleManagementPage() {
       measurement: 1,
       unit: item.unit,
       price: item.price,
-      sale_price: item.price,
+      sale_price: item.sale_price,
       shipping: 0
     }))
 
@@ -327,7 +328,7 @@ export default function WorkerSampleManagementPage() {
                             <td>{item.name}</td>
                             <td>{item.qty}</td>
                             <td>{item.unit}</td>
-                            <td>₹{item.price.toFixed(2)}</td>
+                            <td>₹{item?.sale_price?.toFixed(2)}</td>
                             <td>
                               <Badge bg={getStatusBadgeVariant(item.status)}>
                                 {item.status}
