@@ -146,7 +146,7 @@ const totalAmount = useMemo(() => {
   ]
 
   const handleAddRow = () => {
-    append({ name: '', qty: 0, unit: '', category: '', price: 0, measurement: 1 })
+    append({ name: '', qty: 0, unit: 'pound', category: '', price: 0, measurement: 1 })
   }
 
   // Error callback for form submission

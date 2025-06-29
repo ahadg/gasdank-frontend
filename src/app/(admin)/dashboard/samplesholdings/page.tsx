@@ -25,7 +25,7 @@ export default function SampleHoldingPage() {
       {
         name: '',
         qty: '',
-        unit: '',
+        unit: 'pound',
         measurement: 1,
         price: '',
         category_id: ''
@@ -120,7 +120,7 @@ export default function SampleHoldingPage() {
       products: [...newSample.products, {
         name: '',
         qty: '',
-        unit: '',
+        unit: 'pound',
         measurement: 1,
         price: '',
         category_id: ''
@@ -152,9 +152,9 @@ export default function SampleHoldingPage() {
       errors.push('Please select a buyer.')
     }
 
-    if (!newSample.shippingCost || Number(newSample.shippingCost) < 0) {
-      errors.push('Shipping cost must be a valid number.')
-    }
+    // if (!newSample.shippingCost || Number(newSample.shippingCost) < 0) {
+    //   errors.push('Shipping cost must be a valid number.')
+    // }
   
     newSample.products.forEach((p, index) => {
       if (!p.name) errors.push(`Product ${index + 1}: Name is required.`)
@@ -215,7 +215,7 @@ export default function SampleHoldingPage() {
     setNewSample({
       buyer_id: '',
       shippingCost: '',
-      products: [{ name: '', qty: '', unit: '', price: '', measurement: 1, category_id: '' }]
+      products: [{ name: '', qty: '', unit: 'pound', price: '', measurement: 1, category_id: '' }]
     })
     setSelectedBuyer(null)
   }
@@ -528,7 +528,7 @@ export default function SampleHoldingPage() {
                       <Form.Label>Measurement</Form.Label>
                       <Form.Select 
                         value={product.measurement} 
-                        onChange={(e) => handleProductChange(index, 'measurement', parseFloat(e.target.value))}
+                        onChange={(e) => handleProductChange(index, 'measurement', (e.target.value))}
                       >
                         {measurementOptions.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -551,7 +551,7 @@ export default function SampleHoldingPage() {
                           value={product.unit} 
                           onChange={(e) => handleProductChange(index, 'unit', e.target.value)}
                         >
-                          <option value="">Unit</option>
+                          {/* <option value="">Unit</option> */}
                           {unitOptions.map((unit) => (
                             <option key={unit}>{unit}</option>
                           ))}
@@ -564,7 +564,7 @@ export default function SampleHoldingPage() {
                         <InputGroup.Text>$</InputGroup.Text>
                         <Form.Control 
                           type="number" 
-                          placeholder="0.00"
+                          placeholder="0"
                           value={product.price} 
                           onChange={(e) => handleProductChange(index, 'price', e.target.value)} 
                         />

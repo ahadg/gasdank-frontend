@@ -98,7 +98,7 @@ const ActivityLogsPage = () => {
       )
       setActivityData(res.data.logs)
       setTotalLogs(res.data.totallogs)
-      
+      console.log("res.data",res.data)
       // Check which transactions are edited
       const transactionIds = res.data.logs
         .filter((log: any) => log.transaction_id)
@@ -263,7 +263,8 @@ const ActivityLogsPage = () => {
                                 />
                               )}
                               <Link href="" className="text-dark">
-                                {item.user_id?.firstName} {item.user_id?.lastName}
+                              {item?.worker?.length > 0 ? `${item?.worker?.[0]?.firstName} ${item?.worker?.[0]?.lastName} (W)`: `${item.user_id?.firstName} ${item.user_id?.lastName}`}
+                               
                               </Link>
                             </h5>
                           </td>

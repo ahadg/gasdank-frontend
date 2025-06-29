@@ -41,6 +41,7 @@ interface ITransaction {
   total_shipping: number;
   type?: string; // "sale" | "return" | "payment" | "inventory_addition"
   items?: ITransactionItem[];
+  sample_id : any;
   created_at: string;
   payment_direction: string;
   transactionpayment_id?: {
@@ -84,8 +85,8 @@ const AccountHistory = () => {
   // New state for date range selection with single inputs
   const [dateRange, setDateRange] = useState<DateRange>({
     startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
-    endDateTime: moment().endOf('day').format('YYYY-MM-DDTHH:mm')
-  })
+    endDateTime: moment().add(1, 'day').endOf('day').format('YYYY-MM-DDTHH:mm')
+  });
 
   // New state: if true, exclude shipping cost from totals.
   const [excludeShipping, setExcludeShipping] = useState<boolean>(false)
@@ -180,8 +181,26 @@ const AccountHistory = () => {
   }
   
   const calculateTotalPriceWithShippingFromItems = (tx: ITransaction): number => {
-    if (!tx.items || tx.items.length === 0) return 0;
-    
+    //if (!tx.items || tx.items.length === 0) return 0;
+    console.log("tx_tx",tx)
+    if(tx?.type == "sample_recieved") {
+      return tx.sample_id?.products?.reduce((total, item) => {
+        const txItem = item;
+        const shipping = txItem?.shippingCost || 0;
+        const qty = txItem?.qty || 0;
+        // Changed: Add shipping to price first, then multiply by quantity
+        return total + ((txItem?.price + shipping) * qty);
+      }, 0);
+    } else if (tx?.type == "sample_returned") {
+      return tx.sample_id?.products?.reduce((total, item) => {
+        const txItem = item;
+        const shipping = txItem?.shippingCost || 0;
+        const qty = txItem?.qty || 0;
+        // Changed: Add shipping to price first, then multiply by quantity
+        return total + ((txItem?.price + shipping) * qty);
+      }, 0);
+    } 
+    else {
     return tx.items.reduce((total, item) => {
       const txItem = item.transactionitem_id;
       const shipping = txItem?.shipping || 0;
@@ -189,20 +208,25 @@ const AccountHistory = () => {
       // Changed: Add shipping to price first, then multiply by quantity
       return total + ((txItem?.price + shipping) * qty);
     }, 0);
+    }
   }
   
 
   // Compute totals
   const totalsaleAmount = useMemo(() => {
     return transactions
-      .filter((tx) => tx.type === 'sale' || tx.type === 'payment')
+      .filter((tx) => tx.type === 'sale' || tx.type === 'payment' || tx.type === 'sample_recieved')
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'given') {
             return sum + (tx?.price || 0)
           }
           return sum
-        } else {
+        } 
+        else if(tx.type === 'sample_recieved') {
+          return calculateTotalPriceWithShippingFromItems(tx)
+        } 
+        else {
           return sum + (tx?.sale_price || 0)
         }
       }, 0)
@@ -217,7 +241,7 @@ const AccountHistory = () => {
 
   const totalPaymentReceived = useMemo(() => {
     return transactions
-      .filter((tx) => tx.type === 'payment' || tx.type === 'return' || tx.type === 'inventory_addition')
+      .filter((tx) => tx.type === 'payment' || tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved')
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'received') {
@@ -225,6 +249,8 @@ const AccountHistory = () => {
           }
           return sum
         } else if (tx.type === 'inventory_addition') {
+          return sum + (calculateTotalPriceWithShippingFromItems(tx))
+        } else if(tx.type === 'sample_recieved') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
         }
         else {
@@ -312,7 +338,21 @@ const AccountHistory = () => {
         content += ` (${tx.notes})`
       }
       return <div>{content}</div>
-    } else {
+    } else if (tx.sample_id?.products) {
+      return (
+        <div>
+          {tx.sample_id.products.map((item, index) => {
+            const name = item?.name || "Unnamed Product"; // fallback in case `name` is undefined
+            return (
+              <div key={index}>
+                {item.qty} {item.unit} of {name} (@ {formatCurrency((item?.price || 0) + (item?.shippingCost || 0))} each)
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    else {
       if (tx.items && tx.items.length > 0) {
         return (
           <div>
@@ -477,12 +517,14 @@ const AccountHistory = () => {
                       {tx.type === 'payment'
                         ? tx.payment_direction === 'received' &&
                           ('- ' + formatCurrency(tx.price))
-                        : (tx.type === 'return' || tx.type === 'inventory_addition') &&
+                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved') &&
                           ('- ' +  (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
                     </td>
                     <td>
                       {tx.type === 'sale'
                         ? ('+ ' + (formatCurrency(tx.sale_price)))
+                        : tx.type === "sample_returned" ? 
+                          ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
                         : tx.type === 'payment' &&
                           tx.payment_direction === 'given' &&
                           ('+ ' + formatCurrency(tx.price))}

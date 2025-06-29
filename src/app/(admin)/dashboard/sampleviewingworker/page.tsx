@@ -14,9 +14,8 @@ interface SampleItem {
   qty: number
   unit: string
   price: number
-  status: 'pending' | 'accepted' | 'rejected',
-  shippingCost: number,
-  sale_price : number
+  shippingCost: number
+  sale_price: number
 }
 
 interface SampleSession {
@@ -33,7 +32,7 @@ interface SampleSession {
     lastName: string
   }
   items: SampleItem[]
-  viewingStatus: 'pending' | 'viewed'
+  status: 'pending' | 'accepted' | 'rejected'
   sentAt: string
   notes?: string
 }
@@ -58,8 +57,8 @@ export default function WorkerSampleManagementPage() {
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [saleNotes, setSaleNotes] = useState('')
   const [saleLoading, setSaleLoading] = useState(false)
-  const [savingSession, setSavingSession] = useState<string | null>(null)
-  console.log("selectedSession",selectedSession)
+  const [processingSession, setProcessingSession] = useState<string | null>(null)
+  
   const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -81,67 +80,37 @@ export default function WorkerSampleManagementPage() {
     }
   }
 
-  const updateItemStatus = async (sessionId: string, items: SampleItem[]) => {
+  const rejectSession = async (session: SampleSession) => {
     try {
-      setSavingSession(sessionId)
+      setProcessingSession(session._id)
       
-      const payload = {
-        items: items.map(item => ({
-          productId: item.productId,
-          status: item.status
-        }))
-      }
+      // Update session status to rejected
+      await api.patch(`/api/sampleviewingclient/${session._id}/status`, {
+        status: 'rejected'
+      })
       
-      const response = await api.patch(`/api/sampleviewingclient/${sessionId}/items`, payload)
-      
-      // Remove the session from state after successful update
+      // Remove the session from state after successful rejection
       setSampleSessions(prev => 
-        prev.filter(session => session._id !== sessionId)
+        prev.filter(sessionItem => sessionItem._id !== session._id)
       )
       
-      // showNotification({
-      //   message: 'Sample session updated successfully and removed from list',
-      //   variant: 'success'
-      // })
+      showNotification({
+        message: 'Sample session rejected successfully',
+        variant: 'success'
+      })
     } catch (error: any) {
       showNotification({
-        message: error?.response?.data?.error || 'Failed to update item statuses',
+        message: error?.response?.data?.error || 'Failed to reject session',
         variant: 'danger'
       })
     } finally {
-      setSavingSession(null)
+      setProcessingSession(null)
     }
-  }
-
-  const handleStatusChange = (sessionId: string, itemIndex: number, newStatus: string) => {
-    setSampleSessions(prev => 
-      prev.map(session => {
-        if (session._id === sessionId) {
-          const updatedItems = [...session.items]
-          updatedItems[itemIndex].status = newStatus as 'pending' | 'accepted' | 'rejected'
-          return { ...session, items: updatedItems }
-        }
-        return session
-      })
-    )
-  }
-
-  const handleSaveSession = (session: SampleSession) => {
-    updateItemStatus(session._id, session.items)
   }
 
   const prepareSaleModal = (session: SampleSession) => {
-    const acceptedItems = session.items.filter(item => item.status === 'accepted')
-    
-    if (acceptedItems.length === 0) {
-      showNotification({
-        message: 'No accepted items to sell in this session',
-        variant: 'warning'
-      })
-      return
-    }
-
-    const saleItemsData: SaleItem[] = acceptedItems.map(item => ({
+    // Convert all items to sale items
+    const saleItemsData: SaleItem[] = session.items.map(item => ({
       productId: item.productId,
       name: item.name,
       quantity: item.qty,
@@ -187,6 +156,12 @@ export default function WorkerSampleManagementPage() {
     try {
       setSaleLoading(true)
       
+      // First, update session status to accepted
+      await api.patch(`/api/sampleviewingclient/${selectedSession._id}/status`, {
+        status: 'accepted'
+      })
+      
+      // Then create the sale transaction
       const transformedItems = saleItems.map(item => ({
         inventory_id: item.productId,
         qty: Number(item.quantity) * Number(item.measurement),
@@ -200,7 +175,8 @@ export default function WorkerSampleManagementPage() {
 
       const { orgPrice, totalSalePrice, totalShipping, profit } = calculateTotals()
       const caltotalShipping = selectedSession?.items?.reduce((sum, item) => sum + Number(item?.shippingCost), 0)
-      const payload = {
+      
+      const transactionPayload = {
         worker_id: user._id,
         user_id: user?.created_by,
         buyer_id: selectedSession.buyer_id._id,
@@ -213,7 +189,12 @@ export default function WorkerSampleManagementPage() {
         type: "sale",
       }
 
-      await api.post('/api/transaction', payload)
+      await api.post('/api/transaction', transactionPayload)
+      
+      // Remove the session from state after successful sale
+      setSampleSessions(prev => 
+        prev.filter(sessionItem => sessionItem._id !== selectedSession._id)
+      )
       
       showNotification({
         message: 'Sale processed successfully',
@@ -224,7 +205,6 @@ export default function WorkerSampleManagementPage() {
       setSaleItems([])
       setSaleNotes('')
       setSelectedSession(null)
-      fetchSampleSessions()
     } catch (error: any) {
       showNotification({
         message: error?.response?.data?.error || 'Error processing sale',
@@ -233,18 +213,6 @@ export default function WorkerSampleManagementPage() {
     } finally {
       setSaleLoading(false)
     }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'accepted': return 'success'
-      case 'rejected': return 'danger'
-      default: return 'secondary'
-    }
-  }
-
-  const hasChanges = (session: SampleSession) => {
-    return session.items.some(item => item.status !== 'pending')
   }
 
   if (loading) {
@@ -272,104 +240,84 @@ export default function WorkerSampleManagementPage() {
         </Alert>
       ) : (
         <Row>
-          {sampleSessions.map((session) => {
-            const isChanged = hasChanges(session)
-            const acceptedCount = session.items.filter(item => item.status === 'accepted').length
-            
-            return (
-              <Col lg={12} className="mb-4" key={session._id}>
-                <Card>
-                  <Card.Header className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h5 className="mb-1">
-                        {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
-                      </h5>
-                      <small className="text-muted">
-                        {new Date(session.sentAt).toLocaleDateString()}
-                      </small>
-                    </div>
-                    <div className="d-flex align-items-center gap-2">
-                      {session.viewingStatus === 'viewed' && (
-                        <Badge bg="success">Viewed</Badge>
-                      )}
-                      {acceptedCount > 0 && (
+          {sampleSessions.map((session) => (
+            <Col lg={12} className="mb-4" key={session._id}>
+              <Card>
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 className="mb-1">
+                      {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
+                    </h5>
+                    <small className="text-muted">
+                      {new Date(session.sentAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <Badge bg={session.status === 'pending' ? 'warning' : session.status === 'accepted' ? 'success' : 'danger'}>
+                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                    </Badge>
+                    {session.status === 'pending' && (
+                      <>
                         <Button
                           variant="success"
                           size="sm"
                           onClick={() => prepareSaleModal(session)}
+                          disabled={processingSession === session._id}
                         >
-                          Create Sale ({acceptedCount})
+                          <IconifyIcon icon="tabler:shopping-cart" className="me-1" />
+                          Create Sale ({session.items.length})
                         </Button>
-                      )}
-                    </div>
-                  </Card.Header>
-                  
-                  <Card.Body>
-                    {session.notes && (
-                      <Alert variant="info" className="mb-3">
-                        <strong>Notes:</strong> {session.notes}
-                      </Alert>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => rejectSession(session)}
+                          disabled={processingSession === session._id}
+                        >
+                          {processingSession === session._id ? (
+                            <Spinner animation="border" size="sm" />
+                          ) : (
+                            <>
+                              <IconifyIcon icon="tabler:x" className="me-1" />
+                              Reject
+                            </>
+                          )}
+                        </Button>
+                      </>
                     )}
-                    
-                    <Table striped>
-                      <thead>
-                        <tr>
-                          <th>Product</th>
-                          <th>Qty</th>
-                          <th>Unit</th>
-                          <th>Price</th>
-                          <th>Status</th>
-                          <th>Action</th>
+                  </div>
+                </Card.Header>
+                
+                <Card.Body>
+                  {session.notes && (
+                    <Alert variant="info" className="mb-3">
+                      <strong>Notes:</strong> {session.notes}
+                    </Alert>
+                  )}
+                  
+                  <Table striped>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {session.items.map((item, index) => (
+                        <tr key={item.productId}>
+                          <td>{item.name}</td>
+                          <td>{item.qty}</td>
+                          <td>{item.unit}</td>
+                          <td>₹{item?.sale_price?.toFixed(2)}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {session.items.map((item, index) => (
-                          <tr key={item.productId}>
-                            <td>{item.name}</td>
-                            <td>{item.qty}</td>
-                            <td>{item.unit}</td>
-                            <td>₹{item?.sale_price?.toFixed(2)}</td>
-                            <td>
-                              <Badge bg={getStatusBadgeVariant(item.status)}>
-                                {item.status}
-                              </Badge>
-                            </td>
-                            <td>
-                              <Form.Select
-                                size="sm"
-                                value={item.status}
-                                onChange={(e) => handleStatusChange(session._id, index, e.target.value)}
-                                style={{ width: '120px' }}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="accepted">Accept</option>
-                                <option value="rejected">Reject</option>
-                              </Form.Select>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                    
-                    <div className="d-flex justify-content-end mt-3">
-                      <Button
-                        variant={isChanged ? "primary" : "outline-secondary"}
-                        onClick={() => handleSaveSession(session)}
-                        disabled={savingSession === session._id}
-                        size="sm"
-                      >
-                        {savingSession === session._id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <IconifyIcon icon="tabler:check" />
-                        )}
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            )
-          })}
+                      ))}
+                    </tbody>
+                  </Table>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
         </Row>
       )}
 
@@ -388,7 +336,6 @@ export default function WorkerSampleManagementPage() {
                 <th>Unit</th>
                 <th>Cost Price</th>
                 <th>Sale Price</th>
-                {/* <th>Shipping</th> */}
               </tr>
             </thead>
             <tbody>
@@ -398,7 +345,6 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      // min="1"
                       value={item.quantity}
                       onChange={(e) => handleSaleItemChange(index, 'quantity', (e.target.value))}
                       size="sm"
@@ -407,7 +353,6 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      // min="1"
                       value={item.measurement}
                       onChange={(e) => handleSaleItemChange(index, 'measurement', (e.target.value))}
                       size="sm"
@@ -417,8 +362,6 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      // min="0"
-                      // step="0.01"
                       value={item.price}
                       onChange={(e) => handleSaleItemChange(index, 'price', (e.target.value))}
                       size="sm"
@@ -427,23 +370,11 @@ export default function WorkerSampleManagementPage() {
                   <td>
                     <Form.Control
                       type="number"
-                      // min="0"
-                      // step="0.01"
                       value={item.sale_price}
                       onChange={(e) => handleSaleItemChange(index, 'sale_price', (e.target.value))}
                       size="sm"
                     />
                   </td>
-                  {/* <td>
-                    <Form.Control
-                      type="number"
-                      // min="0"
-                      // step="0.01"
-                      value={item.shipping}
-                      onChange={(e) => handleSaleItemChange(index, 'shipping', (e.target.value))}
-                      size="sm"
-                    />
-                  </td> */}
                 </tr>
               ))}
             </tbody>
@@ -473,10 +404,6 @@ export default function WorkerSampleManagementPage() {
                   <span>Sale Price:</span>
                   <span>${calculateTotals().totalSalePrice.toFixed(2)}</span>
                 </div>
-                {/* <div className="d-flex justify-content-between">
-                  <span>Shipping:</span>
-                  <span>${calculateTotals().totalShipping.toFixed(2)}</span>
-                </div> */}
                 <hr />
                 <div className="d-flex justify-content-between">
                   <strong>Profit:</strong>

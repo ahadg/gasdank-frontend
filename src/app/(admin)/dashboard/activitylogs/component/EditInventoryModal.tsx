@@ -274,7 +274,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                               <Form.Control
                                 type="number"
                                 value={item.measurement}
-                                onChange={(e) => handleFormChange('measurement', parseFloat(e.target.value) || '', index)}
+                                onChange={(e) => handleFormChange('measurement', (e.target.value) || '', index)}
                                 // min="0"
                                 // step="0.01"
                               />
@@ -300,7 +300,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                 <Form.Control
                                   // type="number"
                                   value={item.price}
-                                  onChange={(e) => handleFormChange('price', parseFloat(e.target.value) || '', index)}
+                                  onChange={(e) => handleFormChange('price', (e.target.value) || '', index)}
                                   // min="0"
                                   // step="0.01"
                                 />
@@ -329,9 +329,9 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                   <Form.Control
                                     type="number"
                                     value={item.sale_price}
-                                    onChange={(e) => handleFormChange('sale_price', parseFloat(e.target.value) || 0, index)}
-                                    min="0"
-                                    step="0.01"
+                                    onChange={(e) => handleFormChange('sale_price', (e.target.value) || 0, index)}
+                                    // min="0"
+                                    // step="0.01"
                                   />
                                 </Form.Group>
                               </Col>

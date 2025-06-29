@@ -4,10 +4,11 @@ import SimplebarReactClient from '@/components/wrappers/SimplebarReactClient'
 import { Col, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Row } from 'react-bootstrap'
 import Image from 'next/image'
 import { timeSince } from '@/utils/date'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
+import { useRouter } from 'next/navigation'
 
 interface NotificationResponse {
   notifications: NotificationType[];
@@ -42,6 +43,8 @@ const Notifications = () => {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
+  const router = useRouter()
+  const dropdownRef = useRef<any>(null);
 
   // Fetch notifications from API
   const fetchNotifications = async () => {
@@ -64,11 +67,7 @@ const Notifications = () => {
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      await api.put(`/api/notification/${notificationId}/read`, 
-      //   {
-      //   method: 'PUT',
-      // }
-    );
+      await api.put(`/api/notification/${notificationId}/read`);
       
       // Update local state
       setNotifications(prev => 
@@ -81,6 +80,7 @@ const Notifications = () => {
       
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
+      
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
     }
@@ -88,12 +88,10 @@ const Notifications = () => {
 
   // Mark all notifications as read
   const markAllAsRead = async () => {
-    if (!user?.id) return;
+    if (!user?._id) return;
     
     try {
-      await api.put(`/api/notification/${user.id}/mark-all-read`, {
-        method: 'PUT',
-      });
+      await api.put(`/api/notification/${user._id}/mark-all-read`);
       
       // Update local state
       setNotifications(prev => 
@@ -108,9 +106,7 @@ const Notifications = () => {
   // Delete notification
   const dismissNotification = async (notificationId: string) => {
     try {
-      await api.delete(`/api/notification/${notificationId}`, {
-        method: 'DELETE',
-      });
+      await api.delete(`/api/notification/${notificationId}`);
       
       // Update local state
       setNotifications(prev => 
@@ -129,12 +125,10 @@ const Notifications = () => {
 
   // Delete all notifications
   const deleteAllNotifications = async () => {
-    if (!user?.id) return;
+    if (!user?._id) return;
     
     try {
-      await api.delete(`/api/notification/${user.id}/delete-all`, {
-        method: 'DELETE',
-      });
+      await api.delete(`/api/notification/${user._id}/delete-all`);
       
       setNotifications([]);
       setUnreadCount(0);
@@ -143,12 +137,97 @@ const Notifications = () => {
     }
   };
 
-  // Handle notification click - mark as read automatically
-  const handleNotificationClick = (notification: NotificationType) => {
-    if (!notification.isRead) {
-      markAsRead(notification._id);
+  // Close dropdown programmatically
+  const closeDropdown = () => {
+    // Method 1: Try Bootstrap API if available
+    if (typeof window !== 'undefined' && (window as any).bootstrap?.Dropdown && dropdownRef.current) {
+      try {
+        const dropdownElement = dropdownRef.current;
+        const bootstrapDropdown = new (window as any).bootstrap.Dropdown(dropdownElement);
+        bootstrapDropdown.hide();
+      } catch (error) {
+        console.log('Bootstrap dropdown hide failed:', error);
+      }
     }
-    // Add any additional click handling here (e.g., navigation)
+    
+    // Method 2: Simulate click outside dropdown
+    try {
+      // Find and click the backdrop or body to close dropdown
+      const backdrop = document.querySelector('.dropdown-backdrop');
+      if (backdrop) {
+        (backdrop as HTMLElement).click();
+      } else {
+        // Alternative: dispatch ESC key to close dropdown
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      }
+    } catch (error) {
+      console.log('Manual dropdown close failed:', error);
+    }
+    
+    // Always update state
+    setIsOpen(false);
+  };
+
+  // Handle notification click - mark as read automatically
+  const handleNotificationClick = async (notification: NotificationType) => {
+    if (!notification.isRead) {
+      await markAsRead(notification._id);
+    }
+    
+    // Close dropdown first
+    setIsOpen(false);
+    
+    // Small delay to ensure dropdown closes before navigation
+    setTimeout(() => {
+      // Handle navigation based on notification type
+      switch (notification.type) {
+        case "product":
+          router.push('/inventory/products');
+          break;
+          
+        case "sample_viewing_assigned":
+          router.push('/dashboard/sampleviewingworker');
+          break;
+          
+        case "order":
+        case "new_order":
+          router.push('/orders');
+          break;
+          
+        case "user":
+        case "new_user":
+          router.push('/users');
+          break;
+          
+        case "activity":
+          // If there's an activityId, navigate to specific activity
+          if (notification.activityId) {
+            router.push(`/activities/${notification.activityId}`);
+          } else {
+            router.push('/activities');
+          }
+          break;
+          
+        case "message":
+        case "chat":
+          router.push('/messages');
+          break;
+          
+        case "report":
+          router.push('/reports');
+          break;
+          
+        case "system":
+        case "announcement":
+          router.push('/settings');
+          break;
+          
+        default:
+          console.log('Unknown notification type:', notification.type);
+          router.push('/dashboard/sales');
+          break;
+      }
+    }, 150);
   };
 
   // Handle dropdown toggle
@@ -166,17 +245,16 @@ const Notifications = () => {
       console.log("step_2")
       fetchNotifications();
     }
-  }, [user?.id]);
+  }, [user?._id]); // Fixed dependency - was user?.id, should be user?._id
 
   return (
     <div className="topbar-item">
-      <Dropdown align={'end'} onToggle={handleDropdownToggle}>
+      <Dropdown ref={dropdownRef} align={'end'} onToggle={handleDropdownToggle} show={isOpen}>
         <DropdownToggle 
           as={'a'} 
           className="topbar-link drop-arrow-none" 
           data-bs-toggle="dropdown" 
           data-bs-offset="0,25" 
-          data-bs-auto-close="outside" 
           aria-haspopup="false" 
           aria-expanded="false"
         >
@@ -309,15 +387,6 @@ const Notifications = () => {
               </div>
             </div>
           )}
-          
-          {/* {notifications.length > 0 && (
-            <Link 
-              href="/notifications" 
-              className="dropdown-item notification-item position-fixed z-2 bottom-0 text-center text-reset text-decoration-underline link-offset-2 fw-bold notify-item border-top border-light py-2"
-            >
-              View All
-            </Link>
-          )} */}
         </DropdownMenu>
       </Dropdown>
     </div>
