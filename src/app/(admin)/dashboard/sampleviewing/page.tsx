@@ -66,6 +66,7 @@ export default function SampleViewingToolPage() {
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }
+      query += `&qty=gt0`
       const response = await api.get(query)
       // Expecting response.data to have: { page, limit, totalProducts, products }
       setProducts(response.data.products || [])
