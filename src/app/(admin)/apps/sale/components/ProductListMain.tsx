@@ -191,6 +191,7 @@ const saleTransactionsPage = () => {
                   />
                 </th>
                 <th>PRODUCT ID</th>
+                <th>PRODUCT Name</th>
                 <th>CATEGORY</th>
                 <th>Available Quantity</th>
                 <th>Unit</th>

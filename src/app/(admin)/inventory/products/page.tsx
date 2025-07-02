@@ -9,6 +9,7 @@ import api from '@/utils/axiosInstance'
 
 import CustomPagination from '@/app/(admin)/e-commerce/products-grid/components/CustomPagination'
 import { useAuthStore } from '@/store/authStore'
+import RestockModal from './edit/components/Restockmodal'
 
 //export const metadata: Metadata = { title: 'Products' }
 
@@ -20,6 +21,10 @@ const ProductsPage = () => {
   const [page, setPage] = useState(1)
   const limit = 10
   const [totalPages, setTotalPages] = useState(1)
+  
+  // Restock modal state
+  const [showRestockModal, setShowRestockModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
 
   // Fetch products for the current user using Axios with pagination
   async function fetchProducts() {
@@ -44,6 +49,21 @@ const ProductsPage = () => {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value)
+  }
+
+  const handleRestockClick = (product: any) => {
+    setSelectedProduct(product)
+    setShowRestockModal(true)
+  }
+
+  const handleRestockModalClose = () => {
+    setShowRestockModal(false)
+    setSelectedProduct(null)
+    // Refresh products after restocking
+    //fetchProducts()
+  }
+  const onRestockComplete = () => {
+    fetchProducts()
   }
 
   const searchLower = search.toLowerCase()
@@ -109,9 +129,15 @@ const ProductsPage = () => {
                         <td>{item.notes}</td>
                         <td className="text-center">
                           <div className="hstack justify-content-center">
-                            {/* <Button variant="soft-primary" size="sm" className="btn-icon rounded-circle me-1">
-                              <IconifyIcon icon="tabler:eye" />
-                            </Button> */}
+                            <Button 
+                              variant="soft-primary" 
+                              size="sm" 
+                              className="btn-icon rounded-circle me-1"
+                              onClick={() => handleRestockClick(item)}
+                              title="Restock Product"
+                            >
+                              <IconifyIcon icon="tabler:package" />
+                            </Button>
                             <Link href={`/inventory/products/edit/${item._id}`}>
                               <Button variant="soft-success" size="sm" className="btn-icon rounded-circle">
                                 <IconifyIcon icon="tabler:edit" className="fs-16" />
@@ -145,6 +171,14 @@ const ProductsPage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Restock Modal */}
+      <RestockModal
+        show={showRestockModal}
+        onHide={handleRestockModalClose}
+        product={selectedProduct}
+        onRestockComplete={onRestockComplete}
+      />
     </>
   )
 }
