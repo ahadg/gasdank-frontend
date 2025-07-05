@@ -92,7 +92,7 @@ export default function AddWholePage() {
                   name="email"
                   className="form-control"
                   defaultValue=""
-                  required
+                  // required
                 />
               </Col>
               <Col md={6}>
@@ -117,7 +117,7 @@ export default function AddWholePage() {
                   name="startingBalance"
                   className="form-control"
                   defaultValue="0"
-                  required
+                  // required
                 />
               </Col>
             </Row>

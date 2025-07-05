@@ -10,27 +10,51 @@ import api from '@/utils/axiosInstance'
 import CustomPagination from '@/app/(admin)/e-commerce/products-grid/components/CustomPagination'
 import { useAuthStore } from '@/store/authStore'
 import RestockModal from './edit/components/Restockmodal'
+import { useNotificationContext } from '@/context/useNotificationContext'
 
 //export const metadata: Metadata = { title: 'Products' }
 
 const ProductsPage = () => {
   const user = useAuthStore((state) => state.user)
   const [products, setProducts] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [filterCategory, setFilterCategory] = useState<string>('')
   const [page, setPage] = useState(1)
-  const limit = 10
+  const limit = 100
   const [totalPages, setTotalPages] = useState(1)
+  const { showNotification } = useNotificationContext()
   
   // Restock modal state
   const [showRestockModal, setShowRestockModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
 
-  // Fetch products for the current user using Axios with pagination
+  // Fetch user-specific categories
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await api.get(`/api/categories/${user?._id}`)
+        setCategories(response.data)
+      } catch (error) {
+        showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
+        console.error('Error fetching categories:', error)
+      }
+    }
+    if (user?._id) {
+      fetchCategories()
+    }
+  }, [user?._id])
+
+  // Fetch products for the current user using Axios with pagination and category filter
   async function fetchProducts() {
     setLoading(true)
     try {
-      const response = await api.get(`/api/inventory/${user?._id}?page=${page}&limit=${limit}`)
+      let query = `/api/inventory/${user?._id}?page=${page}&limit=${limit}`
+      if (filterCategory) {
+        query += `&category=${filterCategory}`
+      }
+      const response = await api.get(query)
       // Expect API to return { products: [...], total: number }
       setProducts(response.data.products)
       setTotalPages(Math.ceil(response.data.totalProducts / limit))
@@ -45,7 +69,7 @@ const ProductsPage = () => {
     if (user?._id) {
       fetchProducts()
     }
-  }, [user?._id, page])
+  }, [user?._id, page, filterCategory])
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value)
@@ -78,7 +102,8 @@ const ProductsPage = () => {
         <Col xs={12}>
           <Card>
             <CardHeader className="d-flex align-items-center justify-content-between border-bottom border-light">
-              <div className="px-3 py-3 d-flex justify-content-start">
+              <div className="px-3 py-3 d-flex justify-content-start gap-3">
+                {/* Search Input */}
                 <div className="input-group" style={{ maxWidth: '300px' }}>
                   <input
                     type="text"
@@ -87,6 +112,34 @@ const ProductsPage = () => {
                     value={search}
                     onChange={handleSearchChange}
                   />
+                </div>
+                
+                {/* Category Filter */}
+                <div className="input-group" style={{ maxWidth: '250px' }}>
+                  <Form.Select
+                    value={filterCategory}
+                    onChange={(e) => {
+                      setFilterCategory(e.target.value)
+                      setPage(1) // Reset to page 1 on filter change
+                    }}
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => {
+                      setFilterCategory('')
+                      setPage(1)
+                    }}
+                  >
+                    CLEAR
+                  </Button>
                 </div>
               </div>
               <CardTitle as="h4">Manage Products</CardTitle>

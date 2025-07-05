@@ -16,6 +16,7 @@ export const metadata: Metadata = { title: 'Add Products' }
 const multipleProductSchema = yup.object({
   products: yup.array().of(
     yup.object({
+      referenceNumber: yup.number().required('Reference number is required'),
       name: yup.string().required('Product name is required'),
       qty: yup.number().required('Quantity is required').min(1, 'Minimum quantity is 1'),
       unit: yup.string().required('Unit is required'),
@@ -36,11 +37,14 @@ function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
+  // State for managing reference numbers
+  const [nextReferenceNumber, setNextReferenceNumber] = useState<number>(1)
+  const [referenceNumberLoading, setReferenceNumberLoading] = useState(false)
 
-  const { control, handleSubmit, getValues } = useForm<MultipleProductFormData>({
+  const { control, handleSubmit, getValues, reset } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
+      products: [{ referenceNumber: 1, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
       shippingCost: 0,
     },
   })
@@ -54,7 +58,7 @@ function AddProductsPage() {
   const productsData = useWatch({
     control,
     name: 'products',
-    defaultValue: [{ name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }]
+    defaultValue: [{ referenceNumber: 0, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }]
   })
 
   const shippingCost = useWatch({
@@ -76,23 +80,21 @@ function AddProductsPage() {
   )
 
   // Calculate total amount correctly: qty * (price + avgShipping) for each product
-  // Calculate total amount correctly: qty * (price + avgShipping) for each product
-const totalAmount = useMemo(() => {
-  const productsTotal = productsData.reduce((sum, item) => {
-    const qty = Number(item?.qty || 0);
-    const price = Number(item?.price || 0);
+  const totalAmount = useMemo(() => {
+    const productsTotal = productsData.reduce((sum, item) => {
+      const qty = Number(item?.qty || 0);
+      const price = Number(item?.price || 0);
 
-    // Calculate avg_shipping per item (as number, rounded to 2 decimals)
-    let avg_shipping = totalQuantity > 0 ? Number(shippingCost || 0) / totalQuantity : 0;
-    avg_shipping = Math.round(avg_shipping * 100) / 100; // Round to 2 decimal places
+      // Calculate avg_shipping per item (as number, rounded to 2 decimals)
+      let avg_shipping = totalQuantity > 0 ? Number(shippingCost || 0) / totalQuantity : 0;
+      avg_shipping = Math.round(avg_shipping * 100) / 100; // Round to 2 decimal places
 
-    const itemTotal = qty * (price + avg_shipping);
-    return sum + itemTotal;
-  }, 0);
+      const itemTotal = qty * (price + avg_shipping);
+      return sum + itemTotal;
+    }, 0);
 
-  return productsTotal;
-}, [productsData, shippingCost, totalQuantity]);
-
+    return productsTotal;
+  }, [productsData, shippingCost, totalQuantity]);
 
   // State for account (buyer) selector
   const [accounts, setAccounts] = useState<any[]>([])
@@ -100,6 +102,20 @@ const totalAmount = useMemo(() => {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+
+  // Fetch next reference number
+  const fetchNextReferenceNumber = async () => {
+    setReferenceNumberLoading(true)
+    try {
+      const response = await api.get('/api/inventory/next-reference-number')
+      setNextReferenceNumber(response.data.nextReferenceNumber)
+    } catch (error: any) {
+      showNotification({ message: error?.response?.data?.error || 'Error fetching reference number', variant: 'danger' })
+      console.error('Error fetching reference number:', error)
+    } finally {
+      setReferenceNumberLoading(false)
+    }
+  }
 
   // Fetch buyers for the current user
   useEffect(() => {
@@ -116,6 +132,21 @@ const totalAmount = useMemo(() => {
     }
     fetchAccounts()
   }, [user?._id])
+
+  // Fetch next reference number on component mount
+  useEffect(() => {
+    fetchNextReferenceNumber()
+  }, [])
+
+  // Reset form with correct reference number when it's fetched
+  useEffect(() => {
+    if (nextReferenceNumber > 1) {
+      reset({
+        products: [{ referenceNumber: nextReferenceNumber, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
+        shippingCost: 0,
+      })
+    }
+  }, [nextReferenceNumber, reset])
 
   // Filter accounts based on search query
   const filteredAccounts = accounts.filter((acc) =>
@@ -146,7 +177,16 @@ const totalAmount = useMemo(() => {
   ]
 
   const handleAddRow = () => {
-    append({ name: '', qty: 0, unit: 'pound', category: '', price: 0, measurement: 1 })
+    const newReferenceNumber = nextReferenceNumber + fields.length
+    append({ 
+      referenceNumber: newReferenceNumber, 
+      name: '', 
+      qty: 0, 
+      unit: 'pound', 
+      category: '', 
+      price: 0, 
+      measurement: 1 
+    })
   }
 
   // Error callback for form submission
@@ -224,6 +264,7 @@ const totalAmount = useMemo(() => {
         const res = await api.post('/api/inventory', {
           user_id: user._id,
           buyer_id: selectedAccount._id,
+          reference_number: prod.referenceNumber,
           name: prod.name,
           qty: prod.qty * prod.measurement,
           unit: prod.unit,
@@ -315,6 +356,7 @@ const totalAmount = useMemo(() => {
             <Table responsive bordered className="mb-3">
               <thead className="table-light">
                 <tr>
+                  <th>Reference #</th>
                   <th>Product Name</th>
                   <th>Quantity</th>
                   <th>Unit</th>
@@ -327,6 +369,21 @@ const totalAmount = useMemo(() => {
               <tbody>
                 {fields.map((field, index) => (
                   <tr key={field.id}>
+                    <td>
+                      <Controller
+                        control={control}
+                        name={`products.${index}.referenceNumber` as const}
+                        render={({ field }) => (
+                          <Form.Control 
+                            type="number" 
+                            value={nextReferenceNumber + index}
+                            disabled
+                            className="bg-light"
+                            {...field}
+                          />
+                        )}
+                      />
+                    </td>
                     <td>
                       <Controller
                         control={control}
@@ -414,7 +471,12 @@ const totalAmount = useMemo(() => {
                 ))}
               </tbody>
             </Table>
-            <Button variant="outline-primary" onClick={handleAddRow} className="mb-3">
+            <Button 
+              variant="outline-primary" 
+              onClick={handleAddRow} 
+              className="mb-3"
+              disabled={referenceNumberLoading}
+            >
               + Add Another Product
             </Button>
             <Row className="mb-3">

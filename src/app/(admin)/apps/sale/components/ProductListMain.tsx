@@ -34,7 +34,7 @@ const saleTransactionsPage = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [Buyer, setBuyer] = useState<any>()
-  const [pageLimit, setPageLimit] = useState<number>(10)
+  const [pageLimit, setPageLimit] = useState<number>(50)
   const [totalProducts, setTotalProducts] = useState<number>(0)
   const { showNotification } = useNotificationContext()
   console.log('Buyer',Buyer)

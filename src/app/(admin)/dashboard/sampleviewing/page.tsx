@@ -29,7 +29,7 @@ export default function SampleViewingToolPage() {
   
   // New state for profit margin functionality
   const [activeTab, setActiveTab] = useState('bulk')
-  const [profitMargin, setProfitMargin] = useState<number>(0)
+  const [profitMargin, setProfitMargin] = useState<any>(0)
   const [selectedBuyerName, setSelectedBuyerName] = useState('')
   
   console.log("workers", workers)
@@ -355,11 +355,11 @@ export default function SampleViewingToolPage() {
                         )}
                       </Form.Label>
                       <Form.Control
-                        type="number"
+                        //type="number"
                         // step="0.01"
                         // min="0"
-                        value={profitMargin}
-                        onChange={e => setProfitMargin(parseFloat(e.target.value) || 0)}
+                        //value={profitMargin}
+                        onChange={e => setProfitMargin(parseInt(e.target.value) || 0)}
                         placeholder="e.g., 200"
                       />
                       <Form.Text className="text-muted">
