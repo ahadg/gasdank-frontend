@@ -29,8 +29,8 @@ export default function AddWholePage() {
         lastName,
         email,
         phone,
-        startingBalance: Number(startingBalance),
-        currentBalance : Number(startingBalance),
+        balance: Number(startingBalance),
+        //currentBalance : Number(startingBalance),
       })
 
       if (response.status === 200 || response.status === 201) {
