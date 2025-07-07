@@ -389,7 +389,7 @@ function AddProductsPage() {
                         control={control}
                         name={`products.${index}.name` as const}
                         render={({ field }) => (
-                          <Form.Control type="text" placeholder="Enter product name (optional)" {...field} />
+                          <Form.Control type="text" placeholder="(optional)" {...field} />
                         )}
                       />
                     </td>
