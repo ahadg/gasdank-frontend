@@ -17,7 +17,7 @@ const multipleProductSchema = yup.object({
   products: yup.array().of(
     yup.object({
       referenceNumber: yup.number().required('Reference number is required'),
-      name: yup.string().required('Product name is required'),
+      name: yup.string().optional(),
       qty: yup.number().required('Quantity is required').min(1, 'Minimum quantity is 1'),
       unit: yup.string().required('Unit is required'),
       measurement: yup
@@ -389,7 +389,7 @@ function AddProductsPage() {
                         control={control}
                         name={`products.${index}.name` as const}
                         render={({ field }) => (
-                          <Form.Control type="text" placeholder="Enter product name" {...field} />
+                          <Form.Control type="text" placeholder="Enter product name (optional)" {...field} />
                         )}
                       />
                     </td>
