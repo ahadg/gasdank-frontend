@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { useChatStore } from '../../store/chatStore'
 import { useAuthStore } from '@/store/authStore'
+import api from '@/utils/axiosInstance'
 //import 'bootstrap/dist/css/bootstrap.min.css'
 
 const ChatWidget = () => {
@@ -37,31 +38,15 @@ const ChatWidget = () => {
     setIsLoading(true)
   
     try {
-      // Use your backend proxy instead of direct N8N call
-      const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://manapnl.com'}/api/webhook-proxy/n8n-chat`,
-        { 
-          sessionID, 
-          userMessage, 
-          userId: user?._id 
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            // Add any authentication headers your backend requires
-          },
-          timeout: 15000,
-        }
-      )
+      const response = await api.post('/api/bot/chat', {
+        sessionID, 
+        userMessage, 
+        userId: user?._id 
+      })
       
-      console.log("dataaa", data)
-      
-      // If data is a string, parse it
-      const match = data.match ? data.match(/"response"\s*:\s*"([^"]+)"/) : null
-      const responseText = match ? match[1] : (data.response || data.message || '❌ No response found.')
-      
+
       const botResponse = { 
-        content: responseText, 
+        content: response.data?.response, 
         from: 'bot' as const, 
         timestamp: new Date(),
         id: generateId()
