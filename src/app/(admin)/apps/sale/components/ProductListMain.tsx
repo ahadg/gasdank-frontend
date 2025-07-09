@@ -38,6 +38,7 @@ const saleTransactionsPage = () => {
   const [totalProducts, setTotalProducts] = useState<number>(0)
   const { showNotification } = useNotificationContext()
   console.log('Buyer',Buyer)
+  
   // Fetch user-specific categories
   useEffect(() => {
     async function fetchCategories() {
@@ -56,7 +57,6 @@ const saleTransactionsPage = () => {
     setLoading(true)
     try {
       const response = await api.get(`/api/buyers/${buyerId}`)
-      // Expecting response.data to have: { page, limit, totalProducts, products }
       setBuyer(response.data)
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -64,18 +64,16 @@ const saleTransactionsPage = () => {
       //setLoading(false)
     }
   }
-  console.log("filterCategory",filterCategory)
+  
   // Fetch products for the user with pagination
   async function fetchProducts() {
     setLoading(true)
     try {
-      // Build query string with pagination and category filter if set
       let query = `/api/inventory/${user._id}/inventory/${buyerId}?page=${currentPage}&limit=${pageLimit}`
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }
       const response = await api.get(query)
-      // Expecting response.data to have: { page, limit, totalProducts, products }
       setProducts(response.data.products)
       setTotalProducts(response.data.totalProducts)
     } catch (error) {
@@ -115,13 +113,13 @@ const saleTransactionsPage = () => {
   }
 
   return (
-    <div className="container-fluid">
+    <div className="container-fluid px-2 px-md-3">
       <PageTitle title={`Sales Transactions (${Buyer?.firstName} ${Buyer?.lastName})`} subTitle="Transactions" />
 
       {/* Filter & Search Section */}
       <div className="mt-3">
-        <div className="row g-3 align-items-end">
-          <div className="col-auto">
+        <div className="row g-2 g-md-3 align-items-end">
+          <div className="col-12 col-md-auto">
             <label htmlFor="categoryFilter" className="form-label fs-15 mb-1">
               Filter by Category:
             </label>
@@ -131,7 +129,7 @@ const saleTransactionsPage = () => {
                 value={filterCategory}
                 onChange={(e) => {
                   setFilterCategory(e.target.value)
-                  setCurrentPage(1) // Reset to page 1 on filter change
+                  setCurrentPage(1)
                 }}
               >
                 <option value="">All Categories</option>
@@ -141,15 +139,32 @@ const saleTransactionsPage = () => {
                   </option>
                 ))}
               </Form.Select>
-              <Button type="button" variant="secondary" onClick={() => {
-                setFilterCategory('')
-                setCurrentPage(1)
-              }}>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="d-none d-sm-block"
+                onClick={() => {
+                  setFilterCategory('')
+                  setCurrentPage(1)
+                }}
+              >
                 CLEAR
+              </Button>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                size="sm"
+                onClick={() => {
+                  setFilterCategory('')
+                  setCurrentPage(1)
+                }}
+                className="d-sm-none"
+              >
+                <IconifyIcon icon="tabler:x" />
               </Button>
             </div>
           </div>
-          <div className="col-auto">
+          <div className="col-12 col-md-auto">
             <label htmlFor="searchInput" className="form-label fs-15 mb-1">
               Search:
             </label>
@@ -163,20 +178,24 @@ const saleTransactionsPage = () => {
             />
           </div>
         </div>
-        <p className="mt-2">To add another item, search and select it.</p>
+        <p className="mt-2 small">To add another item, search and select it.</p>
       </div>
 
       {/* Sell Selected Button */}
       {selectedProducts.length > 0 && (
         <div className="mt-3">
-          <Button variant="primary" onClick={() => setActiveModal('sellMultiple')}>
+          <Button 
+            variant="primary" 
+            onClick={() => setActiveModal('sellMultiple')}
+            className="w-100 w-sm-auto"
+          >
             SELL SELECTED ({selectedProducts.length})
           </Button>
         </div>
       )}
 
-      {/* Product Table */}
-      <Card className="mt-3">
+      {/* Desktop Table View */}
+      <Card className="mt-3 d-none d-lg-block">
         <div className="table-responsive">
           <table className="table align-middle mb-0">
             <thead className="table-light">
@@ -201,7 +220,7 @@ const saleTransactionsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center">
+                  <td colSpan={7} className="text-center">
                     Loading...
                   </td>
                 </tr>
@@ -222,21 +241,19 @@ const saleTransactionsPage = () => {
                     <td>{prod.qty}</td>
                     <td>{prod.unit}</td>
                     <td className="text-center">
-                      <div className="d-flex gap-3 justify-content-center">
+                      <div className="d-flex gap-2 justify-content-center">
                         <Button
                           variant="primary"
-                          size="lg"
                           onClick={() => {
                             setSelectedProduct(prod)
                             setActiveModal('history')
                           }}
                           className="rounded-pill shadow"
                         >
-                          <IconifyIcon icon="tabler:clock" className="fs-4" />
+                          <IconifyIcon icon="tabler:clock" className="fs-5" />
                         </Button>
                         <Button
                           variant="success"
-                          size="lg"
                           onClick={() => {
                             setSelectedProduct(prod)
                             setActiveModal('sellMultiple')
@@ -244,18 +261,17 @@ const saleTransactionsPage = () => {
                           }}
                           className="rounded-pill shadow"
                         >
-                          <IconifyIcon icon="tabler:currency-dollar" className="fs-4" />
+                          <IconifyIcon icon="tabler:currency-dollar" className="fs-5" />
                         </Button>
                         <Button
                           variant="info"
-                          size="lg"
                           onClick={() => {
                             setSelectedProduct(prod)
                             setActiveModal('add')
                           }}
                           className="rounded-pill shadow"
                         >
-                          <IconifyIcon icon="tabler:plus" className="fs-4" />
+                          <IconifyIcon icon="tabler:plus" className="fs-5" />
                         </Button>
                       </div>
                     </td>
@@ -263,7 +279,7 @@ const saleTransactionsPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center">
+                  <td colSpan={7} className="text-center">
                     No products found
                   </td>
                 </tr>
@@ -281,6 +297,110 @@ const saleTransactionsPage = () => {
           </div>
         </Card.Footer>
       </Card>
+
+      {/* Mobile Card View */}
+      <div className="d-lg-none mt-3">
+        {loading ? (
+          <Card className="text-center py-4">
+            <Card.Body>Loading...</Card.Body>
+          </Card>
+        ) : filteredProducts.length > 0 ? (
+          <>
+            {filteredProducts.map((prod) => (
+              <Card key={prod._id} className="mb-3 shadow-sm">
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={selectedProducts.some((p) => p._id === prod._id)}
+                        onChange={(e) => handleCheckboxChange(prod, e.target.checked)}
+                        id={`check-${prod._id}`}
+                      />
+                      <label className="form-check-label fw-bold" htmlFor={`check-${prod._id}`}>
+                        {prod.name}
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <small className="text-muted">Product ID:</small>
+                      <div className="fw-medium">{prod.product_id}</div>
+                    </div>
+                    <div className="col-6">
+                      <small className="text-muted">Category:</small>
+                      <div className="fw-medium">{prod?.category?.name}</div>
+                    </div>
+                    <div className="col-6">
+                      <small className="text-muted">Available Qty:</small>
+                      <div className="fw-medium">{prod.qty}</div>
+                    </div>
+                    <div className="col-6">
+                      <small className="text-muted">Unit:</small>
+                      <div className="fw-medium">{prod.unit}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="d-flex gap-2 justify-content-center">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedProduct(prod)
+                        setActiveModal('history')
+                      }}
+                      className="flex-fill"
+                    >
+                      <IconifyIcon icon="tabler:clock" className="me-1" />
+                      <span className="d-none d-sm-inline">History</span>
+                    </Button>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedProduct(prod)
+                        setActiveModal('sellMultiple')
+                        setSelectedProducts([prod])
+                      }}
+                      className="flex-fill"
+                    >
+                      <IconifyIcon icon="tabler:currency-dollar" className="me-1" />
+                      <span className="d-none d-sm-inline">Sell</span>
+                    </Button>
+                    <Button
+                      variant="info"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedProduct(prod)
+                        setActiveModal('add')
+                      }}
+                      className="flex-fill"
+                    >
+                      <IconifyIcon icon="tabler:plus" className="me-1" />
+                      <span className="d-none d-sm-inline">Add</span>
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            ))}
+            
+            {/* Mobile Pagination */}
+            <div className="d-flex justify-content-center mt-3">
+              <CustomPagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalProducts / pageLimit)}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
+        ) : (
+          <Card className="text-center py-4">
+            <Card.Body>No products found</Card.Body>
+          </Card>
+        )}
+      </div>
 
       {/* Conditionally Render Modals */}
       {activeModal === 'history' && selectedProduct && (

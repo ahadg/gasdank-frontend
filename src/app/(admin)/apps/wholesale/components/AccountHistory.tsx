@@ -397,96 +397,85 @@ const AccountHistory = () => {
       </h5>
       
       <Card className="mb-3">
-        <CardBody>
-          <Row className="mb-3">
-            <Col md={12}>
-              <ButtonGroup className="w-100">
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('today')}
-                  className="flex-grow-1"
-                >
-                  Today
-                </Button>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('yesterday')}
-                  className="flex-grow-1"
-                >
-                  Yesterday
-                </Button>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('thisWeek')}
-                  className="flex-grow-1"
-                >
-                  This Week
-                </Button>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('lastWeek')}
-                  className="flex-grow-1"
-                >
-                  Last Week
-                </Button>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('thisMonth')}
-                  className="flex-grow-1"
-                >
-                  This Month
-                </Button>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => applyQuickFilter('lastMonth')}
-                  className="flex-grow-1"
-                >
-                  Last Month
-                </Button>
-              </ButtonGroup>
-            </Col>
-          </Row>
-          <Row>
-            <Col md={5}>
-              <Form.Group>
-                <Form.Label>Start Date & Time</Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  name="startDateTime"
-                  value={dateRange.startDateTime}
-                  onChange={handleDateRangeChange}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={5}>
-              <Form.Group>
-                <Form.Label>End Date & Time</Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  name="endDateTime"
-                  value={dateRange.endDateTime}
-                  onChange={handleDateRangeChange}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={2} className="d-flex align-items-end">
-              <Button onClick={() => fetchHistory()} variant="primary" className="bg-gradient w-100">
-                Search
-              </Button>
-            </Col>
-          </Row>
-          {/* <Row className="mt-3">
-            <Col md={12}>
-              <Form.Check
-                type="checkbox"
-                id="excludeShipping"
-                label="Exclude Shipping Cost"
-                checked={excludeShipping}
-                onChange={(e) => setExcludeShipping(e.target.checked)}
-              />
-            </Col>
-          </Row> */}
-        </CardBody>
+      <CardBody>
+  {/* Quick Filters */}
+  <Row className="mb-3">
+    <Col xs={12}>
+      <ButtonGroup className="d-flex flex-wrap w-100 gap-2">
+        {[
+          { label: 'Today', value: 'today' },
+          { label: 'Yesterday', value: 'yesterday' },
+          { label: 'This Week', value: 'thisWeek' },
+          { label: 'Last Week', value: 'lastWeek' },
+          { label: 'This Month', value: 'thisMonth' },
+          { label: 'Last Month', value: 'lastMonth' },
+        ].map(({ label, value }) => (
+          <Button
+            key={value}
+            variant="outline-secondary"
+            onClick={() => applyQuickFilter(value)}
+            className="flex-grow-1"
+          >
+            {label}
+          </Button>
+        ))}
+      </ButtonGroup>
+    </Col>
+  </Row>
+
+  {/* Date Pickers + Search */}
+  <Row className="gy-3">
+    <Col xs={12} md={5}>
+      <Form.Group>
+        <Form.Label>Start Date & Time</Form.Label>
+        <Form.Control
+          type="datetime-local"
+          name="startDateTime"
+          value={dateRange.startDateTime}
+          onChange={handleDateRangeChange}
+        />
+      </Form.Group>
+    </Col>
+
+    <Col xs={12} md={5}>
+      <Form.Group>
+        <Form.Label>End Date & Time</Form.Label>
+        <Form.Control
+          type="datetime-local"
+          name="endDateTime"
+          value={dateRange.endDateTime}
+          onChange={handleDateRangeChange}
+        />
+      </Form.Group>
+    </Col>
+
+    <Col xs={12} md={2} className="d-flex align-items-end">
+      <Button
+        onClick={() => fetchHistory()}
+        variant="primary"
+        className="bg-gradient w-100"
+      >
+        Search
+      </Button>
+    </Col>
+  </Row>
+
+  {/* Optional Checkbox */}
+  {/* 
+  <Row className="mt-3">
+    <Col xs={12}>
+      <Form.Check
+        type="checkbox"
+        id="excludeShipping"
+        label="Exclude Shipping Cost"
+        checked={excludeShipping}
+        onChange={(e) => setExcludeShipping(e.target.checked)}
+      />
+    </Col>
+  </Row> 
+  */}
+</CardBody>
+
       </Card>
       
       {loading ? (

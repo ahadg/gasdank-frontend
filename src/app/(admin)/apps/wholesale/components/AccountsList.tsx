@@ -116,22 +116,34 @@ export default function WholesaleAccountsPage() {
           {loading && <p className="mt-2 text-muted">Loading accounts...</p>}
           
           {selectedAccount && (
-            <div className="mt-4 p-3 bg-light rounded shadow-sm">
-              <h6 className="fs-15">Account Actions</h6>
-              <div className="d-flex gap-3">
-                <Link href={`/apps/wholesale/history/${selectedAccount._id}`}>
-                  <Button variant="primary">View Transaction</Button>
-                </Link>
-                {/* <Link href={`/apps/wholesale/add/${selectedAccount._id}`}> */}
-                <Button 
-                onClick={() => setActiveModal('balance')}
-                variant="success">Add Balance</Button>
-                {/* </Link> */}
-                <Link href={`/apps/wholesale/edit/${selectedAccount._id}`}>
-                  <Button variant="info">Edit Account</Button>
-                </Link>
-              </div>
+          <div className="mt-4 p-3 bg-light rounded shadow-sm">
+          <h6 className="fs-15 mb-3">Account Actions</h6>
+          <div className="d-flex flex-column flex-md-row gap-2">
+            <div className="flex-md-1">
+              <Link href={`/apps/wholesale/history/${selectedAccount._id}`} className="text-decoration-none">
+                <Button variant="primary" className="w-100">View Transaction</Button>
+              </Link>
             </div>
+        
+            <div className="flex-md-1">
+              <Button
+                onClick={() => setActiveModal('balance')}
+                variant="success"
+                className="w-100">
+                Add Balance
+              </Button>
+            </div>
+        
+            <div className="flex-md-1">
+              <Link href={`/apps/wholesale/edit/${selectedAccount._id}`} className="text-decoration-none">
+                <Button variant="info" className="w-100">Edit Account</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+        
+          
+          
           )}
         </Card.Body>
         {selectedAccount && (

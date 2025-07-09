@@ -95,61 +95,149 @@ const ProductsPage = () => {
     product.name.toLowerCase().includes(searchLower)
   )
 
+  // Mobile card component for products
+  const MobileProductCard = ({ item }: { item: any }) => (
+    <Card className="mb-3 border-0 shadow-sm">
+      <Card.Body className="p-3">
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h6 className="mb-1 fw-semibold">{item.name}</h6>
+            <small className="text-muted">ID: {item.product_id}</small>
+          </div>
+          <div className="text-end">
+            <span className="badge bg-light text-dark">${(item.price + item?.shippingCost).toLocaleString()}</span>
+          </div>
+        </div>
+        
+        <div className="row g-2 mb-3">
+          <div className="col-6">
+            <small className="text-muted d-block">Quantity</small>
+            <span className="fw-medium">{item.qty} {item.unit}</span>
+          </div>
+          <div className="col-6">
+            <small className="text-muted d-block">Category</small>
+            <span className="fw-medium">{item.category?.name || 'N/A'}</span>
+          </div>
+        </div>
+        
+        {item.reference_number && (
+          <div className="mb-2">
+            <small className="text-muted d-block">Reference</small>
+            <span className="fw-medium">{item.reference_number}</span>
+          </div>
+        )}
+        
+        {item.notes && (
+          <div className="mb-3">
+            <small className="text-muted d-block">Notes</small>
+            <small className="text-truncate d-block" style={{ maxWidth: '100%' }}>{item.notes}</small>
+          </div>
+        )}
+        
+        <div className="d-flex gap-2">
+          <Button 
+            variant="outline-primary" 
+            size="sm" 
+            className="flex-fill"
+            onClick={() => handleRestockClick(item)}
+          >
+            <IconifyIcon icon="tabler:package" className="me-1" />
+            Restock
+          </Button>
+          <Link href={`/inventory/products/edit/${item._id}`} className="flex-fill">
+            <Button variant="outline-success" size="sm" className="w-100">
+              <IconifyIcon icon="tabler:edit" className="me-1" />
+              Edit
+            </Button>
+          </Link>
+        </div>
+      </Card.Body>
+    </Card>
+  )
+
   return (
     <>
       <PageTitle title="Products" subTitle="Inventory" />
       <Row>
         <Col xs={12}>
           <Card>
-            <CardHeader className="d-flex align-items-center justify-content-between border-bottom border-light">
-              <div className="px-3 py-3 d-flex justify-content-start gap-3">
-                {/* Search Input */}
-                <div className="input-group" style={{ maxWidth: '300px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search"
-                    value={search}
-                    onChange={handleSearchChange}
-                  />
-                </div>
+            <CardHeader className="border-bottom border-light">
+              <div className="px-3 py-3">
                 
-                {/* Category Filter */}
-                <div className="input-group" style={{ maxWidth: '250px' }}>
-                  <Form.Select
-                    value={filterCategory}
-                    onChange={(e) => {
-                      setFilterCategory(e.target.value)
-                      setPage(1) // Reset to page 1 on filter change
-                    }}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
-                    onClick={() => {
-                      setFilterCategory('')
-                      setPage(1)
-                    }}
-                  >
-                    CLEAR
-                  </Button>
+                {/* Title - Always at top on mobile */}
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <CardTitle as="h4" className="mb-0">
+                    Manage Products
+                  </CardTitle>
+                  {/* Add Product Button - Right side on mobile */}
+                  <div className="d-block d-md-none">
+                    <Link href="/inventory/products/add" className="btn btn-success bg-gradient btn-sm">
+                      <IconifyIcon icon="tabler:plus" className="me-1" /> Add
+                    </Link>
+                  </div>
                 </div>
-              </div>
-              <CardTitle as="h4">Manage Products</CardTitle>
-              <div>
-                <Link href="/inventory/products/add" className="btn btn-success bg-gradient">
-                  <IconifyIcon icon="tabler:plus" className="me-1" /> Add Product
-                </Link>
+
+                {/* Main Content Row */}
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+                  
+                  {/* Left Section: Search + Category Filter */}
+                  <div className="d-flex flex-column flex-sm-row gap-2 flex-grow-1">
+                    {/* Search Input */}
+                    <div className="flex-grow-1">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search products..."
+                        value={search}
+                        onChange={handleSearchChange}
+                      />
+                    </div>
+                    
+                    {/* Category Filter + Clear */}
+                    <div className="d-flex gap-2" style={{ minWidth: '200px' }}>
+                      <Form.Select
+                        value={filterCategory}
+                        onChange={(e) => {
+                          setFilterCategory(e.target.value)
+                          setPage(1)
+                        }}
+                        className="flex-grow-1"
+                        style={{ minWidth: '120px' }}
+                      >
+                        <option value="">All Categories</option>
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                      <Button 
+                        type="button" 
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => {
+                          setFilterCategory('')
+                          setPage(1)
+                        }}
+                        style={{ minWidth: '60px' }}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Right: Add Product Button (Desktop only) */}
+                  <div className="d-none d-md-block flex-shrink-0">
+                    <Link href="/inventory/products/add" className="btn btn-success bg-gradient">
+                      <IconifyIcon icon="tabler:plus" className="me-1" /> Add Product
+                    </Link>
+                  </div>
+                </div>
               </div>
             </CardHeader>
-            <div className="table-responsive">
+
+            {/* Desktop Table View */}
+            <div className="table-responsive d-none d-lg-block">
               <table className="table table-nowrap mb-0">
                 <thead className="bg-light-subtle">
                   <tr>
@@ -160,7 +248,6 @@ const ProductsPage = () => {
                     <th>Unit</th>
                     <th>Category</th>
                     <th>Price</th>
-                    {/* <th>Shipping Cost</th> */}
                     <th>Notes</th>
                     <th className="text-center" style={{ width: 125 }}>Action</th>
                   </tr>
@@ -179,9 +266,12 @@ const ProductsPage = () => {
                         <td>{item.qty}</td>
                         <td>{item.unit}</td>
                         <td>{item.category?.name}</td>
-                        <td>${(item.price + item?.shippingCost).toLocaleString(2)}</td>
-                        {/* <td>${item.shippingCost.toLocaleString()}</td> */}
-                        <td>{item.notes}</td>
+                        <td>${(item.price + item?.shippingCost).toLocaleString()}</td>
+                        <td>
+                          <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
+                            {item.notes}
+                          </span>
+                        </td>
                         <td className="text-center">
                           <div className="hstack justify-content-center">
                             <Button 
@@ -198,9 +288,6 @@ const ProductsPage = () => {
                                 <IconifyIcon icon="tabler:edit" className="fs-16" />
                               </Button>
                             </Link>
-                            {/* <Button variant="soft-danger" size="sm" className="btn-icon rounded-circle">
-                              <IconifyIcon icon="tabler:trash" />
-                            </Button> */}
                           </div>
                         </td>
                       </tr>
@@ -211,11 +298,34 @@ const ProductsPage = () => {
                     </tr>
                   )}
                 </tbody>
-                {/* Optionally, you can add a footer here */}
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="d-block d-lg-none">
+              <div className="p-3">
+                {loading ? (
+                  <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-2 text-muted">Loading products...</p>
+                  </div>
+                ) : filteredProducts.length > 0 ? (
+                  filteredProducts.map((item, idx) => (
+                    <MobileProductCard key={idx} item={item} />
+                  ))
+                ) : (
+                  <div className="text-center py-5">
+                    <IconifyIcon icon="tabler:package-off" className="fs-1 text-muted mb-3" />
+                    <p className="text-muted">No products found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <CardFooter>
-              <div className="d-flex justify-content-end">
+              <div className="d-flex justify-content-center justify-content-md-end">
                 <CustomPagination
                   currentPage={page}
                   totalPages={totalPages}

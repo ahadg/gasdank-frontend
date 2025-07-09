@@ -648,7 +648,7 @@ export default function SampleViewingToolPage() {
                         return totalProfit + profit
                       }, 0).toFixed(2)}
                     </td>
-                    <td className="text-capitalize">{session.viewingStatus}</td>
+                    <td className="text-capitalize">{session.status}</td>
                   </tr>
                 ))}
               </tbody>

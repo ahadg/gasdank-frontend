@@ -215,6 +215,88 @@ export default function WorkerSampleManagementPage() {
     }
   }
 
+  // Mobile-friendly item card component
+  const MobileItemCard = ({ item }: { item: SampleItem }) => (
+    <Card className="mb-2">
+      <Card.Body className="py-2">
+        <div className="d-flex justify-content-between align-items-start">
+          <div className="flex-grow-1">
+            <h6 className="mb-1 text-truncate">{item.name}</h6>
+            <small className="text-muted">
+              {item.qty} {item.unit} • ₹{item?.sale_price?.toFixed(2)}
+            </small>
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
+  )
+
+  // Mobile-friendly sale item component
+  const MobileSaleItem = ({ item, index }: { item: SaleItem; index: number }) => (
+    <Card className="mb-3">
+      <Card.Body>
+        <h6 className="mb-3">{item.name}</h6>
+        <Row className="g-2">
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Quantity</Form.Label>
+              <Form.Control
+                type="number"
+                value={item.quantity}
+                onChange={(e) => handleSaleItemChange(index, 'quantity', e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Measurement</Form.Label>
+              <Form.Control
+                type="number"
+                value={item.measurement}
+                onChange={(e) => handleSaleItemChange(index, 'measurement', e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Unit</Form.Label>
+              <Form.Control
+                type="text"
+                value={item.unit}
+                disabled
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Cost Price</Form.Label>
+              <Form.Control
+                type="number"
+                value={item.price}
+                onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+          <Col xs={12}>
+            <Form.Group>
+              <Form.Label className="small">Sale Price</Form.Label>
+              <Form.Control
+                type="number"
+                value={item.sale_price}
+                onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
+  )
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -224,10 +306,15 @@ export default function WorkerSampleManagementPage() {
   }
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Sample Sessions</h3>
-        <Button variant="outline-primary" onClick={fetchSampleSessions} disabled={loading}>
+    <div className="container-fluid px-2 px-md-4 py-3">
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
+        <h3 className="mb-0">Sample Sessions</h3>
+        <Button 
+          variant="outline-primary" 
+          onClick={fetchSampleSessions} 
+          disabled={loading}
+          className="d-flex align-items-center"
+        >
           <IconifyIcon icon="tabler:refresh" className="me-1" />
           Refresh
         </Button>
@@ -241,79 +328,91 @@ export default function WorkerSampleManagementPage() {
       ) : (
         <Row>
           {sampleSessions.map((session) => (
-            <Col lg={12} className="mb-4" key={session._id}>
+            <Col xs={12} className="mb-4" key={session._id}>
               <Card>
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 className="mb-1">
-                      {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
-                    </h5>
-                    <small className="text-muted">
-                      {new Date(session.sentAt).toLocaleDateString()}
-                    </small>
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <Badge bg={session.status === 'pending' ? 'warning' : session.status === 'accepted' ? 'success' : 'danger'}>
-                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                    </Badge>
-                    {session.status === 'pending' && (
-                      <>
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => prepareSaleModal(session)}
-                          disabled={processingSession === session._id}
-                        >
-                          <IconifyIcon icon="tabler:shopping-cart" className="me-1" />
-                          Create Sale ({session.items.length})
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => rejectSession(session)}
-                          disabled={processingSession === session._id}
-                        >
-                          {processingSession === session._id ? (
-                            <Spinner animation="border" size="sm" />
-                          ) : (
-                            <>
-                              <IconifyIcon icon="tabler:x" className="me-1" />
-                              Reject
-                            </>
-                          )}
-                        </Button>
-                      </>
-                    )}
+                <Card.Header className="p-3">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2">
+                    <div className="flex-grow-1">
+                      <h5 className="mb-1">
+                        {session.buyer_id?.name || `${session.buyer_id?.firstName} ${session.buyer_id?.lastName}`}
+                      </h5>
+                      <small className="text-muted">
+                        {new Date(session.sentAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                    <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+                      <Badge bg={session.status === 'pending' ? 'warning' : session.status === 'accepted' ? 'success' : 'danger'}>
+                        {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                      </Badge>
+                      {session.status === 'pending' && (
+                        <div className="d-flex gap-2">
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => prepareSaleModal(session)}
+                            disabled={processingSession === session._id}
+                          >
+                            <IconifyIcon icon="tabler:shopping-cart" className="me-1" />
+                            Create Sale ({session.items.length})
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => rejectSession(session)}
+                            disabled={processingSession === session._id}
+                          >
+                            {processingSession === session._id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <>
+                                <IconifyIcon icon="tabler:x" className="me-1" />
+                                Reject
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Card.Header>
                 
-                <Card.Body>
+                <Card.Body className="p-3">
                   {session.notes && (
                     <Alert variant="info" className="mb-3">
                       <strong>Notes:</strong> {session.notes}
                     </Alert>
                   )}
                   
-                  <Table striped>
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Qty</th>
-                        <th>Unit</th>
-                        <th>Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {session.items.map((item, index) => (
-                        <tr key={item.productId}>
-                          <td>{item.name}</td>
-                          <td>{item.qty}</td>
-                          <td>{item.unit}</td>
-                          <td>₹{item?.sale_price?.toFixed(2)}</td>
+                  {/* Desktop Table */}
+                  <div className="d-none d-md-block">
+                    <Table striped responsive>
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Qty</th>
+                          <th>Unit</th>
+                          <th>Price</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
+                      </thead>
+                      <tbody>
+                        {session.items.map((item, index) => (
+                          <tr key={item.productId}>
+                            <td>{item.name}</td>
+                            <td>{item.qty}</td>
+                            <td>{item.unit}</td>
+                            <td>₹{item?.sale_price?.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="d-md-none">
+                    {session.items.map((item) => (
+                      <MobileItemCard key={item.productId} item={item} />
+                    ))}
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
@@ -322,66 +421,81 @@ export default function WorkerSampleManagementPage() {
       )}
 
       {/* Sale Modal */}
-      <Modal show={showSaleModal} onHide={() => setShowSaleModal(false)} size="xl">
+      <Modal 
+        show={showSaleModal} 
+        onHide={() => setShowSaleModal(false)} 
+        size="xl"
+        fullscreen="md-down"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Create Sale</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Table striped>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Measurement</th>
-                <th>Unit</th>
-                <th>Cost Price</th>
-                <th>Sale Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {saleItems.map((item, index) => (
-                <tr key={item.productId}>
-                  <td>{item.name}</td>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleSaleItemChange(index, 'quantity', (e.target.value))}
-                      size="sm"
-                    />
-                  </td>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      value={item.measurement}
-                      onChange={(e) => handleSaleItemChange(index, 'measurement', (e.target.value))}
-                      size="sm"
-                    />
-                  </td>
-                  <td>{item.unit}</td>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      value={item.price}
-                      onChange={(e) => handleSaleItemChange(index, 'price', (e.target.value))}
-                      size="sm"
-                    />
-                  </td>
-                  <td>
-                    <Form.Control
-                      type="number"
-                      value={item.sale_price}
-                      onChange={(e) => handleSaleItemChange(index, 'sale_price', (e.target.value))}
-                      size="sm"
-                    />
-                  </td>
+          {/* Desktop Table */}
+          <div className="d-none d-lg-block">
+            <Table striped responsive>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Measurement</th>
+                  <th>Unit</th>
+                  <th>Cost Price</th>
+                  <th>Sale Price</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {saleItems.map((item, index) => (
+                  <tr key={item.productId}>
+                    <td>{item.name}</td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleSaleItemChange(index, 'quantity', e.target.value)}
+                        size="sm"
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={item.measurement}
+                        onChange={(e) => handleSaleItemChange(index, 'measurement', e.target.value)}
+                        size="sm"
+                      />
+                    </td>
+                    <td>{item.unit}</td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
+                        size="sm"
+                      />
+                    </td>
+                    <td>
+                      <Form.Control
+                        type="number"
+                        value={item.sale_price}
+                        onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
+                        size="sm"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="d-lg-none">
+            {saleItems.map((item, index) => (
+              <MobileSaleItem key={item.productId} item={item} index={index} />
+            ))}
+          </div>
 
           <Row className="mt-4">
-            <Col md={6}>
+            <Col lg={6} className="mb-3">
               <Form.Group>
                 <Form.Label>Sale Notes</Form.Label>
                 <Form.Control
@@ -393,36 +507,41 @@ export default function WorkerSampleManagementPage() {
                 />
               </Form.Group>
             </Col>
-            <Col md={6}>
+            <Col lg={6}>
               <div className="border rounded p-3">
                 <h6>Sale Summary</h6>
-                <div className="d-flex justify-content-between">
+                <div className="d-flex justify-content-between mb-1">
                   <span>Cost Price:</span>
-                  <span>${calculateTotals().orgPrice.toFixed(2)}</span>
+                  <span>₹{calculateTotals().orgPrice.toFixed(2)}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+                <div className="d-flex justify-content-between mb-2">
                   <span>Sale Price:</span>
-                  <span>${calculateTotals().totalSalePrice.toFixed(2)}</span>
+                  <span>₹{calculateTotals().totalSalePrice.toFixed(2)}</span>
                 </div>
-                <hr />
+                <hr className="my-2" />
                 <div className="d-flex justify-content-between">
                   <strong>Profit:</strong>
                   <strong className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
-                    ${calculateTotals().profit.toFixed(2)}
+                    ₹{calculateTotals().profit.toFixed(2)}
                   </strong>
                 </div>
               </div>
             </Col>
           </Row>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowSaleModal(false)}>
+        <Modal.Footer className="d-flex flex-column flex-sm-row gap-2">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowSaleModal(false)}
+            className="w-100 w-sm-auto order-2 order-sm-1"
+          >
             Cancel
           </Button>
           <Button 
             variant="primary" 
             onClick={handleSaleSubmit}
             disabled={saleLoading || saleItems.length === 0}
+            className="w-100 w-sm-auto order-1 order-sm-2"
           >
             {saleLoading ? (
               <>

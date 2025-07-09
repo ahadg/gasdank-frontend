@@ -223,6 +223,8 @@ const ActivityLogsPage = () => {
                             <option value="sale">Sale</option>
                             <option value="payment">Transaction</option>
                             <option value="user_created">User</option>
+                            <option value="expense_created">Expenses</option>
+                            <option value="client_created">Client</option>
                           </Form.Select>
                         </Form.Group>
                       </Col>

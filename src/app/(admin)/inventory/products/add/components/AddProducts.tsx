@@ -289,29 +289,169 @@ function AddProductsPage() {
     }
   }
 
+  // Mobile Product Card Component
+  const MobileProductCard = ({ field, index }: { field: any; index: number }) => (
+    <Card className="mb-3 d-md-none">
+      <CardBody>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h6 className="mb-0">Product {index + 1}</h6>
+          <Button 
+            variant="outline-danger" 
+            size="sm"
+            onClick={() => remove(index)}
+            disabled={fields.length === 1}
+          >
+            <IconifyIcon icon="tabler:trash" />
+          </Button>
+        </div>
+        
+        <Row className="g-2">
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Reference #</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.referenceNumber` as const}
+              render={({ field }) => (
+                <Form.Control 
+                  type="number" 
+                  value={nextReferenceNumber + index}
+                  disabled
+                  className="bg-light"
+                  size="sm"
+                  {...field}
+                />
+              )}
+            />
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Product Name</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.name` as const}
+              render={({ field }) => (
+                <Form.Control 
+                  type="text" 
+                  placeholder="(optional)" 
+                  size="sm"
+                  {...field} 
+                />
+              )}
+            />
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Quantity</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.qty` as const}
+              render={({ field }) => (
+                <Form.Control 
+                  type="number" 
+                  placeholder="Enter quantity" 
+                  step="any" 
+                  size="sm"
+                  {...field} 
+                />
+              )}
+            />
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Unit</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.unit` as const}
+              render={({ field }) => (
+                <Form.Select size="sm" {...field}>
+                  <option value="">Select unit</option>
+                  <option value="per piece">Per Piece</option>
+                  <option value="pound">Pound</option>
+                  <option value="Kg">Kg</option>
+                  <option value="gram">Gram</option>
+                </Form.Select>
+              )}
+            />
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Measurement</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.measurement` as const}
+              render={({ field }) => (
+                <Form.Select size="sm" {...field}>
+                  <option value="">Select measurement</option>
+                  {measurementOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Form.Select>
+              )}
+            />
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Price</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.price` as const}
+              render={({ field }) => (
+                <Form.Control 
+                  type="number" 
+                  placeholder="Enter price" 
+                  step="any" 
+                  size="sm"
+                  {...field} 
+                />
+              )}
+            />
+          </Col>
+          <Col xs={12}>
+            <Form.Label className="small fw-semibold">Category</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.category` as const}
+              render={({ field }) => (
+                <Form.Select size="sm" {...field}>
+                  <option value="">Select category</option>
+                  {userCategories.map((cat: any) => (
+                    <option key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              )}
+            />
+          </Col>
+        </Row>
+      </CardBody>
+    </Card>
+  )
+
   return (
-    <div className="container-fluid">
-      <h4 className="mb-4">Add Products</h4>
+    <div className="container-fluid px-2 px-md-3">
+      <div className="d-flex align-items-center mb-3 mb-md-4">
+        <h4 className="mb-0 fs-5 fs-md-4">Add Products</h4>
+      </div>
+      
       <Card>
         <CardHeader className="border-bottom border-light">
-          <CardTitle as="h5" className="mb-0">Add Multiple Products</CardTitle>
+          <CardTitle as="h5" className="mb-0 fs-6 fs-md-5">Add Multiple Products</CardTitle>
         </CardHeader>
-        <CardBody>
+        <CardBody className="p-2 p-md-3">
           {/* Account Selector */}
-          <div className="mb-4">
-            <h6 className="fs-15">Select Account</h6>
+          <div className="mb-3 mb-md-4">
+            <h6 className="fs-6 fs-md-5">Select Account</h6>
             <div className="position-relative">
               <Button
                 variant="outline-secondary"
                 onClick={() => setDropdownOpen((prev) => !prev)}
                 className="w-100 text-start d-flex justify-content-between align-items-center rounded-pill shadow-sm py-2 px-3"
+                size="sm"
               >
-                <span>
+                <span className="text-truncate">
                   {selectedAccount
                     ? `${selectedAccount.firstName} ${selectedAccount.lastName}`
                     : 'Select an Account'}
                 </span>
-                <IconifyIcon icon="tabler:chevron-down" className="fs-4" />
+                <IconifyIcon icon="tabler:chevron-down" className="fs-4 flex-shrink-0" />
               </Button>
               {dropdownOpen && (
                 <div
@@ -324,16 +464,17 @@ function AddProductsPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="border-0 p-2"
+                    size="sm"
                   />
                   <ul
                     className="list-unstyled mb-0"
-                    style={{ maxHeight: '300px', overflowY: 'auto', cursor: 'pointer' }}
+                    style={{ maxHeight: '200px', overflowY: 'auto', cursor: 'pointer' }}
                   >
                     {filteredAccounts.length > 0 ? (
                       filteredAccounts.map((acc) => (
                         <li
                           key={acc._id}
-                          className="p-2 border-bottom hover-bg-light"
+                          className="p-2 border-bottom hover-bg-light small"
                           onClick={() => {
                             setSelectedAccount(acc)
                             setDropdownOpen(false)
@@ -343,7 +484,7 @@ function AddProductsPage() {
                         </li>
                       ))
                     ) : (
-                      <li className="p-2 text-muted">No accounts found</li>
+                      <li className="p-2 text-muted small">No accounts found</li>
                     )}
                   </ul>
                 </div>
@@ -353,160 +494,231 @@ function AddProductsPage() {
 
           {/* Product Form */}
           <Form onSubmit={handleSubmit(onSubmit, onError)}>
-            <Table responsive bordered className="mb-3">
-              <thead className="table-light">
-                <tr>
-                  <th>Reference #</th>
-                  <th>Product Name</th>
-                  <th>Quantity</th>
-                  <th>Unit</th>
-                  <th>Measurement</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fields.map((field, index) => (
-                  <tr key={field.id}>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.referenceNumber` as const}
-                        render={({ field }) => (
-                          <Form.Control 
-                            type="number" 
-                            value={nextReferenceNumber + index}
-                            disabled
-                            className="bg-light"
-                            {...field}
+            {/* Desktop Table - Hidden on mobile */}
+            <div className="d-none d-md-block">
+              <div className="table-responsive">
+                <Table bordered className="mb-3">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="small">Reference #</th>
+                      <th className="small">Product Name</th>
+                      <th className="small">Quantity</th>
+                      <th className="small">Unit</th>
+                      <th className="small">Measurement</th>
+                      <th className="small">Category</th>
+                      <th className="small">Price</th>
+                      <th className="small">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fields.map((field, index) => (
+                      <tr key={field.id}>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.referenceNumber` as const}
+                            render={({ field }) => (
+                              <Form.Control 
+                                type="number" 
+                                value={nextReferenceNumber + index}
+                                disabled
+                                className="bg-light"
+                                size="sm"
+                                {...field}
+                              />
+                            )}
                           />
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.name` as const}
-                        render={({ field }) => (
-                          <Form.Control type="text" placeholder="(optional)" {...field} />
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.qty` as const}
-                        render={({ field }) => (
-                          <Form.Control type="number" placeholder="Enter quantity" step="any" {...field} />
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.unit` as const}
-                        render={({ field }) => (
-                          <Form.Select {...field}>
-                            <option value="">Select unit</option>
-                            <option value="per piece">Per Piece</option>
-                            <option value="pound">Pound</option>
-                            <option value="Kg">Kg</option>
-                            <option value="gram">Gram</option>
-                          </Form.Select>
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.measurement` as const}
-                        render={({ field }) => (
-                          <Form.Select {...field}>
-                            <option value="">Select measurement</option>
-                            {measurementOptions.map((opt) => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.category` as const}
-                        render={({ field }) => (
-                          <Form.Select {...field}>
-                            <option value="">Select category</option>
-                            {userCategories.map((cat: any) => (
-                              <option key={cat._id} value={cat.name}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </Form.Select>
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Controller
-                        control={control}
-                        name={`products.${index}.price` as const}
-                        render={({ field }) => (
-                          <Form.Control type="number" placeholder="Enter price" step="any" {...field} />
-                        )}
-                      />
-                    </td>
-                    <td>
-                      <Button 
-                        variant="danger" 
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                      >
-                        REMOVE
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.name` as const}
+                            render={({ field }) => (
+                              <Form.Control 
+                                type="text" 
+                                placeholder="(optional)" 
+                                size="sm"
+                                {...field} 
+                              />
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.qty` as const}
+                            render={({ field }) => (
+                              <Form.Control 
+                                type="number" 
+                                placeholder="Enter quantity" 
+                                step="any" 
+                                size="sm"
+                                {...field} 
+                              />
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.unit` as const}
+                            render={({ field }) => (
+                              <Form.Select size="sm" {...field}>
+                                <option value="">Select unit</option>
+                                <option value="per piece">Per Piece</option>
+                                <option value="pound">Pound</option>
+                                <option value="Kg">Kg</option>
+                                <option value="gram">Gram</option>
+                              </Form.Select>
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.measurement` as const}
+                            render={({ field }) => (
+                              <Form.Select size="sm" {...field}>
+                                <option value="">Select measurement</option>
+                                {measurementOptions.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </Form.Select>
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.category` as const}
+                            render={({ field }) => (
+                              <Form.Select size="sm" {...field}>
+                                <option value="">Select category</option>
+                                {userCategories.map((cat: any) => (
+                                  <option key={cat._id} value={cat.name}>
+                                    {cat.name}
+                                  </option>
+                                ))}
+                              </Form.Select>
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.price` as const}
+                            render={({ field }) => (
+                              <Form.Control 
+                                type="number" 
+                                placeholder="Enter price" 
+                                step="any" 
+                                size="sm"
+                                {...field} 
+                              />
+                            )}
+                          />
+                        </td>
+                        <td>
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm"
+                            onClick={() => remove(index)}
+                            disabled={fields.length === 1}
+                          >
+                            <IconifyIcon icon="tabler:trash" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Mobile Cards - Hidden on desktop */}
+            <div className="d-md-none">
+              {fields.map((field, index) => (
+                <MobileProductCard key={field.id} field={field} index={index} />
+              ))}
+            </div>
+
             <Button 
               variant="outline-primary" 
               onClick={handleAddRow} 
-              className="mb-3"
+              className="mb-3 w-100 w-md-auto"
+              size="sm"
               disabled={referenceNumberLoading}
             >
-              + Add Another Product
+              <IconifyIcon icon="tabler:plus" className="me-1" />
+              Add Another Product
             </Button>
+
+            {/* Shipping Cost */}
             <Row className="mb-3">
-              <Col md={6}>
+              <Col xs={12} md={6}>
                 <Form.Group>
-                  <Form.Label>Shipping Cost</Form.Label>
+                  <Form.Label className="small fw-semibold">Shipping Cost</Form.Label>
                   <Controller
                     control={control}
                     name="shippingCost"
                     render={({ field }) => (
-                      <Form.Control type="number" placeholder="Enter shipping cost" step="any" {...field} />
+                      <Form.Control 
+                        type="number" 
+                        placeholder="Enter shipping cost" 
+                        step="any" 
+                        size="sm"
+                        {...field} 
+                      />
                     )}
                   />
                 </Form.Group>
               </Col>
             </Row>
-            <div className="mt-3">
-              <div>
-                <strong>Total Quantity: </strong>{totalQuantity}
-              </div>
-              <div>
-                <strong>Average Shipping per Unit: </strong>${avgShipping.toFixed(2)}
-              </div>
-              <div>
-                <strong>Total Amount (including shipping): </strong>${totalAmount.toFixed(2)}
-              </div>
-            </div>
-            <div className="mt-3 d-flex justify-content-end">
-              <Button type="submit" variant="success" disabled={loading}>
-                {loading ? 'Submitting...' : 'CREATE PRODUCTS'}
+
+            {/* Summary */}
+            <Card className="mb-3 bg-light">
+              <CardBody className="p-2 p-md-3">
+                <div className="row g-2">
+                  <div className="col-12 col-md-4">
+                    <div className="small">
+                      <strong>Total Quantity:</strong>
+                      <div className="text-primary fs-6">{totalQuantity}</div>
+                    </div>
+                  </div>
+                  <div className="col-12 col-md-4">
+                    <div className="small">
+                      <strong>Avg Shipping per Unit:</strong>
+                      <div className="text-primary fs-6">${avgShipping.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <div className="col-12 col-md-4">
+                    <div className="small">
+                      <strong>Total Amount:</strong>
+                      <div className="text-success fs-6">${totalAmount.toFixed(2)}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Submit Button */}
+            <div className="d-grid d-md-flex justify-content-md-end">
+              <Button 
+                type="submit" 
+                variant="success" 
+                disabled={loading}
+                className="w-100 w-md-auto"
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Submitting...
+                  </>
+                ) : (
+                  'CREATE PRODUCTS'
+                )}
               </Button>
             </div>
           </Form>

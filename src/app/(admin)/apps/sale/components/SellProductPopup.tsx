@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
-import { Button, Form, Table, Spinner } from 'react-bootstrap'
+import { Button, Form, Table, Spinner, Card, Row, Col } from 'react-bootstrap'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import api from '@/utils/axiosInstance'
@@ -118,6 +118,18 @@ export default function SellMultipleProductsModal({
   ]
   const { showNotification } = useNotificationContext()
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const onSubmit = async (data: SellMultipleFormData) => {
     console.log("submit_being called")
@@ -183,6 +195,200 @@ export default function SellMultipleProductsModal({
     }
   }
 
+  const renderMobileItem = (field: any, index: number) => (
+    <Card key={field.id} className="mb-3 shadow-sm">
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <Card.Title className="h6 mb-0">{field.name}</Card.Title>
+          <Button 
+            variant="outline-danger" 
+            size="sm" 
+            onClick={() => remove(index)}
+            className="ms-2"
+          >
+            Remove
+          </Button>
+        </div>
+        
+        <div className="mb-2">
+          <small className="text-muted">Available: {field.qty}</small>
+        </div>
+
+        <Row className="g-2">
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Quantity</Form.Label>
+              <Form.Control
+                type="number"
+                step="any"
+                size="sm"
+                placeholder="Quantity"
+                {...(control.register ? control.register(`items.${index}.quantity` as const) : {})}
+              />
+              {errors?.items && errors.items[index]?.quantity && (
+                <small className="text-danger">
+                  {errors.items[index].quantity?.message}
+                </small>
+              )}
+            </Form.Group>
+          </Col>
+          
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Unit</Form.Label>
+              <Controller
+                control={control}
+                name={`items.${index}.unit` as const}
+                render={({ field }) => (
+                  <Form.Select {...field} size="sm">
+                    <option value="">Select unit</option>
+                    {unitOptions.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </Form.Select>
+                )}
+              />
+            </Form.Group>
+          </Col>
+          
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Measurement</Form.Label>
+              <Controller
+                control={control}
+                name={`items.${index}.measurement` as const}
+                render={({ field }) => (
+                  <Form.Select {...field} size="sm">
+                    <option value="">Select measurement</option>
+                    {measurementOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                )}
+              />
+            </Form.Group>
+          </Col>
+          
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Sale Price</Form.Label>
+              <Form.Control
+                type="number"
+                step="any"
+                size="sm"
+                placeholder="Sale Price"
+                {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
+              />
+            </Form.Group>
+          </Col>
+        </Row>
+        
+        <div className="mt-2 text-end">
+          <strong className="text-primary">
+            Subtotal: ${(
+              Number(items[index]?.measurement || 1) *
+              Number(items[index]?.sale_price || 0) * 
+              Number(items[index]?.quantity || 0)
+            ).toFixed(2)}
+          </strong>
+        </div>
+      </Card.Body>
+    </Card>
+  )
+
+  const renderDesktopTable = () => (
+    <Table responsive bordered>
+      <thead className="table-light">
+        <tr>
+          <th>Product</th>
+          <th>Quantity Available</th>
+          <th>Quantity</th>
+          <th>Unit</th>
+          <th>Measurement</th>
+          <th>Sale Price</th>
+          <th>Subtotal</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {fields.map((field, index) => (
+          <tr key={field.id}>
+            <td>{field.name}</td>
+            <td>{field.qty}</td>
+            <td>
+              <Form.Control
+                type="number"
+                step="any"
+                placeholder="Quantity"
+                {...(control.register ? control.register(`items.${index}.quantity` as const) : {})}
+              />
+              {errors?.items && errors.items[index]?.quantity && (
+                <small className="text-danger">
+                  {errors.items[index].quantity?.message}
+                </small>
+              )}
+            </td>
+            <td>
+              <Controller
+                control={control}
+                name={`items.${index}.unit` as const}
+                render={({ field }) => (
+                  <Form.Select {...field}>
+                    <option value="">Select unit</option>
+                    {unitOptions.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </Form.Select>
+                )}
+              />
+            </td>
+            <td>
+              <Controller
+                control={control}
+                name={`items.${index}.measurement` as const}
+                render={({ field }) => (
+                  <Form.Select {...field}>
+                    <option value="">Select measurement</option>
+                    {measurementOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                )}
+              />
+            </td>
+            <td>
+              <Form.Control
+                type="number"
+                step="any"
+                placeholder="Sale Price"
+                {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
+              />
+            </td>
+            <td>
+              {(
+                (Number(items[index]?.measurement || 1) *
+                Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0) )
+              ).toFixed(2)}
+            </td>
+            <td>
+              <Button variant="danger" onClick={() => remove(index)}>
+                REMOVE
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  )
+
   return (
     <div
       className="modal fade show"
@@ -191,16 +397,49 @@ export default function SellMultipleProductsModal({
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         backgroundColor: 'rgba(0,0,0,0.3)',
+        padding: isMobile ? '10px' : '20px',
       }}
       role="dialog"
     >
-      <div className="modal-dialog" role="document" style={{ maxWidth: '90vw', width: '85%' }}>
-        <div className="modal-content shadow-lg rounded border border-light" style={{ backgroundColor: '#fff', position: 'relative' }}>
+      <div 
+        className="modal-dialog" 
+        role="document" 
+        style={{ 
+          maxWidth: isMobile ? '100%' : '90vw', 
+          width: isMobile ? '100%' : '85%',
+          margin: isMobile ? '0' : '1.75rem auto',
+          height: isMobile ? '100vh' : 'auto',
+          maxHeight: isMobile ? '100vh' : '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div 
+          className="modal-content shadow-lg rounded border border-light" 
+          style={{ 
+            backgroundColor: '#fff', 
+            position: 'relative',
+            height: isMobile ? '100%' : 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div className="modal-header bg-light border-bottom border-light">
-            <h5 className="modal-title">Selling Products to {user?.firstName + ' ' + user.lastName }</h5>
+            <h5 className={`modal-title ${isMobile ? 'h6' : ''}`}>
+              Selling Products to {user?.firstName + ' ' + user.lastName}
+            </h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
-          <div className="modal-body" style={{ position: 'relative' }}>
+          
+          <div 
+            className="modal-body" 
+            style={{ 
+              position: 'relative',
+              flex: 1,
+              overflowY: 'auto',
+              padding: isMobile ? '15px' : '20px',
+            }}
+          >
             {loading && (
               <div style={{
                 position: 'absolute',
@@ -217,141 +456,60 @@ export default function SellMultipleProductsModal({
                 <Spinner animation="border" variant="primary" />
               </div>
             )}
+            
             <Form onSubmit={(handleSubmit(onSubmit, (errors) => console.log('Validation Errors:', errors)))}>
-              <Table responsive bordered>
-                <thead className="table-light">
-                  <tr>
-                    <th>Product</th>
-                    <th>Quantity Available</th>
-                    <th>Quantity</th>
-                    <th>Unit</th>
-                    <th>Measurement</th>
-                    {/* <th>Org Price</th> */}
-                    <th>Sale Price</th>
-                    {/* <th>Shipping (per unit)</th> */}
-                    <th>Subtotal</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fields.map((field, index) => (
-                    <tr key={field.id}>
-                      <td>{field.name}</td>
-                      <td>{field.qty}</td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          step="any"
-                          placeholder="Quantity"
-                          {...(control.register ? control.register(`items.${index}.quantity` as const) : {})}
-                        />
-                        {errors?.items && errors.items[index]?.quantity && (
-                          <small className="text-danger">
-                            {errors.items[index].quantity?.message}
-                          </small>
-                        )}
-                      </td>
-                      <td>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.unit` as const}
-                          render={({ field }) => (
-                            <Form.Select {...field}>
-                              <option value="">Select unit</option>
-                              {unitOptions.map((unit) => (
-                                <option key={unit} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          )}
-                        />
-                      </td>
-                      <td>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.measurement` as const}
-                          render={({ field }) => (
-                            <Form.Select {...field}>
-                              <option value="">Select measurement</option>
-                              {measurementOptions.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          )}
-                        />
-                      </td>
-                      {/* <td>
-                        <Form.Control
-                          type="number"
-                          step="any"
-                          //disabled
-                          placeholder="Price"
-                          {...(control.register ? control.register(`items.${index}.price` as const) : {})}
-                        />
-                      </td> */}
-                      <td>
-                        <Form.Control
-                          type="number"
-                          step="any"
-                          placeholder="Sale Price"
-                          {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
-                        />
-                      </td>
-                      {/* <td>
-                        <Form.Control
-                          type="number"
-                          step="any"
-                          placeholder="Shipping"
-                          //disabled
-                          {...(control.register ? control.register(`items.${index}.shipping` as const) : {})}
-                        />
-                      </td> */}
-                      <td>
-                        {(
-                          // (Number(items[index]?.quantity || 0) *  Number(items[index]?.shipping || 0) ) +
-                          (Number(items[index]?.measurement || 1) *
-                          Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0) )
-                        ).toFixed(2)}
-                      </td>
-                      <td>
-                        <Button variant="danger" onClick={() => remove(index)}>
-                          REMOVE
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-              {/* <div className="mt-1">
-                <strong>Total Shipping : </strong>${totalShipping.toFixed(2)}
-              </div> */}
-              <div className="mt-1">
-                <strong>Total Amount :  </strong>${totalAmount.toFixed(2)}
+              {isMobile ? (
+                <div className="mb-3">
+                  {fields.map((field, index) => renderMobileItem(field, index))}
+                </div>
+              ) : (
+                renderDesktopTable()
+              )}
+              
+              <div className="mt-3 p-3 bg-light rounded">
+                <Row>
+                  <Col xs={12} md={6}>
+                    <strong>Total Amount: ${totalAmount.toFixed(2)}</strong>
+                  </Col>
+                </Row>
               </div>
+              
               <div className="mt-3">
                 <Form.Group className="mb-3">
-                  <Form.Label>Note</Form.Label>
+                  <Form.Label>Notes</Form.Label>
                   <Controller
                     control={control}
                     name="notes"
                     render={({ field }) => (
-                      <Form.Control as="textarea" rows={3} placeholder="Enter any notes" {...field} />
+                      <Form.Control 
+                        as="textarea" 
+                        rows={isMobile ? 2 : 3} 
+                        placeholder="Enter any notes" 
+                        {...field} 
+                      />
                     )}
                   />
                 </Form.Group>
               </div>
+              
               <div className="mt-3 d-flex justify-content-end">
-                <Button type="submit" variant="success">
+                <Button 
+                  type="submit" 
+                  variant="success"
+                  className={isMobile ? 'w-100' : ''}
+                >
                   Checkout
                 </Button>
               </div>
             </Form>
           </div>
+          
           <div className="modal-footer bg-light border-top border-light">
-            <Button variant="secondary" onClick={onClose}>
+            <Button 
+              variant="secondary" 
+              onClick={onClose}
+              className={isMobile ? 'w-100' : ''}
+            >
               Close
             </Button>
           </div>

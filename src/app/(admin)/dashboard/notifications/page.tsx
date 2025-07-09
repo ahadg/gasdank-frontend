@@ -415,9 +415,8 @@ const sendNotifications = async (type: 'outstanding' | 'product') => {
       )}
 
       {/* Product Notification Modal */}
-      // Replace the entire Product Notification Modal JSX with this updated version:
-{activeModal === 'product' && (
-  <Modal show={true} onHide={() => setActiveModal(null)} size="xl">
+  {activeModal === 'product' && (
+   <Modal show={true} onHide={() => setActiveModal(null)} size="xl">
     <Modal.Header closeButton className="bg-info text-white">
       <Modal.Title>
         <IconifyIcon icon="tabler:shopping-bag" className="me-2" />

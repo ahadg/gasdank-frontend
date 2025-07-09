@@ -239,43 +239,54 @@ const RevenueForecastChart = ({ forecastData, loading }) => {
   return (
     <>
       <Card className="shadow-sm border-0">
-        <CardHeader className="bg-transparent py-3 border-0">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h6 className="mb-1">
-                <IconifyIcon icon="tabler:chart-line" className="me-2" />
-                Revenue Forecasting & Analytics
-              </h6>
-              <small className="text-muted">
-                {forecastData.summary?.dataPoints || 0} months of data • 
-                {forecastData.summary?.avgConfidence || 0}% avg confidence • 
-                {forecastData.summary?.projectedGrowth || 'No trend'}
-              </small>
-            </div>
-            <div className="d-flex gap-2">
-              <Button 
-                variant="outline-primary" 
-                size="sm"
-                onClick={() => setShowInsights(!showInsights)}
-              >
-                <IconifyIcon icon="tabler:bulb" className="me-1" />
-                Insights
-              </Button>
-              <div className="btn-group" role="group">
-                {['line', 'bar', 'area'].map(type => (
-                  <Button
-                    key={type}
-                    variant={chartType === type ? 'primary' : 'outline-primary'}
-                    size="sm"
-                    onClick={() => setChartType(type as ChartType)}
-                  >
-                    <IconifyIcon icon={`tabler:chart-${type}`} />
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
+      <CardHeader className="bg-transparent py-3 border-0">
+  <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+    <div className="w-100 w-lg-auto">
+      <h6 className="mb-1 d-flex align-items-center flex-wrap">
+        <IconifyIcon icon="tabler:chart-line" className="me-2" />
+        <span className="me-2">Revenue Forecasting & Analytics</span>
+      </h6>
+      <small className="text-muted d-block d-lg-inline">
+        <span className="d-inline-block me-2">
+          {forecastData.summary?.dataPoints || 0} months of data
+        </span>
+        <span className="d-inline-block me-2">
+          • {forecastData.summary?.avgConfidence || 0}% avg confidence
+        </span>
+        <span className="d-inline-block">
+          • {forecastData.summary?.projectedGrowth || 'No trend'}
+        </span>
+      </small>
+    </div>
+    
+    <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        className="flex-shrink-0"
+        onClick={() => setShowInsights(!showInsights)}
+      >
+        <IconifyIcon icon="tabler:bulb" className="me-1" />
+        <span className="d-none d-sm-inline">Insights</span>
+      </Button>
+      
+      <div className="btn-group w-100 w-sm-auto" role="group">
+        {['line', 'bar', 'area'].map(type => (
+          <Button
+            key={type}
+            variant={chartType === type ? 'primary' : 'outline-primary'}
+            size="sm"
+            className="flex-fill flex-sm-grow-0"
+            onClick={() => setChartType(type as ChartType)}
+          >
+            <IconifyIcon icon={`tabler:chart-${type}`} />
+            <span className="d-inline d-sm-none ms-1 text-capitalize">{type}</span>
+          </Button>
+        ))}
+      </div>
+    </div>
+  </div>
+</CardHeader>
 
         <CardBody>
           {/* Tabs - Reordered to show Profit first */}
