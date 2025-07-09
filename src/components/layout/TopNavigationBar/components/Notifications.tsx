@@ -249,147 +249,157 @@ const Notifications = () => {
 
   return (
     <div className="topbar-item">
-      <Dropdown ref={dropdownRef} align={'end'} onToggle={handleDropdownToggle} show={isOpen}>
-        <DropdownToggle 
-          as={'a'} 
-          className="topbar-link drop-arrow-none" 
-          data-bs-toggle="dropdown" 
-          data-bs-offset="0,25" 
-          aria-haspopup="false" 
-          aria-expanded="false"
-        >
-          <IconifyIcon icon='tabler:bell' className="animate-ring fs-22" />
-          {unreadCount > 0 && (
-            <span className="noti-icon-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </DropdownToggle>
-        
-        <DropdownMenu className="p-0 dropdown-menu-start dropdown-menu-lg" style={{ minHeight: 300 }}>
-          <div className="p-3 border-bottom border-dashed">
-            <Row className="align-items-center">
-              <Col>
-                <h6 className="m-0 fs-16 fw-semibold">
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="badge bg-danger ms-2">{unreadCount}</span>
-                  )}
-                </h6>
-              </Col>
-              <Col xs={'auto'}>
-                <Dropdown>
-                  <DropdownToggle 
-                    as={'a'} 
-                    className="drop-arrow-none link-dark" 
-                    data-bs-toggle="dropdown" 
-                    data-bs-offset="0,15" 
-                    aria-expanded="false"
-                  >
-                    <IconifyIcon icon='tabler:settings' className="fs-22 align-middle" />
-                  </DropdownToggle>
-                  <DropdownMenu className="dropdown-menu-end">
-                    <DropdownItem onClick={markAllAsRead}>
-                      Mark as Read
-                    </DropdownItem>
-                    <DropdownItem onClick={deleteAllNotifications}>
-                      Delete All
-                    </DropdownItem>
-                    <DropdownItem>Do not Disturb</DropdownItem>
-                    <DropdownItem>Other Settings</DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </Col>
-            </Row>
-          </div>
-          
-          <SimplebarReactClient 
-            className="position-relative z-2 card shadow-none rounded-0" 
-            style={{ maxHeight: 300 }}
-          >
-            {loading ? (
-              <div className="d-flex justify-content-center align-items-center p-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : notifications.length > 0 ? (
-              notifications.map((item) => (
-                <div 
-                  className={`notification-item dropdown-item py-2 text-wrap ${!item.isRead ? 'bg-light' : ''}`}
-                  key={item._id}
-                  onClick={() => handleNotificationClick(item)}
-                  style={{ cursor: 'pointer' }}
+    <Dropdown ref={dropdownRef} align={'end'} onToggle={handleDropdownToggle} show={isOpen}>
+      <DropdownToggle 
+        as={'a'} 
+        className="topbar-link drop-arrow-none position-relative" 
+        data-bs-toggle="dropdown" 
+        data-bs-offset="0,25" 
+        aria-haspopup="false" 
+        aria-expanded="false"
+      >
+        <IconifyIcon icon='tabler:bell' className="animate-ring fs-22" />
+        {unreadCount > 0 && (
+          <span className="position-absolute badge rounded-pill bg-danger" style={{
+            top: '-4px',
+            right: '-8px',
+            fontSize: '10px',
+            minWidth: '16px',
+            height: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0 4px'
+          }}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </DropdownToggle>
+      
+      <DropdownMenu className="p-0 dropdown-menu-start dropdown-menu-lg" style={{ minHeight: 300 }}>
+        <div className="p-3 border-bottom border-dashed">
+          <Row className="align-items-center">
+            <Col>
+              <h6 className="m-0 fs-16 fw-semibold">
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="badge bg-danger ms-2">{unreadCount}</span>
+                )}
+              </h6>
+            </Col>
+            <Col xs={'auto'}>
+              <Dropdown>
+                <DropdownToggle 
+                  as={'a'} 
+                  className="drop-arrow-none link-dark" 
+                  data-bs-toggle="dropdown" 
+                  data-bs-offset="0,15" 
+                  aria-expanded="false"
                 >
-                  <span className="d-flex align-items-center">
-                    {item.actorId?.avatar ? (
-                      <span className="me-3 position-relative flex-shrink-0">
-                        <Image 
-                          src={item.actorId.avatar} 
-                          className="avatar-md rounded-circle" 
-                          alt={item.actorId.name}
-                          width={40}
-                          height={40}
-                        />
-                        {!item.isRead && (
-                          <span className="position-absolute rounded-pill bg-primary notification-badge">
-                            <span className="visually-hidden">unread</span>
-                          </span>
-                        )}
-                      </span>
-                    ) : (
-                      <div className="avatar-md flex-shrink-0 me-3">
-                        <span className={`avatar-title bg-primary-subtle text-primary rounded-circle fs-22`}>
-                          <IconifyIcon icon="tabler:bell" />
-                        </span>
-                      </div>
-                    )}
-
-                    <span className="flex-grow-1 text-muted">
-                      <div className={`${!item.isRead ? 'fw-semibold text-dark' : ''}`}>
-                        {item.message || `${item.actorId?.name || 'Someone'} ${item.type}`}
-                      </div>
-                      <span className="fs-12">{timeSince(new Date(item.createdAt))}</span>
-                    </span>
-                    
-                    <span className="notification-item-close">
-                      <button 
-                        type="button" 
-                        className="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dismissNotification(item._id);
-                        }}
-                      >
-                        <IconifyIcon icon='tabler:x' className="fs-16" />
-                      </button>
-                    </span>
-                  </span>
-                </div>
-              ))
-            ) : null}
-          </SimplebarReactClient>
-          
-          {/* Empty state */}
-          {!loading && notifications.length === 0 && (
-            <div 
-              style={{ height: 300 }} 
-              className="d-flex align-items-center justify-content-center text-center position-absolute top-0 bottom-0 start-0 end-0 z-1"
-            >
-              <div>
-                <IconifyIcon 
-                  icon="line-md:bell-twotone-alert-loop" 
-                  className="fs-80 text-secondary mt-2" 
-                />
-                <h4 className="fw-semibold mb-0 fst-italic lh-base mt-3">
-                  Hey! 👋 <br />You have no notifications
-                </h4>
+                  <IconifyIcon icon='tabler:settings' className="fs-22 align-middle" />
+                </DropdownToggle>
+                <DropdownMenu className="dropdown-menu-end">
+                  <DropdownItem onClick={markAllAsRead}>
+                    Mark as Read
+                  </DropdownItem>
+                  {/* <DropdownItem onClick={deleteAllNotifications}>
+                    Delete All
+                  </DropdownItem>
+                  <DropdownItem>Do not Disturb</DropdownItem>
+                  <DropdownItem>Other Settings</DropdownItem> */}
+                </DropdownMenu>
+              </Dropdown>
+            </Col>
+          </Row>
+        </div>
+        
+        <SimplebarReactClient 
+          className="position-relative z-2 card shadow-none rounded-0" 
+          style={{ maxHeight: 300 }}
+        >
+          {loading ? (
+            <div className="d-flex justify-content-center align-items-center p-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
             </div>
-          )}
-        </DropdownMenu>
-      </Dropdown>
-    </div>
+          ) : notifications.length > 0 ? (
+            notifications.map((item) => (
+              <div 
+                className={`notification-item dropdown-item py-2 text-wrap ${!item.isRead ? 'bg-light' : ''}`}
+                key={item._id}
+                onClick={() => handleNotificationClick(item)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span className="d-flex align-items-center">
+                  {item.actorId?.avatar ? (
+                    <span className="me-3 position-relative flex-shrink-0">
+                      <Image 
+                        src={item.actorId.avatar} 
+                        className="avatar-md rounded-circle" 
+                        alt={item.actorId.name}
+                        width={40}
+                        height={40}
+                      />
+                      {!item.isRead && (
+                        <span className="position-absolute rounded-pill bg-primary notification-badge">
+                          <span className="visually-hidden">unread</span>
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <div className="avatar-md flex-shrink-0 me-3">
+                      <span className={`avatar-title bg-primary-subtle text-primary rounded-circle fs-22`}>
+                        <IconifyIcon icon="tabler:bell" />
+                      </span>
+                    </div>
+                  )}
+  
+                  <span className="flex-grow-1 text-muted">
+                    <div className={`${!item.isRead ? 'fw-semibold text-dark' : ''}`}>
+                      {item.message || `${item.actorId?.name || 'Someone'} ${item.type}`}
+                    </div>
+                    <span className="fs-12">{timeSince(new Date(item.createdAt))}</span>
+                  </span>
+                  
+                  <span className="notification-item-close">
+                    <button 
+                      type="button" 
+                      className="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dismissNotification(item._id);
+                      }}
+                    >
+                      <IconifyIcon icon='tabler:x' className="fs-16" />
+                    </button>
+                  </span>
+                </span>
+              </div>
+            ))
+          ) : null}
+        </SimplebarReactClient>
+        
+        {/* Empty state */}
+        {!loading && notifications.length === 0 && (
+          <div 
+            style={{ height: 300 }} 
+            className="d-flex align-items-center justify-content-center text-center position-absolute top-0 bottom-0 start-0 end-0 z-1"
+          >
+            <div>
+              <IconifyIcon 
+                icon="line-md:bell-twotone-alert-loop" 
+                className="fs-80 text-secondary mt-2" 
+              />
+              <h4 className="fw-semibold mb-0 fst-italic lh-base mt-3">
+                Hey! 👋 <br />You have no notifications
+              </h4>
+            </div>
+          </div>
+        )}
+      </DropdownMenu>
+    </Dropdown>
+  </div>
   )
 }
 
