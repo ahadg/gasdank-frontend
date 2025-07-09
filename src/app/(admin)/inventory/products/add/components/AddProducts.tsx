@@ -443,7 +443,7 @@ function AddProductsPage() {
               <Button
                 variant="outline-secondary"
                 onClick={() => setDropdownOpen((prev) => !prev)}
-                className="w-100 text-start d-flex justify-content-between align-items-center rounded-pill shadow-sm py-2 px-3"
+                className="text-start d-flex justify-content-between align-items-center rounded-pill shadow-sm py-2 px-3"
                 size="sm"
               >
                 <span className="text-truncate">
@@ -647,7 +647,7 @@ function AddProductsPage() {
             <Button 
               variant="outline-primary" 
               onClick={handleAddRow} 
-              className="mb-3 w-100 w-md-auto"
+              className="mb-3 w-md-auto"
               size="sm"
               disabled={referenceNumberLoading}
             >
@@ -709,7 +709,7 @@ function AddProductsPage() {
                 type="submit" 
                 variant="success" 
                 disabled={loading}
-                className="w-100 w-md-auto"
+                className="w-md-auto"
               >
                 {loading ? (
                   <>

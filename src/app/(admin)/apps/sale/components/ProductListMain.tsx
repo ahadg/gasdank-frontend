@@ -187,7 +187,7 @@ const saleTransactionsPage = () => {
           <Button 
             variant="primary" 
             onClick={() => setActiveModal('sellMultiple')}
-            className="w-100 w-sm-auto"
+            className=" w-sm-auto"
           >
             SELL SELECTED ({selectedProducts.length})
           </Button>
