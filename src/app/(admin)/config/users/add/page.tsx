@@ -62,10 +62,10 @@ const statPermissions = ['today_sales', 'today_profit', 'inventory_value', 'outs
 
 const schema = yup.object({
   firstName: yup.string().required('First Name is required'),
-  lastName: yup.string().required('Last Name is required'),
+  lastName: yup.string().optional(),
   userName: yup.string().required('User Name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
-  phone: yup.string().required('Phone is required'),
+  phone: yup.string().optional(),
   password: yup
     .string()
     .required('PIN is required')
@@ -78,7 +78,7 @@ export default function AddUserPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const [loading, setLoading] = useState(false)
-  const user = useAuthStore((state) => state.user) || { _id: '67cf4bb808facf7a76f9f229' }
+  const user = useAuthStore((state) => state.user)
   console.log("user",user)
   const {
     register,
@@ -148,7 +148,7 @@ export default function AddUserPage() {
 
   return (
     <div className="container-fluid">
-      <h4 className="mb-4">Add User</h4>
+      <h4 className="mb-4"></h4>
       <Card>
         <CardHeader className="border-bottom border-light">
           <CardTitle as="h5" className="mb-0">Add User</CardTitle>

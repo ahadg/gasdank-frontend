@@ -29,8 +29,36 @@ const LoginPinPage = () => {
     pinArray[index] = value
     const newPin = pinArray.join('').padEnd(4, ' ')
     setValue('pin', newPin)
-    const nextInput = document.getElementById(`pin-${index + 1}`)
-    if (value && nextInput) nextInput.focus()
+    
+    // Move to next input if value is entered
+    if (value) {
+      const nextInput = document.getElementById(`pin-${index + 1}`)
+      if (nextInput) nextInput.focus()
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const pinArray = pinValue.split('')
+      
+      // If current field has a value, clear it
+      if (pinArray[index] && pinArray[index] !== ' ') {
+        pinArray[index] = ' '
+        const newPin = pinArray.join('')
+        setValue('pin', newPin)
+      } else {
+        // If current field is empty, move to previous field and clear it
+        if (index > 0) {
+          const prevInput = document.getElementById(`pin-${index - 1}`)
+          if (prevInput) {
+            prevInput.focus()
+            pinArray[index - 1] = ' '
+            const newPin = pinArray.join('')
+            setValue('pin', newPin)
+          }
+        }
+      }
+    }
   }
 
   useEffect(() => {
@@ -81,6 +109,7 @@ const LoginPinPage = () => {
                       style={{ width: '50px', height: '50px' }}
                       value={pinValue[i] === ' ' ? '' : pinValue[i] || ''}
                       onChange={(e) => handleInputChange(i, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(i, e)}
                     />
                   ))}
                 </div>

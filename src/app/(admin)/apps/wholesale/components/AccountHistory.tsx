@@ -84,7 +84,8 @@ const AccountHistory = () => {
 
   // New state for date range selection with single inputs
   const [dateRange, setDateRange] = useState<DateRange>({
-    startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
+    startDateTime: moment().subtract(1, 'month').startOf('day').format('YYYY-MM-DDTHH:mm'),
+    //startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
     endDateTime: moment().add(1, 'day').endOf('day').format('YYYY-MM-DDTHH:mm')
   });
 
