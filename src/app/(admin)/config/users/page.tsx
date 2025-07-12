@@ -175,6 +175,7 @@ export default function UsersPage() {
                   <tr>
                     <th>FIRSTNAME</th>
                     <th>LASTNAME</th>
+                    <th>USERNAME</th>
                     <th>EMAIL</th>
                     <th>PHONE NUMBER</th>
                     {/* Show role column for superadmin */}
@@ -199,6 +200,7 @@ export default function UsersPage() {
                       <tr key={index}>
                         <td>{user.firstName}</td>
                         <td>{user.lastName}</td>
+                        <td>{user.userName}</td>
                         <td>{user.email}</td>
                         <td>{user.phone}</td>
                         {/* Show role for superadmin */}

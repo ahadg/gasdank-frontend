@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: 'Add Products' }
 const multipleProductSchema = yup.object({
   products: yup.array().of(
     yup.object({
-      referenceNumber: yup.number().required('Reference number is required'),
+      referenceNumber: yup.string().optional(),
       name: yup.string().optional(),
       qty: yup.number().required('Quantity is required').min(1, 'Minimum quantity is 1'),
       unit: yup.string().required('Unit is required'),
@@ -26,6 +26,7 @@ const multipleProductSchema = yup.object({
         .oneOf([1, 0.5, 0.25], 'Invalid measurement'),
       category: yup.string().required('Category is required'),
       price: yup.number().required('Price is required').min(0, 'Price must be non-negative'),
+      strain_type: yup.string().optional(),
     })
   ).min(1, 'At least one product is required'),
   shippingCost: yup.number().required('Shipping cost is required').min(0, 'Must be non-negative'),
@@ -37,14 +38,11 @@ function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
-  // State for managing reference numbers
-  const [nextReferenceNumber, setNextReferenceNumber] = useState<number>(1)
-  const [referenceNumberLoading, setReferenceNumberLoading] = useState(false)
 
   const { control, handleSubmit, getValues, reset } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ referenceNumber: 1, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
+      products: [{ referenceNumber: '', name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0, strain_type: "" }],
       shippingCost: 0,
     },
   })
@@ -58,7 +56,7 @@ function AddProductsPage() {
   const productsData = useWatch({
     control,
     name: 'products',
-    defaultValue: [{ referenceNumber: 0, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }]
+    defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0, strain_type: "" }]
   })
 
   const shippingCost = useWatch({
@@ -103,20 +101,6 @@ function AddProductsPage() {
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
-  // Fetch next reference number
-  const fetchNextReferenceNumber = async () => {
-    setReferenceNumberLoading(true)
-    try {
-      const response = await api.get('/api/inventory/next-reference-number')
-      setNextReferenceNumber(response.data.nextReferenceNumber)
-    } catch (error: any) {
-      showNotification({ message: error?.response?.data?.error || 'Error fetching reference number', variant: 'danger' })
-      console.error('Error fetching reference number:', error)
-    } finally {
-      setReferenceNumberLoading(false)
-    }
-  }
-
   // Fetch buyers for the current user
   useEffect(() => {
     async function fetchAccounts() {
@@ -132,21 +116,6 @@ function AddProductsPage() {
     }
     fetchAccounts()
   }, [user?._id])
-
-  // Fetch next reference number on component mount
-  useEffect(() => {
-    fetchNextReferenceNumber()
-  }, [])
-
-  // Reset form with correct reference number when it's fetched
-  useEffect(() => {
-    if (nextReferenceNumber > 1) {
-      reset({
-        products: [{ referenceNumber: nextReferenceNumber, name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0 }],
-        shippingCost: 0,
-      })
-    }
-  }, [nextReferenceNumber, reset])
 
   // Filter accounts based on search query
   const filteredAccounts = accounts.filter((acc) =>
@@ -177,15 +146,15 @@ function AddProductsPage() {
   ]
 
   const handleAddRow = () => {
-    const newReferenceNumber = nextReferenceNumber + fields.length
     append({ 
-      referenceNumber: newReferenceNumber, 
+      referenceNumber: "", 
       name: '', 
       qty: 0, 
       unit: 'pound', 
       category: '', 
       price: 0, 
-      measurement: 1 
+      measurement: 1,
+      strain_type: ""
     })
   }
 
@@ -208,6 +177,7 @@ function AddProductsPage() {
         unit: item.unit,
         price: item.price,
         shipping: avg_shipping.toFixed(2),
+        strain_type: item?.strain_type
       }))
 
       const productsTotal = productsData.reduce((sum, item) => {
@@ -271,6 +241,7 @@ function AddProductsPage() {
           category: the_category?._id,
           price: prod.price,
           shippingCost: avg_shipping.toFixed(2),
+          strain_type: prod.strain_type,
           status: "",
           notes: "",
         })
@@ -313,10 +284,8 @@ function AddProductsPage() {
               name={`products.${index}.referenceNumber` as const}
               render={({ field }) => (
                 <Form.Control 
-                  type="number" 
-                  value={nextReferenceNumber + index}
-                  disabled
-                  className="bg-light"
+                  type="text" 
+                  placeholder="Enter reference number"
                   size="sm"
                   {...field}
                 />
@@ -420,6 +389,21 @@ function AddProductsPage() {
               )}
             />
           </Col>
+          <Col xs={12}>
+            <Form.Label className="small fw-semibold">Strain Type</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.strain_type` as const}
+              render={({ field }) => (
+                <Form.Select size="sm" {...field}>
+                  <option value="">Select strain type</option>
+                  <option value="indica">Indica</option>
+                  <option value="sativa">Sativa</option>
+                  <option value="hybrid">Hybrid</option>
+                </Form.Select>
+              )}
+            />
+          </Col>
         </Row>
       </CardBody>
     </Card>
@@ -507,6 +491,7 @@ function AddProductsPage() {
                       <th className="small">Measurement</th>
                       <th className="small">Category</th>
                       <th className="small">Price</th>
+                      <th className="small">Strain Type</th>
                       <th className="small">Action</th>
                     </tr>
                   </thead>
@@ -519,10 +504,8 @@ function AddProductsPage() {
                             name={`products.${index}.referenceNumber` as const}
                             render={({ field }) => (
                               <Form.Control 
-                                type="number" 
-                                value={nextReferenceNumber + index}
-                                disabled
-                                className="bg-light"
+                                type="text" 
+                                placeholder="Reference number"
                                 size="sm"
                                 {...field}
                               />
@@ -536,7 +519,7 @@ function AddProductsPage() {
                             render={({ field }) => (
                               <Form.Control 
                                 type="text" 
-                                placeholder="(optional)" 
+                                placeholder="Product Name" 
                                 size="sm"
                                 {...field} 
                               />
@@ -621,6 +604,20 @@ function AddProductsPage() {
                           />
                         </td>
                         <td>
+                          <Controller
+                            control={control}
+                            name={`products.${index}.strain_type` as const}
+                            render={({ field }) => (
+                              <Form.Select size="sm" {...field}>
+                                <option value="">Select strain type</option>
+                                <option value="indica">Indica</option>
+                                <option value="sativa">Sativa</option>
+                                <option value="hybrid">Hybrid</option>
+                              </Form.Select>
+                            )}
+                          />
+                        </td>
+                        <td>
                           <Button 
                             variant="outline-danger" 
                             size="sm"
@@ -649,7 +646,6 @@ function AddProductsPage() {
               onClick={handleAddRow} 
               className="mb-3 w-md-auto"
               size="sm"
-              disabled={referenceNumberLoading}
             >
               <IconifyIcon icon="tabler:plus" className="me-1" />
               Add Another Product

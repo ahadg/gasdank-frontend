@@ -155,12 +155,7 @@ export default function WorkerSampleManagementPage() {
 
     try {
       setSaleLoading(true)
-      
-      // First, update session status to accepted
-      await api.patch(`/api/sampleviewingclient/${selectedSession._id}/status`, {
-        status: 'accepted'
-      })
-      
+    
       // Then create the sale transaction
       const transformedItems = saleItems.map(item => ({
         inventory_id: item.productId,
@@ -189,7 +184,7 @@ export default function WorkerSampleManagementPage() {
         type: "sale",
       }
 
-      await api.post('/api/transaction', transactionPayload)
+      let resp = await api.post('/api/transaction', transactionPayload)
       
       // Remove the session from state after successful sale
       setSampleSessions(prev => 
@@ -200,6 +195,13 @@ export default function WorkerSampleManagementPage() {
         message: 'Sale processed successfully',
         variant: 'success'
       })
+      console.log("resp",resp)
+      // First, update session status to accepted
+      await api.patch(`/api/sampleviewingclient/${selectedSession._id}/status`, {
+        status: 'accepted',
+        transaction_id : resp?.data?.transaction_id
+      })
+      
       
       setShowSaleModal(false)
       setSaleItems([])

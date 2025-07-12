@@ -116,6 +116,8 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
       notes: data.note,
       price: Number(data.price) * Number(data.quantity) * Number(data.measurement),
       total_shipping : data.shipping,
+      sale_price : data.saleprice,
+      profit : Number(data.saleprice) - (Number(data.price) + Number(data.shipping)),
       type: "return",
       items: [
         {
@@ -124,6 +126,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
           measurement: data.measurement,
           unit: data.unit,
           name : product?.name,
+          sale_price : data.saleprice,
           shipping : Number(data?.shipping) / Number(data.quantity),
           price: data.price,
         },

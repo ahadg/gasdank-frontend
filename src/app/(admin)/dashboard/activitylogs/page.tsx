@@ -13,6 +13,7 @@ import { Metadata } from "next"
 import api from "@/utils/axiosInstance"
 import { useAuthStore } from "@/store/authStore"
 import { useNotificationContext } from "@/context/useNotificationContext"
+import ViewTransactionModal from "./component/ViewTransactionModal"
 
 // Helper function to build details content
 const getDetailsContent = (tx: any) => {
@@ -83,8 +84,9 @@ const ActivityLogsPage = () => {
   console.log("editingTransactionId",editingTransactionId)
   // History Modal States
   const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [showViewTransactionModal, setShowViewTransactionModal] = useState(false)
   const [viewingTransactionId, setViewingTransactionId] = useState<string | null>(null)
-
+  console.log("viewingTransactionId",viewingTransactionId)
   // State to track edited transactions
   const [editedTransactions, setEditedTransactions] = useState<Set<string>>(new Set())
 
@@ -155,13 +157,24 @@ const ActivityLogsPage = () => {
 
   const handleViewHistoryClick = (activityItem: any) => {
     if (activityItem.transaction_id) {
+     
       setViewingTransactionId(activityItem.transaction_id[0]?._id)
-      setShowHistoryModal(true)
+      setShowViewTransactionModal(true)
+    }
+  }
+
+  const handleViewTransactionClick = (activityItem: any) => {
+    console.log("activityItem",activityItem)
+    if (activityItem.transaction_id[0]?._id) {
+      console.log("adsadasdsa",activityItem.transaction_id[0]?._id)
+      setViewingTransactionId(activityItem.transaction_id[0]?._id)
+      setShowViewTransactionModal(true)
     }
   }
 
   const handleModalClose = () => {
     setShowEditModal(false)
+    setShowViewTransactionModal(false)
     setEditingTransactionId(null)
   }
 
@@ -265,7 +278,7 @@ const ActivityLogsPage = () => {
                                 />
                               )}
                               <Link href="" className="text-dark">
-                              {item?.worker?.length > 0 ? `${item?.worker?.[0]?.firstName} ${item?.worker?.[0]?.lastName} (W)`: `${item.user_id?.firstName} ${item.user_id?.lastName}`}
+                              {item?.worker?.length > 0 ? `${item?.worker?.[0]?.firstName} ${item?.worker?.[0]?.lastName || ""} (W)`: `${item.user_id?.firstName} ${item.user_id?.lastName || ""}`}
                                
                               </Link>
                             </h5>
@@ -298,6 +311,17 @@ const ActivityLogsPage = () => {
                                 >
                                   <IconifyIcon icon="solar:pen-2-line-duotone" className="me-1" />
                                   Edit
+                                </Button>
+                              )}
+
+                              {(item.type === 'sample_viewing_accepted') && item.transaction_id && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => handleViewTransactionClick(item)}
+                                >
+                                  <IconifyIcon icon="solar:pen-2-line-duotone" className="me-1" />
+                                  View Transaction
                                 </Button>
                               )}
                               
@@ -350,6 +374,11 @@ const ActivityLogsPage = () => {
       <EditedTransactionsModal
         show={showHistoryModal}
         onHide={handleHistoryModalClose}
+        transactionId={viewingTransactionId}
+      />
+      <ViewTransactionModal
+        show={showViewTransactionModal}
+        onHide={handleModalClose}
         transactionId={viewingTransactionId}
       />
     </>

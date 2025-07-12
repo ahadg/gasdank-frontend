@@ -248,6 +248,7 @@ const ProductsPage = () => {
                     <th>Unit</th>
                     <th>Category</th>
                     <th>Price</th>
+                    <th>Strain Type</th>
                     <th>Notes</th>
                     <th className="text-center" style={{ width: 125 }}>Action</th>
                   </tr>
@@ -267,6 +268,7 @@ const ProductsPage = () => {
                         <td>{item.unit}</td>
                         <td>{item.category?.name}</td>
                         <td>${(item.price + item?.shippingCost).toLocaleString()}</td>
+                        <td>{item.strain_type}</td>
                         <td>
                           <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
                             {item.notes}

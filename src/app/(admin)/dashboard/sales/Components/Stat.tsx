@@ -72,7 +72,7 @@ const Stat = () => {
   const [newBalance, setNewBalance] = useState<string>('')
   const { showNotification } = useNotificationContext()
   const [balance, setBalance] = useState<number>()
-  const [otherBalance, setOtherBalance] = useState<any>({})
+  const [other_munual_balance, setother_munual_balance] = useState<any>({})
   
   const fetchStats = async () => {
     if (!user?._id) return
@@ -85,8 +85,9 @@ const Stat = () => {
       const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-      setBalance(data.loggedInUserTotalBalance)
-      setOtherBalance(data.other_balance)
+      console.log("stat_data",data)
+      setBalance(data.manual_balance)
+      setother_munual_balance(data.other_munual_balance)
       const stats: StatTypeExtended[] = [
         {
           title: 'Total Sales',
@@ -132,9 +133,9 @@ const Stat = () => {
           title: `${user?.firstName} Cash`,
           permissionKey: 'user_balance',
           icon: 'solar:eye-bold-duotone',
-          count: data.loggedInUserTotalBalance,
-          change: data.loggedInUserTotalBalance,
-          variant: data.loggedInUserTotalBalance < 0 ? 'danger' : 'success',
+          count: data.manual_balance,
+          change: 0,
+          variant: 'danger' ,
         },
         {
           title: 'Company Balances',
@@ -148,17 +149,17 @@ const Stat = () => {
           title: 'Eft Balance',
           permissionKey: 'online_balance',
           icon: 'solar:eye-bold-duotone',
-          count: data.other_balance?.EFT,
-          change: data.onlineBalanceChange,
-          variant: data.onlineBalanceChange < 0 ? 'danger' : 'success',
+          count: data.other_munual_balance?.EFT,
+          change: 0,
+          variant: 'danger',
         },
         {
           title: 'Crypto Balance',
           permissionKey: 'online_balance',
           icon: 'solar:eye-bold-duotone',
-          count: data.other_balance?.Crypto,
-          change: data.onlineBalanceChange,
-          variant: data.onlineBalanceChange < 0 ? 'danger' : 'success',
+          count: data.other_munual_balance?.Crypto,
+          change: 0,
+          variant: 'danger',
         },
       ]
 
@@ -180,23 +181,23 @@ const Stat = () => {
       let update_obj = {}
       if(title === "Eft Balance") {
           update_obj = {
-            other_balance : { 
-              ...otherBalance,
-              EFT : otherBalance?.EFT ? otherBalance?.EFT  + parseInt(newBalance) :  parseInt(newBalance),
+            other_munual_balance : { 
+              ...other_munual_balance,
+              EFT : other_munual_balance?.EFT ? other_munual_balance?.EFT  + parseInt(newBalance) :  parseInt(newBalance),
             }
           } 
           payment_method = 'EFT'
       } else if(title === "Crypto Balance") {
         update_obj = {
-          other_balance : {
-            ...otherBalance,
-            Crypto : otherBalance?.Crypto ? otherBalance?.Crypto  + parseInt(newBalance) :  parseInt(newBalance),
+          other_munual_balance : {
+            ...other_munual_balance,
+            Crypto : other_munual_balance?.Crypto ? other_munual_balance?.Crypto  + parseInt(newBalance) :  parseInt(newBalance),
           }
         } 
         payment_method = 'Crypto'
       } else {
         update_obj = {
-          cash_balance: balance + parseInt(newBalance)
+          manual_balance: balance + parseInt(newBalance)
         } 
         payment_method = 'Cash'
       }
