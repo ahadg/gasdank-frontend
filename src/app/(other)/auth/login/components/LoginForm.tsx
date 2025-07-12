@@ -37,7 +37,7 @@ const LoginPinPage = () => {
     }
   }
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Backspace') {
       const pinArray = pinValue.split('')
       

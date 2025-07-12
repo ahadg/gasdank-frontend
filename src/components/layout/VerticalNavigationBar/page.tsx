@@ -66,7 +66,7 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/expenses/add',
     },
     {
-      key: 'sample',
+      key: 'sampleholdings',
       label: 'Sample Holdings',
       icon: 'tabler:zoom-question',
       url: '/dashboard/samplesholdings',

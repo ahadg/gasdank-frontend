@@ -16,6 +16,21 @@ interface Access {
   create: boolean
 }
 
+interface Config {
+  categories: {
+    read: boolean
+    edit: boolean
+    delete: boolean
+    create: boolean
+  }
+  users: {
+    read: boolean
+    edit: boolean
+    delete: boolean
+    create: boolean
+  }
+}
+
 interface DashboardStatAccess {
   today_sales: boolean
   today_profit: boolean
@@ -33,8 +48,12 @@ interface AccessData {
   wholesale: Access
   inventory: Access
   activitylogs: Access
-  config: Access
+  config: Config
   reports: Access
+  sampleholdings: Access
+  sampleviewing: Access
+  expenses: Access
+  sampleviewingmanagement: Access
 }
 
 const defaultAccess: AccessData = {
@@ -52,13 +71,21 @@ const defaultAccess: AccessData = {
   activitylogs: { read: true, edit: true, delete: true, create: true },
   wholesale: { read: true, edit: true, delete: true, create: true },
   inventory: { read: true, edit: true, delete: true, create: true },
-  config: { read: true, edit: true, delete: true, create: true },
+  config: { 
+    categories: { read: true, edit: true, delete: true, create: true },
+    users: { read: true, edit: true, delete: true, create: true }
+  },
   reports: { read: true, edit: true, delete: true, create: true },
+  sampleholdings: { read: true, edit: true, delete: true, create: true },
+  expenses: { read: true, edit: true, delete: true, create: true },
+  sampleviewing: { read: true, edit: true, delete: true, create: true },
+  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true },
 }
 
-const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'config', 'reports']
+const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'reports', 'expenses', 'sampleholdings', 'sampleviewing', 'sampleviewingmanagement']
 const permissions = ['read', 'edit', 'delete', 'create']
 const statPermissions = ['today_sales', 'today_profit', 'inventory_value', 'outstanding_balance', 'user_balance', 'company_balance', 'online_balance']
+const configSections = ['categories', 'users']
 
 const schema = yup.object({
   firstName: yup.string().required('First Name is required'),
@@ -136,6 +163,19 @@ export default function AddUserPage() {
     }))
   }
 
+  const handleConfigAccessChange = (section: string, perm: string, checked: boolean) => {
+    setAccessData((prev) => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        [section]: {
+          ...prev.config[section],
+          [perm]: checked,
+        },
+      },
+    }))
+  }
+
   const handleStatAccessChange = (stat: string, checked: boolean) => {
     setAccessData((prev) => ({
       ...prev,
@@ -201,6 +241,27 @@ export default function AddUserPage() {
                           type="checkbox"
                           checked={accessData[page][perm]}
                           onChange={(e) => handleAccessChange(page, perm, e.target.checked)}
+                        />{' '}
+                        {perm}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <h5 className="mt-4">Config Permissions</h5>
+            {configSections.map((section) => (
+              <div key={section} className="mb-3">
+                <strong>{section.charAt(0).toUpperCase() + section.slice(1)}</strong>
+                <div className="d-flex gap-3">
+                  {permissions.map((perm) => (
+                    <div key={perm}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={accessData.config[section][perm]}
+                          onChange={(e) => handleConfigAccessChange(section, perm, e.target.checked)}
                         />{' '}
                         {perm}
                       </label>

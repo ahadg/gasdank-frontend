@@ -188,6 +188,10 @@ const Notifications = () => {
         case "sample_viewing_assigned":
           router.push('/dashboard/sampleviewingworker');
           break;
+        
+        case "product_low_quantity":
+          router.push('/inventory/products');
+          break;
           
         case "order":
         case "new_order":
