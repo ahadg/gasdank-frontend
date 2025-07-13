@@ -60,7 +60,8 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
   const user = useAuthStore((state) => state.user)
   const params = useParams()
   // Available unit options
-  const unitOptions = ['kg', 'pound', 'per piece', 'gram']
+  let unitOptions = useAuthStore(state => state.settings?.units)
+  //const unitOptions = ['kg', 'pound', 'per piece', 'gram']
   // Measurement options for fractional input
   const measurementOptions = [
     { label: 'Full', value: 1 },

@@ -107,9 +107,10 @@ export default function SellMultipleProductsModal({
     0
   );
   
-
+  const unitOptions = useAuthStore(state => state.settings?.units)
+  console.log("useAuthStore(state => state.settings?.units)",useAuthStore(state => state.settings))
   // Define available unit options
-  const unitOptions = ['kg', 'pound', 'per piece', 'gram']
+  //const unitOptions = ['kg', 'pound', 'per piece', 'gram']
   // Define measurement (fraction) options
   const measurementOptions = [
     { label: 'Full', value: 1 },
@@ -242,7 +243,7 @@ export default function SellMultipleProductsModal({
                 render={({ field }) => (
                   <Form.Select {...field} size="sm">
                     <option value="">Select unit</option>
-                    {unitOptions.map((unit) => (
+                    {unitOptions?.map((unit) => (
                       <option key={unit} value={unit}>
                         {unit}
                       </option>
@@ -339,7 +340,7 @@ export default function SellMultipleProductsModal({
                 render={({ field }) => (
                   <Form.Select {...field}>
                     <option value="">Select unit</option>
-                    {unitOptions.map((unit) => (
+                    {unitOptions?.map((unit) => (
                       <option key={unit} value={unit}>
                         {unit}
                       </option>

@@ -45,6 +45,7 @@ interface AccessData {
   wholesale: Access;
   inventory: Access;
   config: Config;
+  analytics: Access;
   reports: Access;
   sampleholdings: Access
   sampleviewing: Access
@@ -62,6 +63,7 @@ const defaultAccess: AccessData = {
     company_balance: false,
     online_balance: false,
   },
+  analytics: { read: false, edit: false, delete: false, create: false },
   sale: { read: false, edit: false, delete: false, create: false },
   wholesale: { read: false, edit: false, delete: false, create: false },
   inventory: { read: false, edit: false, delete: false, create: false },
@@ -76,7 +78,7 @@ const defaultAccess: AccessData = {
   sampleviewingmanagement: { read: true, edit: true, delete: true, create: true },
 }
 
-const pages = ["dashboard", "sale", "wholesale", "inventory", "reports","expenses","sampleholdings","sampleviewing","sampleviewingmanagement"]
+const pages = ["dashboard", "sale", "wholesale", "inventory","analytics", "reports","expenses","sampleholdings","sampleviewing","sampleviewingmanagement"]
 const permissions = ["read", "edit", "delete", "create"]
 const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance", "online_balance"]
 const configSections = ["categories", "users"]
@@ -106,7 +108,7 @@ export default function EditUserPage() {
 
   const [loading, setLoading] = useState(false)
   const [accessData, setAccessData] = useState<AccessData>(defaultAccess)
-  const user = useAuthStore((state) => state.user) || { _id: '67cf4bb808facf7a76f9f229' }
+  const user = useAuthStore((state) => state.user)
   console.log("user",user)
   const {
     register,
@@ -178,7 +180,7 @@ export default function EditUserPage() {
       const response = await api.patch(`/api/users/${userId}`, payload)
       if (response.status === 200 || response.status === 204) {
         showNotification({ message: 'User updated successfully', variant: 'success' })
-        router.back()
+        //router.back()
       }
     } catch (error: any) {
       console.error('Error updating user:', error)

@@ -59,6 +59,7 @@ const Stat = () => {
     oneWeekAgo.setHours(0, 0, 0, 0)
     return toLocalDateTimeString(oneWeekAgo)
   })
+  const [the_user,setuser] = useState<any>()
   const [endDate, setEndDate] = useState(() => {
     const now = new Date()
     return toLocalDateTimeString(now)
@@ -85,7 +86,8 @@ const Stat = () => {
       const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-      console.log("stat_data",data)
+      setuser(response.data?.user)
+      console.log("response.data?.user",response.data?.user)
       setBalance(data.manual_balance)
       setother_munual_balance(data.other_munual_balance)
       const stats: StatTypeExtended[] = [
@@ -163,11 +165,13 @@ const Stat = () => {
         },
       ]
 
-      const userStats = user?.access?.dashboard_stats || {}
+      const userStats = response.data?.user?.access?.dashboard_stats || {}
+      console.log("user?.access?.dashboard_stats",response.data?.user?.access?.dashboard_stats)
       const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
       setStatData(filteredStats)
     } catch (error) {
       console.error('Error fetching stats:', error)
+      showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
     } finally {
       setLoading(false)
     }

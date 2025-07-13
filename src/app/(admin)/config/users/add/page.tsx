@@ -137,7 +137,7 @@ export default function AddUserPage() {
       const response = await api.post('/api/users', payload)
       if (response.status === 200 || response.status === 201) {
         showNotification({ message: 'User added successfully', variant: 'success' })
-        router.back()
+        //router.back()
       }
     } catch (error: any) {
       console.error('Error adding user:', error)

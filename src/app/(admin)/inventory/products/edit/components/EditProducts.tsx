@@ -95,7 +95,7 @@ const EditProduct = () => {
   const watchPrice = watch('price')
   const watchShippingCost = watch('shippingCost')
   const watchUnit = watch('unit')
-  
+  let unitOptions = useAuthStore(state => state.settings?.units)
   // Load product data
   useEffect(() => {
     async function fetchProduct() {
@@ -454,10 +454,7 @@ const EditProduct = () => {
                         render={({ field }) => (
                           <Form.Select {...field}>
                             <option value="">Select unit</option>
-                            <option value="per piece">Per Piece</option>
-                            <option value="pound">Pound</option>
-                            <option value="Kg">Kg</option>
-                            <option value="gram">Gram</option>
+                            {unitOptions.map((item) => <option key={item} value={item}>{item}</option>)}
                           </Form.Select>
                         )}
                       />

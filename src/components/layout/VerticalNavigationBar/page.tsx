@@ -18,7 +18,7 @@ const VerticalNavigationBar = () => {
   const { toggleBackdrop } = useLayoutContext()
   const user = useAuthStore((state) => state.user)
   const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([])
-  
+  const setSettings = useAuthStore((state) => state.setSettings)
   // Complete menu items array
   const menuItems = [
     {
@@ -98,12 +98,18 @@ const VerticalNavigationBar = () => {
           key: 'users',
           label: 'Users',
           url: '/config/users',
-          parentKey: 'hospital',
+          parentKey: 'config',
         },
         {
           key: 'categories',
           label: 'Categories',
           url: '/config/categories',
+          parentKey: 'config',
+        },
+        {
+          key: 'settings',
+          label: 'Settings',
+          url: '/config/settings',
           parentKey: 'config',
         },
       ]
@@ -136,27 +142,99 @@ const VerticalNavigationBar = () => {
     // Optionally include other items (e.g., logout) handled separately.
   ]
 
+  // Function to filter menu items based on access permissions
+// Function to filter menu items based on access permissions
+const filterMenuItems = (items, access) => {
+  return items.reduce((filtered, item) => {
+    // Handle config section with nested structure
+    if (item.key === 'config' && access.config) {
+      // Filter config children based on nested access
+      const filteredChildren = item.children?.filter((child) => {
+        console.log("access.config.users?.read", access.config.users?.read)
+        if (child.key === 'users') {
+          return access.config.users?.read
+        }
+        if (child.key === 'categories') {
+          return access.config.categories?.read
+        }
+        return true
+      }) || []
+      
+      // Only include config if it has at least one accessible child
+      if (filteredChildren.length > 0) {
+        filtered.push({
+          ...item,
+          children: filteredChildren
+        })
+      }
+      // If no children, don't add the config item at all
+      return filtered
+    }
+    
+    // Handle reports section (similar nested structure)
+    if (item.key === 'reports' && access.reports) {
+      if (item.children && access.reports.read) {
+        filtered.push({
+          ...item,
+          children: item.children.filter((child) => {
+            // Add specific logic for reports children if needed
+            return true
+          })
+        })
+      }
+      return filtered
+    }
+    
+    // Handle other sections with regular access structure
+    if (access[item.key] !== undefined) {
+      if (access[item.key].read) {
+        if (item.children) {
+          // Include item with filtered children
+          filtered.push({
+            ...item,
+            children: item.children.filter((child) => {
+              // Add granular child access logic here if needed
+              return true
+            })
+          })
+        } else {
+          // Include simple item
+          filtered.push(item)
+        }
+      }
+      return filtered
+    }
+    
+    // Show items that don't have access restrictions (like profile, notifications)
+    filtered.push(item)
+    return filtered
+  }, [])
+}
+let unitOptions = useAuthStore(state => state.settings?.units)
   // Fetch user access data from the backend and filter menu items accordingly.
   useEffect(() => {
     async function fetchUserAccess() {
+      //if(!unitOptions) {
+        const response = await api.get('/api/personal-settings')
+        setSettings(response.data)
+      //}
       if (user && user._id) {
         try {
           const response = await api.get(`/api/users/${user._id}`)
           const userData = response.data
           const access = userData.access || {}
-          // Filter out items that have read access false
-          const filtered = menuItems.filter(item => {
-            if (access[item.key] !== undefined) {
-              return access[item.key].read
-            }
-            return true
-          })
+          
+          // Filter menu items based on access permissions
+          const filtered = filterMenuItems(menuItems, access)
           setFilteredMenuItems(filtered)
         } catch (error) {
           console.error("Error fetching user access:", error)
           // Fallback to showing full menu if error occurs
           setFilteredMenuItems(menuItems)
         }
+      } else {
+        // If no user, show full menu (or handle as needed)
+        setFilteredMenuItems(menuItems)
       }
     }
     fetchUserAccess()

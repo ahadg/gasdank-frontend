@@ -24,6 +24,7 @@ export const useSignIn = () => {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const setAuth = useAuthStore((state) => state.setAuth)
+  const setSettings = useAuthStore((state) => state.setSettings)
   const queryParams = useQueryParams()
   const form = useForm<FormData>({
     resolver: yupResolver(schema),
@@ -52,6 +53,8 @@ export const useSignIn = () => {
       if (token && user) {
         localStorage.setItem('last_login_identifier', identifier) // ✅ Save for next time
         setAuth(token, user)
+        const response = await api.get('/api/personal-settings')
+        setSettings(response.data)
         showNotification({ message: 'Login successful', variant: 'success' })
         router.push(queryParams['redirectTo'] ?? '/dashboard/sales')
       } else {

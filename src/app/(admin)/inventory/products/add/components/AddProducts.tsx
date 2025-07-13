@@ -38,7 +38,7 @@ function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
-
+  let unitOptions = useAuthStore(state => state.settings?.units)
   const { control, handleSubmit, getValues, reset } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
@@ -548,10 +548,7 @@ function AddProductsPage() {
                             render={({ field }) => (
                               <Form.Select size="sm" {...field}>
                                 <option value="">Select unit</option>
-                                <option value="per piece">Per Piece</option>
-                                <option value="pound">Pound</option>
-                                <option value="Kg">Kg</option>
-                                <option value="gram">Gram</option>
+                                {unitOptions.map((item) => <option key={item} value={item}>{item}</option>)}
                               </Form.Select>
                             )}
                           />

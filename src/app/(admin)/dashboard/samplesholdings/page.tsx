@@ -33,7 +33,7 @@ export default function SampleHoldingPage() {
     ]
   })
 
-  const unitOptions = ['kg', 'pound', 'per piece', 'gram']
+  let unitOptions = useAuthStore(state => state.settings?.units)
   const measurementOptions = [
     { label: 'Full', value: 1 },
     { label: 'Half', value: 0.5 },
