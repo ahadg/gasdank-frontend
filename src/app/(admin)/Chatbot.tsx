@@ -16,7 +16,7 @@ const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [hasNewMessage, setHasNewMessage] = useState(false)
-  const [showCommands, setShowCommands] = useState(true)
+  const [showCommands, setShowCommands] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const user = useAuthStore((state) => state.user)
