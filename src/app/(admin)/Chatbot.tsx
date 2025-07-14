@@ -6,7 +6,6 @@ import { useChatStore } from '../../store/chatStore'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
 import './ChatWidget.css'
-//import 'bootstrap/dist/css/bootstrap.min.css'
 
 const ChatWidget = () => {
   const { sessionID } = useChatStore()
@@ -17,16 +16,53 @@ const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [hasNewMessage, setHasNewMessage] = useState(false)
+  const [showCommands, setShowCommands] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const user = useAuthStore((state) => state.user)
 
+  const commandCategories = [
+    {
+      title: "📦 Inventory Management",
+      icon: "📦",
+      color: "blue",
+      commands: [
+        { text: "Show all inventory", message: "Show me all inventory items" },
+        { text: "Add new product", message: "Add new inventory item" },
+        { text: "Check stock levels", message: "Check current stock levels" },
+        { text: "Update inventory", message: "Update existing inventory" }
+      ]
+    },
+    {
+      title: "👥 Buyer Management",
+      icon: "👥",
+      color: "green",
+      commands: [
+        { text: "Show all buyers", message: "Show me all buyers" },
+        { text: "Add new buyer", message: "Add a new buyer" },
+        { text: "Check buyer balance", message: "Check buyer balance" },
+        { text: "Update buyer info", message: "Update buyer information" }
+      ]
+    },
+    {
+      title: "💰 Expense Tracking",
+      icon: "💰",
+      color: "purple",
+      commands: [
+        { text: "Show expenses", message: "Show me recent expenses" },
+        { text: "Add expense", message: "Add a new expense" },
+        { text: "Expense categories", message: "Show expense categories" },
+        { text: "Monthly summary", message: "Show monthly expense summary" }
+      ]
+    }
+  ]
+
   const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9)
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return
+  const sendMessage = async (messageText?: string) => {
+    const userMessage = messageText || input.trim()
+    if (!userMessage || isLoading) return
     
-    const userMessage = input.trim()
     const newUserMessage = { 
       content: userMessage, 
       from: 'user' as const, 
@@ -37,16 +73,16 @@ const ChatWidget = () => {
     setMessages(prev => [...prev, newUserMessage])
     setInput('')
     setIsLoading(true)
+    setShowCommands(false) // Hide commands after first interaction
   
     try {
       const response = await api.post('/api/bot/chat', {
         sessionID, 
         userMessage, 
-        userId: user?._id ,
-        useRedis : true
+        userId: user?._id,
+        useRedis: true
       })
       
-
       const botResponse = { 
         content: response.data?.response, 
         from: 'bot' as const, 
@@ -71,6 +107,10 @@ const ChatWidget = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleCommandClick = (command: { text: string; message: string }) => {
+    sendMessage(command.message)
   }
 
   const toggleChat = () => {
@@ -102,6 +142,15 @@ const ChatWidget = () => {
   useEffect(() => {
     console.log('ChatWidget mounted, sessionID:', sessionID)
   }, [sessionID])
+
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: { bg: 'bg-primary', text: 'text-primary', border: 'border-primary' },
+      green: { bg: 'bg-success', text: 'text-success', border: 'border-success' },
+      purple: { bg: 'bg-info', text: 'text-info', border: 'border-info' }
+    }
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue
+  }
 
   return (
     <>
@@ -158,6 +207,70 @@ const ChatWidget = () => {
               </button>
             </div>
           </div>
+
+          {/* Command Categories */}
+          {showCommands && (
+            <div className="command-categories-container">
+              <div className="command-categories-header">
+                <h6 className="mb-2 fw-bold text-muted">Quick Actions</h6>
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setShowCommands(false)}
+                  style={{ fontSize: '12px', padding: '2px 8px' }}
+                >
+                  Hide
+                </button>
+              </div>
+              
+              <div className="command-categories">
+                {commandCategories.map((category, categoryIndex) => {
+                  const colors = getColorClasses(category.color)
+                  return (
+                    <div key={categoryIndex} className="command-category">
+                      <div className={`category-header ${colors.bg} bg-opacity-10 ${colors.border} border-start border-3`}>
+                        <span className="category-icon">{category.icon}</span>
+                        <span className={`category-title ${colors.text} fw-semibold`}>
+                          {category.title.replace(/^[^\s]+\s/, '')}
+                        </span>
+                      </div>
+                      <div className="command-buttons">
+                        {category.commands.map((command, commandIndex) => (
+                          <button
+                            key={commandIndex}
+                            className={`command-btn btn btn-sm ${colors.border} border-opacity-25`}
+                            onClick={() => handleCommandClick(command)}
+                            disabled={isLoading}
+                          >
+                            {command.text}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              <div className="command-categories-footer">
+                <small className="text-muted">Click any button to get started</small>
+              </div>
+            </div>
+          )}
+
+          {/* Show Commands Button (when hidden) */}
+          {!showCommands && (
+            <div className="show-commands-container">
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => setShowCommands(true)}
+                style={{ fontSize: '12px' }}
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="me-1">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Quick Actions
+              </button>
+            </div>
+          )}
 
           {/* Messages */}
           <div className="messages-container">
@@ -221,7 +334,7 @@ const ChatWidget = () => {
                 )}
               </div>
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={isLoading || !input.trim()}
                 className="send-btn d-flex align-items-center justify-content-center"
               >
