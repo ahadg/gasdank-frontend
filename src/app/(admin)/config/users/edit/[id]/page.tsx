@@ -180,7 +180,7 @@ export default function EditUserPage() {
       const response = await api.patch(`/api/users/${userId}`, payload)
       if (response.status === 200 || response.status === 204) {
         showNotification({ message: 'User updated successfully', variant: 'success' })
-        //router.back()
+        router.back()
       }
     } catch (error: any) {
       console.error('Error updating user:', error)

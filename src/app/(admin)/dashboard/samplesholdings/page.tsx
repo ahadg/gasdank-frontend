@@ -439,7 +439,7 @@ export default function SampleHoldingPage() {
                 value={newSample.buyer_id} 
                 onChange={handleBuyerSelect}
               >
-                <option value="">-- Select Buyer --</option>
+                <option value="">-- Select Seller --</option>
                 {accounts.map((acc) => (
                   <option key={acc._id} value={acc._id}>
                     {acc.firstName} {acc.lastName} {acc.company ? `(${acc.company})` : ''}
