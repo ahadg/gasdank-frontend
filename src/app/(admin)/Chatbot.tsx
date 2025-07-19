@@ -10,7 +10,20 @@ import './ChatWidget.css'
 const ChatWidget = () => {
   const { sessionID } = useChatStore()
   const [messages, setMessages] = useState<{ content: string; from: 'user' | 'bot'; timestamp?: Date; id: string }[]>([
-    { content: '👋 Hi! What would you like to do?', from: 'bot', timestamp: new Date(), id: '1' },
+    { 
+      content: `👋 Hi! I'm your Osen Assistant.
+
+      I can help you:
+     • 📦 Add products to your inventory  
+      • 👥 Manage and add clients  
+      • 💰 Add and view expenses 
+      • 📊 View summaries and reports
+      
+      Try typing something like "add product" or click Quick Actions below to get started!`,
+    from: 'bot', 
+    timestamp: new Date(), 
+    id: '1'
+  }
   ])
   const [input, setInput] = useState('')
   const [isOpen, setIsOpen] = useState(false)

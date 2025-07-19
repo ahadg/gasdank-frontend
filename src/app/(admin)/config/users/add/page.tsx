@@ -209,7 +209,8 @@ export default function AddUserPage() {
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Label>User Name</Form.Label>
-                <Form.Control type="text" {...register('userName')} />
+                <Form.Control type="text" {...register('userName')} isInvalid={!!errors.userName} />
+                <Form.Control.Feedback type="invalid">{errors.userName?.message}</Form.Control.Feedback>
               </Col>
               <Col md={6}>
                 <Form.Label>Email<span className="text-danger">*</span></Form.Label>

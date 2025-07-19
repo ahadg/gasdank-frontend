@@ -24,28 +24,29 @@ export default function PersonalSettingsPage() {
   const [newUnit, setNewUnit] = useState('')
   const [editingUnits, setEditingUnits] = useState<string[]>([])
   const [isEditing, setIsEditing] = useState(false)
+  const setSettingsZustand = useAuthStore((state) => state.setSettings)
   
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
-
+  async function fetchSettings() {
+    setLoading(true)
+    try {
+      const response = await api.get('/api/personal-settings')
+      setSettings(response.data)
+      setSettingsZustand(response.data)
+      setEditingUnits(response.data.units || [])
+    } catch (error: any) {
+      showNotification({ 
+        message: error?.response?.data?.error || 'Error fetching personal settings', 
+        variant: 'danger' 
+      })
+      console.error("Error fetching settings:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
   // Load personal settings from API on component mount
   useEffect(() => {
-    async function fetchSettings() {
-      setLoading(true)
-      try {
-        const response = await api.get('/api/personal-settings')
-        setSettings(response.data)
-        setEditingUnits(response.data.units || [])
-      } catch (error: any) {
-        showNotification({ 
-          message: error?.response?.data?.error || 'Error fetching personal settings', 
-          variant: 'danger' 
-        })
-        console.error("Error fetching settings:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
     
     if (user?._id) {
       fetchSettings()
@@ -89,6 +90,7 @@ export default function PersonalSettingsPage() {
         message: response.data.message || 'Units updated successfully', 
         variant: 'success' 
       })
+      fetchSettings()
     } catch (error: any) {
       showNotification({ 
         message: error?.response?.data?.error || 'Error updating units', 
