@@ -31,6 +31,7 @@ interface ITransactionItem {
 interface ITransaction {
   payment: number;
   price: number;
+  sale_reference_id : string;
   sale_price: number;
   status: number;
   datePaid?: string;
@@ -200,6 +201,14 @@ const AccountHistory = () => {
         // Changed: Add shipping to price first, then multiply by quantity
         return total + ((txItem?.price + shipping) * qty);
       }, 0);
+    } else if (tx?.type == "return") {
+      return tx.items?.reduce((total, item) => {
+        const txItem = item.transactionitem_id;
+        const shipping = txItem?.shippingCost || 0;
+        const qty = txItem?.qty || 0;
+        // Changed: Add shipping to price first, then multiply by quantity
+        return total + ((txItem?.sale_price) * qty);
+      }, 0);
     } 
     else {
     return tx.items.reduce((total, item) => {
@@ -254,6 +263,8 @@ const AccountHistory = () => {
         } else if(tx.type === 'sample_recieved') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
         } else if(tx.type === "restock") {
+          return sum + (calculateTotalPriceWithShippingFromItems(tx))
+        } else if(tx.type === "return") {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
         }
         else {
@@ -354,6 +365,20 @@ const AccountHistory = () => {
           })}
         </div>
       );
+    } else if (tx.type === "return") {
+      return (
+        <div>
+          {tx.items.map((item, index) => {
+            const txItem = item.transactionitem_id
+            const name = txItem?.name || "Unnamed Product"; // fallback in case `name` is undefined
+            return (
+              <div key={index}>
+                {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency((txItem?.sale_price || 0))} each)
+              </div>
+            );
+          })}
+        </div>
+      );
     }
     else {
       if (tx.items && tx.items.length > 0) {
@@ -362,14 +387,6 @@ const AccountHistory = () => {
             {tx.items.map((item, index) => {
               const txItem = item.transactionitem_id
               const name = txItem?.name || txItem?.inventory_id?.name || 'Item'
-              const measurementLabel =
-                txItem.measurement === '1'
-                  ? 'Full'
-                  : txItem.measurement === '0.5'
-                  ? 'Half'
-                  : txItem.measurement === '0.25'
-                  ? 'Quarter'
-                  : txItem.measurement
               
               // MODIFIED: Calculate price including shipping per unit, then multiply by quantity
               const basePrice = txItem.sale_price || txItem?.price || 0;
@@ -503,7 +520,7 @@ const AccountHistory = () => {
                   <tr key={idx}>
                     <td>{moment(tx.created_at).format('MM/DD/YYYY HH:mm')}</td>
                     <td>{getDetailsContent(tx)}</td>
-                    <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type}</td>
+                    <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type === "sale" ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}` : tx.type}</td>
                     <td>{tx.notes}</td>
                     <td>
                       {tx.type === 'payment'

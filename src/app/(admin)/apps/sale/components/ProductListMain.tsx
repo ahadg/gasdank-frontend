@@ -12,10 +12,11 @@ import SellMultipleProductsModal from './SellProductPopup'
 import HistoryModal from './HistoryModal'
 import AddProductModal from './AddProductStockModal'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import ReturnSaleModal from './ReturnSaleModal'
 
 export const metadata: Metadata = { title: 'Sales Transactions' }
 
-type ModalType = 'history' | 'sellMultiple' | 'add' | null
+type ModalType = 'history' | 'sellMultiple' | 'add' | "returnsale" | null
 
 const saleTransactionsPage = () => {
   const { id } = useParams() // buyer id from route parameter
@@ -401,6 +402,7 @@ const saleTransactionsPage = () => {
           </Card>
         )}
       </div>
+
 
       {/* Conditionally Render Modals */}
       {activeModal === 'history' && selectedProduct && (

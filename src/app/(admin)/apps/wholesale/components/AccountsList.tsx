@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
 import AddBalanceModal from './AddBalance'
 import { useNotificationContext } from '@/context/useNotificationContext'
+import ReturnSaleModal from '../../sale/components/ReturnSaleModal'
 
 export const metadata: Metadata = { title: 'Wholesale Accounts' }
 
@@ -133,6 +134,16 @@ export default function WholesaleAccountsPage() {
                 Add Balance
               </Button>
             </div>
+
+            <div className="flex-md-1">
+              <Button 
+                variant="danger"
+                onClick={() => setActiveModal('returnsale')}
+              >
+                <IconifyIcon icon="tabler:arrow-back-up" className="me-1" />
+                Return Sale
+              </Button>
+            </div>
         
             <div className="flex-md-1">
               <Link href={`/apps/wholesale/edit/${selectedAccount._id}`} className="text-decoration-none">
@@ -154,6 +165,18 @@ export default function WholesaleAccountsPage() {
               </div>
             </div>
           </Card.Footer>
+        )}
+
+        {activeModal === 'returnsale' && selectedAccount && (
+          <ReturnSaleModal 
+            show={true}
+            buyerId={selectedAccount?._id as string}
+            onClose={() => setActiveModal(null)}
+            onReturnComplete={() => {
+              //fetchProducts() // refresh inventory
+              setActiveModal(null)
+            }}
+          />
         )}
         {activeModal === 'balance' && selectedAccount && (
           <AddBalanceModal fetchAccounts={fetchAccounts} account={selectedAccount} onClose={() => setActiveModal(null)} />
