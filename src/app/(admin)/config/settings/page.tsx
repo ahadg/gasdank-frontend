@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import PageTitle from "@/components/PageTitle"
 import IconifyIcon from "@/components/wrappers/IconifyIcon"
-import { Card, CardHeader, CardFooter, CardTitle, Row, Col, Button, Form, Modal, Alert } from "react-bootstrap"
+import { Card, CardHeader, CardFooter, CardTitle, Row, Col, Button, Form, Modal, Alert, Dropdown } from "react-bootstrap"
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
@@ -11,6 +11,7 @@ interface PersonalSettings {
   _id?: string
   user_id: string
   units: string[]
+  default_unit: string
   created_at?: Date
   updated_at?: Date
 }
@@ -23,11 +24,13 @@ export default function PersonalSettingsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newUnit, setNewUnit] = useState('')
   const [editingUnits, setEditingUnits] = useState<string[]>([])
+  const [editingDefaultUnit, setEditingDefaultUnit] = useState<string>('')
   const [isEditing, setIsEditing] = useState(false)
   const setSettingsZustand = useAuthStore((state) => state.setSettings)
   
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
+  
   async function fetchSettings() {
     setLoading(true)
     try {
@@ -35,6 +38,7 @@ export default function PersonalSettingsPage() {
       setSettings(response.data)
       setSettingsZustand(response.data)
       setEditingUnits(response.data.units || [])
+      setEditingDefaultUnit(response.data.default_unit || '')
     } catch (error: any) {
       showNotification({ 
         message: error?.response?.data?.error || 'Error fetching personal settings', 
@@ -45,9 +49,9 @@ export default function PersonalSettingsPage() {
       setLoading(false)
     }
   }
+  
   // Load personal settings from API on component mount
   useEffect(() => {
-    
     if (user?._id) {
       fetchSettings()
     }
@@ -58,7 +62,8 @@ export default function PersonalSettingsPage() {
     setSaving(true)
     try {
       const response = await api.post('/api/personal-settings', {
-        units: editingUnits
+        units: editingUnits,
+        default_unit: editingDefaultUnit
       })
       
       setSettings(response.data.settings)
@@ -86,6 +91,13 @@ export default function PersonalSettingsPage() {
       
       setSettings(response.data.settings)
       setEditingUnits(units)
+      
+      // If the current default unit is not in the new units array, update it
+      if (!units.includes(editingDefaultUnit) && units.length > 0) {
+        setEditingDefaultUnit(units[0])
+        await handleUpdateDefaultUnit(units[0])
+      }
+      
       showNotification({ 
         message: response.data.message || 'Units updated successfully', 
         variant: 'success' 
@@ -102,6 +114,32 @@ export default function PersonalSettingsPage() {
     }
   }
 
+  // Update default unit
+  const handleUpdateDefaultUnit = async (defaultUnit: string) => {
+    setSaving(true)
+    try {
+      const response = await api.patch('/api/personal-settings/default-unit', { 
+        default_unit: defaultUnit 
+      })
+      
+      setSettings(response.data.settings)
+      setEditingDefaultUnit(defaultUnit)
+      showNotification({ 
+        message: response.data.message || 'Default unit updated successfully', 
+        variant: 'success' 
+      })
+      fetchSettings()
+    } catch (error: any) {
+      showNotification({ 
+        message: error?.response?.data?.error || 'Error updating default unit', 
+        variant: 'danger' 
+      })
+      console.error("Error updating default unit:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Delete settings
   const handleDeleteSettings = async () => {
     if (!confirm('Are you sure you want to delete all personal settings?')) return
@@ -112,6 +150,7 @@ export default function PersonalSettingsPage() {
       
       setSettings(null)
       setEditingUnits([])
+      setEditingDefaultUnit('')
       showNotification({ 
         message: 'Settings deleted successfully', 
         variant: 'success' 
@@ -132,6 +171,12 @@ export default function PersonalSettingsPage() {
     if (newUnit.trim() && !editingUnits.includes(newUnit.trim())) {
       const updatedUnits = [...editingUnits, newUnit.trim()]
       setEditingUnits(updatedUnits)
+      
+      // If no default unit is set, set the new unit as default
+      if (!editingDefaultUnit) {
+        setEditingDefaultUnit(newUnit.trim())
+      }
+      
       setNewUnit('')
       setShowAddModal(false)
       
@@ -146,6 +191,13 @@ export default function PersonalSettingsPage() {
     const updatedUnits = editingUnits.filter(unit => unit !== unitToRemove)
     setEditingUnits(updatedUnits)
     
+    // If removing the default unit, set the first remaining unit as default
+    if (editingDefaultUnit === unitToRemove && updatedUnits.length > 0) {
+      setEditingDefaultUnit(updatedUnits[0])
+    } else if (updatedUnits.length === 0) {
+      setEditingDefaultUnit('')
+    }
+    
     if (!isEditing) {
       handleUpdateUnits(updatedUnits)
     }
@@ -154,6 +206,7 @@ export default function PersonalSettingsPage() {
   // Cancel editing
   const handleCancelEdit = () => {
     setEditingUnits(settings?.units || [])
+    setEditingDefaultUnit(settings?.default_unit || '')
     setIsEditing(false)
   }
 
@@ -170,7 +223,6 @@ export default function PersonalSettingsPage() {
               <CardTitle as="h4" className="mb-0">
                 Personal Settings
               </CardTitle>
-             
             </CardHeader>
 
             {/* Settings Content */}
@@ -200,10 +252,15 @@ export default function PersonalSettingsPage() {
                     </div>
                     
                     {editingUnits.length > 0 ? (
-                      <div className="d-flex flex-wrap gap-2">
+                      <div className="d-flex flex-wrap gap-2 mb-3">
                         {editingUnits.map((unit, index) => (
                           <div key={index} className="badge bg-light text-dark border p-2 d-flex align-items-center">
                             <span className="me-2">{unit}</span>
+                            {unit === editingDefaultUnit && (
+                              <span className="badge bg-primary me-2" style={{ fontSize: '0.6em' }}>
+                                DEFAULT
+                              </span>
+                            )}
                             {(isEditing || editingUnits.length > 1) && (
                               <Button
                                 variant="link"
@@ -224,6 +281,49 @@ export default function PersonalSettingsPage() {
                       </Alert>
                     )}
                   </div>
+
+                  {/* Default Unit Section */}
+                  {editingUnits.length > 0 && (
+                    <div className="mb-4">
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <h6 className="mb-0">Default Unit</h6>
+                      </div>
+                      
+                      <Dropdown>
+                        <Dropdown.Toggle 
+                          variant="outline-secondary" 
+                          id="default-unit-dropdown"
+                          disabled={saving}
+                        >
+                          {editingDefaultUnit || 'Select Default Unit'}
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu>
+                          {editingUnits.map((unit, index) => (
+                            <Dropdown.Item
+                              key={index}
+                              active={unit === editingDefaultUnit}
+                              onClick={() => {
+                                setEditingDefaultUnit(unit)
+                                if (!isEditing) {
+                                  handleUpdateDefaultUnit(unit)
+                                }
+                              }}
+                            >
+                              {unit}
+                              {unit === editingDefaultUnit && (
+                                <IconifyIcon icon="tabler:check" className="ms-2 text-success" />
+                              )}
+                            </Dropdown.Item>
+                          ))}
+                        </Dropdown.Menu>
+                      </Dropdown>
+                      
+                      <small className="text-muted d-block mt-2">
+                        This unit will be selected by default when adding new items.
+                      </small>
+                    </div>
+                  )}
 
                   {/* Settings Info */}
                   <div className="border-top pt-3">

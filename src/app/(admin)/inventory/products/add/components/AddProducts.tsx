@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Metadata } from 'next'
-import { Row, Col, Card, CardBody, CardHeader, CardTitle, Button, Form, Table } from 'react-bootstrap'
+import { Row, Col, Card, CardBody, CardHeader, CardTitle, Button, Form, Table, Modal } from 'react-bootstrap'
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -38,11 +38,12 @@ function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
-  let unitOptions = useAuthStore(state => state.settings?.units)
+  console.log("useAuthStore(state => state.settings)",useAuthStore(state => state.settings))
+  let {units : unitOptions,default_unit} = useAuthStore(state => state.settings)
   const { control, handleSubmit, getValues, reset } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ referenceNumber: '', name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0, strain_type: "" }],
+      products: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, strain_type: "" }],
       shippingCost: 0,
     },
   })
@@ -56,7 +57,7 @@ function AddProductsPage() {
   const productsData = useWatch({
     control,
     name: 'products',
-    defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: 'pound', category: '', measurement: 1, price: 0, strain_type: "" }]
+    defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, strain_type: "" }]
   })
 
   const shippingCost = useWatch({
@@ -100,6 +101,10 @@ function AddProductsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<MultipleProductFormData | null>(null)
 
   // Fetch buyers for the current user
   useEffect(() => {
@@ -150,7 +155,7 @@ function AddProductsPage() {
       referenceNumber: "", 
       name: '', 
       qty: 0, 
-      unit: 'pound', 
+      unit: default_unit, 
       category: '', 
       price: 0, 
       measurement: 1,
@@ -190,7 +195,7 @@ function AddProductsPage() {
 
       const payload = {
         user_id: user._id,
-        buyer_id: selectedAccount._id,
+        buyer_id: selectedAccount?._id || null,
         items: transformedItems,
         price: productsTotal.toFixed(2),
         total_shipping: Number(shippingCost),
@@ -209,11 +214,8 @@ function AddProductsPage() {
     }
   }
 
-  const onSubmit = async (data: MultipleProductFormData) => {
-    if (!selectedAccount) {
-      showNotification({ message: 'Please select an account first.', variant: 'danger' })
-      return
-    }
+  // Main form submission handler
+  const processFormSubmission = async (data: MultipleProductFormData) => {
     setLoading(true)
     
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
@@ -233,7 +235,7 @@ function AddProductsPage() {
         console.log('prod', prod)
         const res = await api.post('/api/inventory', {
           user_id: user._id,
-          buyer_id: selectedAccount._id,
+          buyer_id: selectedAccount?._id || null,
           reference_number: prod.referenceNumber,
           name: prod.name,
           qty: prod.qty * prod.measurement,
@@ -259,6 +261,209 @@ function AddProductsPage() {
       setLoading(false)
     }
   }
+
+  const onSubmit = async (data: MultipleProductFormData) => {
+    // Check if no account is selected and show confirmation
+    if (!selectedAccount) {
+      setPendingFormData(data)
+      setShowConfirmModal(true)
+      return
+    }
+    
+    // Proceed with submission if account is selected
+    await processFormSubmission(data)
+  }
+
+  const handleConfirmSubmission = async () => {
+    setShowConfirmModal(false)
+    if (pendingFormData) {
+      await processFormSubmission(pendingFormData)
+      setPendingFormData(null)
+    }
+  }
+
+  const handleCancelSubmission = () => {
+    setShowConfirmModal(false)
+    setPendingFormData(null)
+  }
+
+ // Enhanced Account Selector Component - Fixed Version
+const AccountSelector = () => (
+  <div className="mb-4">
+    <div className="d-flex align-items-center justify-content-between mb-3">
+      <h6 className="mb-0 fw-semibold text-dark">
+        <IconifyIcon icon="tabler:user-circle" className="me-2 text-primary" />
+        Client Selection
+      </h6>
+      <span className="badge bg-light text-muted small">Optional</span>
+    </div>
+    
+    <div className="position-relative">
+      <div 
+        className={`form-control d-flex align-items-center justify-content-between cursor-pointer ${dropdownOpen ? 'border-primary shadow-sm' : ''}`}
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        style={{ cursor: 'pointer', minHeight: '48px' }}
+      >
+        <div className="d-flex align-items-center flex-grow-1">
+          {selectedAccount ? (
+            <div className="d-flex align-items-center">
+              <div 
+                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
+              >
+                {selectedAccount.firstName.charAt(0)}{selectedAccount.lastName.charAt(0)}
+              </div>
+              <div>
+                <div className="fw-semibold text-dark">
+                  {selectedAccount.firstName} {selectedAccount.lastName}
+                </div>
+                <div className="small text-muted">Assigned Account</div>
+              </div>
+            </div>
+          ) : (
+            <div className="d-flex align-items-center">
+              <div 
+                className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
+                style={{ width: '36px', height: '36px' }}
+              >
+                <IconifyIcon icon="tabler:building-store" className="text-muted" />
+              </div>
+              <div>
+                <div className="text-muted">General Inventory</div>
+                <div className="small text-muted">No specific account assigned</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <IconifyIcon 
+          icon={dropdownOpen ? "tabler:chevron-up" : "tabler:chevron-down"} 
+          className="text-muted"
+        />
+      </div>
+
+      {dropdownOpen && (
+        <div
+          className="position-absolute w-100 bg-white border rounded-3 shadow-lg mt-1"
+          style={{ zIndex: 1000 }}
+        >
+          {/* Search Input - Fixed */}
+          <div className="p-3 border-bottom bg-light rounded-top">
+            <div className="position-relative">
+              <IconifyIcon 
+                icon="tabler:search" 
+                className="position-absolute text-muted"
+                style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+              />
+              <Form.Control
+                type="text"
+                placeholder="Search accounts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ps-5 border-0 shadow-none"
+                style={{ backgroundColor: 'white' }}
+                onClick={(e) => e.stopPropagation()} // Prevent dropdown from closing
+                onFocus={(e) => e.stopPropagation()} // Prevent dropdown from closing
+                autoFocus // Auto focus when dropdown opens
+              />
+            </div>
+          </div>
+
+          {/* Account List */}
+          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+            {/* General Inventory Option */}
+            <div
+              className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${!selectedAccount ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedAccount(null);
+                setDropdownOpen(false);
+                setSearchQuery('');
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div 
+                className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
+                style={{ width: '40px', height: '40px' }}
+              >
+                <IconifyIcon icon="tabler:building-store" className="text-primary" />
+              </div>
+              <div className="flex-grow-1">
+                <div className="fw-semibold text-primary">General Inventory</div>
+                <div className="small text-muted">Products without specific account assignment</div>
+              </div>
+              {!selectedAccount && (
+                <IconifyIcon icon="tabler:check" className="text-primary" />
+              )}
+            </div>
+
+            {/* Account Options */}
+            {filteredAccounts.length > 0 ? (
+              filteredAccounts.map((acc) => (
+                <div
+                  key={acc._id}
+                  className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${selectedAccount?._id === acc._id ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAccount(acc);
+                    setDropdownOpen(false);
+                    setSearchQuery('');
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div 
+                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                    style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
+                  >
+                    {acc.firstName.charAt(0)}{acc.lastName.charAt(0)}
+                  </div>
+                  <div className="flex-grow-1">
+                    <div className="fw-semibold text-dark">{acc.firstName} {acc.lastName}</div>
+                    {/* <div className="small text-muted">Account ID: {acc._id.slice(-8)}</div> */}
+                  </div>
+                  {selectedAccount?._id === acc._id && (
+                    <IconifyIcon icon="tabler:check" className="text-primary" />
+                  )}
+                </div>
+              ))
+            ) : searchQuery ? (
+              <div className="p-4 text-center text-muted">
+                <IconifyIcon icon="tabler:search-off" className="mb-2" style={{ fontSize: '32px' }} />
+                <div>No accounts found matching "{searchQuery}"</div>
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted">
+                <IconifyIcon icon="tabler:users-off" className="mb-2" style={{ fontSize: '32px' }} />
+                <div>No accounts available</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Selected Account Actions */}
+    {/* {selectedAccount && (
+      <div className="mt-3 p-3 bg-light rounded-3 border">
+        <div className="d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center">
+            <IconifyIcon icon="tabler:info-circle" className="text-info me-2" />
+            <span className="small text-muted">Products will be assigned to this account</span>
+          </div>
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            onClick={() => setSelectedAccount(null)}
+            className="d-flex align-items-center"
+          >
+            <IconifyIcon icon="tabler:x" className="me-1" />
+            Clear
+          </Button>
+        </div>
+      </div>
+    )} */}
+  </div>
+)
+
 
   // Mobile Product Card Component
   const MobileProductCard = ({ field, index }: { field: any; index: number }) => (
@@ -420,61 +625,8 @@ function AddProductsPage() {
           <CardTitle as="h5" className="mb-0 fs-6 fs-md-5">Add Multiple Products</CardTitle>
         </CardHeader>
         <CardBody className="p-2 p-md-3">
-          {/* Account Selector */}
-          <div className="mb-3 mb-md-4">
-            <h6 className="fs-6 fs-md-5">Select Account</h6>
-            <div className="position-relative">
-              <Button
-                variant="outline-secondary"
-                onClick={() => setDropdownOpen((prev) => !prev)}
-                className="text-start d-flex justify-content-between align-items-center rounded-pill shadow-sm py-2 px-3"
-                size="sm"
-              >
-                <span className="text-truncate">
-                  {selectedAccount
-                    ? `${selectedAccount.firstName} ${selectedAccount.lastName}`
-                    : 'Select an Account'}
-                </span>
-                <IconifyIcon icon="tabler:chevron-down" className="fs-4 flex-shrink-0" />
-              </Button>
-              {dropdownOpen && (
-                <div
-                  className="position-absolute w-100 bg-white border rounded shadow"
-                  style={{ zIndex: 1000, top: '110%' }}
-                >
-                  <Form.Control
-                    type="text"
-                    placeholder="Search accounts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-0 p-2"
-                    size="sm"
-                  />
-                  <ul
-                    className="list-unstyled mb-0"
-                    style={{ maxHeight: '200px', overflowY: 'auto', cursor: 'pointer' }}
-                  >
-                    {filteredAccounts.length > 0 ? (
-                      filteredAccounts.map((acc) => (
-                        <li
-                          key={acc._id}
-                          className="p-2 border-bottom hover-bg-light small"
-                          onClick={() => {
-                            setSelectedAccount(acc)
-                            setDropdownOpen(false)
-                          }}
-                        >
-                          {acc.firstName} {acc.lastName}
-                        </li>
-                      ))
-                    ) : (
-                      <li className="p-2 text-muted small">No accounts found</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Enhanced Account Selector */}
+          <AccountSelector />
 
           {/* Product Form */}
           <Form onSubmit={handleSubmit(onSubmit, onError)}>
@@ -649,74 +801,211 @@ function AddProductsPage() {
             </Button>
 
             {/* Shipping Cost */}
+           {/* Shipping Cost */}
             <Row className="mb-3">
-              <Col xs={12} md={6}>
-                <Form.Group>
-                  <Form.Label className="small fw-semibold">Shipping Cost</Form.Label>
-                  <Controller
-                    control={control}
-                    name="shippingCost"
-                    render={({ field }) => (
-                      <Form.Control 
-                        type="number" 
-                        placeholder="Enter shipping cost" 
-                        step="any" 
-                        size="sm"
-                        {...field} 
-                      />
-                    )}
-                  />
-                </Form.Group>
+              <Col md={6}>
+                <Form.Label className="fw-semibold">
+                  <IconifyIcon icon="tabler:truck" className="me-2 text-primary" />
+                  Total Shipping Cost
+                </Form.Label>
+                <Controller
+                  control={control}
+                  name="shippingCost"
+                  render={({ field }) => (
+                    <Form.Control 
+                      type="number" 
+                      placeholder="Enter total shipping cost" 
+                      step="any"
+                      {...field} 
+                    />
+                  )}
+                />
+                <Form.Text className="text-muted">
+                  This will be distributed evenly across all products
+                </Form.Text>
               </Col>
             </Row>
 
-            {/* Summary */}
-            <Card className="mb-3 bg-light">
-              <CardBody className="p-2 p-md-3">
-                <div className="row g-2">
-                  <div className="col-12 col-md-4">
-                    <div className="small">
-                      <strong>Total Quantity:</strong>
-                      <div className="text-primary fs-6">{totalQuantity}</div>
+            {/* Summary Section */}
+            <Card className="mb-4 border-light bg-light">
+              <CardBody className="p-3">
+                <h6 className="mb-3 text-dark">
+                  <IconifyIcon icon="tabler:calculator" className="me-2 text-primary" />
+                  Summary
+                </h6>
+                <Row className="g-3">
+                  <Col sm={6} md={3}>
+                    <div className="text-center p-3 bg-white rounded border">
+                      <div className="h4 mb-1 text-primary">{totalQuantity}</div>
+                      <div className="small text-muted">Total Items</div>
                     </div>
-                  </div>
-                  <div className="col-12 col-md-4">
-                    <div className="small">
-                      <strong>Avg Shipping per Unit:</strong>
-                      <div className="text-primary fs-6">${avgShipping.toFixed(2)}</div>
+                  </Col>
+                  <Col sm={6} md={3}>
+                    <div className="text-center p-3 bg-white rounded border">
+                      <div className="h4 mb-1 text-warning">${Number(shippingCost || 0).toFixed(2)}</div>
+                      <div className="small text-muted">Shipping Cost</div>
                     </div>
-                  </div>
-                  <div className="col-12 col-md-4">
-                    <div className="small">
-                      <strong>Total Amount:</strong>
-                      <div className="text-success fs-6">${totalAmount.toFixed(2)}</div>
+                  </Col>
+                  <Col sm={6} md={3}>
+                    <div className="text-center p-3 bg-white rounded border">
+                      <div className="h4 mb-1 text-info">${avgShipping.toFixed(2)}</div>
+                      <div className="small text-muted">Avg. Shipping/Item</div>
                     </div>
-                  </div>
-                </div>
+                  </Col>
+                  <Col sm={6} md={3}>
+                    <div className="text-center p-3 bg-white rounded border border-primary">
+                      <div className="h4 mb-1 text-success">${totalAmount.toFixed(2)}</div>
+                      <div className="small text-muted fw-semibold">Total Amount</div>
+                    </div>
+                  </Col>
+                </Row>
               </CardBody>
             </Card>
 
-            {/* Submit Button */}
-            <div className="d-grid d-md-flex justify-content-md-end">
+            {/* Action Buttons */}
+            <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => router.back()}
+                disabled={loading}
+                className="order-2 order-md-1"
+              >
+                <IconifyIcon icon="tabler:arrow-left" className="me-1" />
+                Cancel
+              </Button>
               <Button 
                 type="submit" 
-                variant="success" 
-                disabled={loading}
-                className="w-md-auto"
+                variant="primary" 
+                disabled={loading || totalQuantity === 0}
+                className="order-1 order-md-2"
               >
                 {loading ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Submitting...
+                    <div className="spinner-border spinner-border-sm me-2" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    Processing...
                   </>
                 ) : (
-                  'CREATE PRODUCTS'
+                  <>
+                    <IconifyIcon icon="tabler:check" className="me-1" />
+                    Add Products
+                  </>
                 )}
               </Button>
             </div>
           </Form>
         </CardBody>
       </Card>
+
+      {/* Confirmation Modal */}
+      <Modal 
+        show={showConfirmModal} 
+        onHide={handleCancelSubmission}
+        backdrop="static"
+        keyboard={false}
+        centered
+      >
+        <Modal.Header className="border-bottom-0 pb-2">
+          <Modal.Title className="h5">
+            <IconifyIcon icon="tabler:alert-triangle" className="me-2 text-warning" />
+            Confirm Product Addition
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          <div className="alert alert-warning border-0 bg-warning bg-opacity-10">
+            <div className="d-flex align-items-start">
+              <IconifyIcon icon="tabler:info-circle" className="me-2 text-warning mt-1" />
+              <div>
+                <strong>No Account Selected</strong>
+                <p className="mb-0 mt-1">
+                  You haven't assigned these products to a specific account. 
+                  They will be added to your general inventory instead.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-3">
+            <h6 className="mb-2">Products to be added:</h6>
+            <ul className="list-unstyled">
+              {pendingFormData?.products.map((product, index) => (
+                <li key={index} className="mb-2 p-2 bg-light rounded">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{product.name || `Product ${index + 1}`}</strong>
+                      {product.referenceNumber && (
+                        <span className="text-muted ms-2">({product.referenceNumber})</span>
+                      )}
+                      <div className="small text-muted">
+                        {product.qty} {product.unit} × ${product.price}
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <div className="fw-semibold">
+                        ${(Number(product.qty) * Number(product.price)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            
+            <div className="border-top pt-2 mt-3">
+              <div className="d-flex justify-content-between">
+                <span>Subtotal:</span>
+                <span>${(pendingFormData?.products.reduce((sum, p) => sum + (Number(p.qty) * Number(p.price)), 0) || 0).toFixed(2)}</span>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span>Shipping:</span>
+                <span>${Number(pendingFormData?.shippingCost || 0).toFixed(2)}</span>
+              </div>
+              <div className="d-flex justify-content-between fw-bold border-top pt-2 mt-2">
+                <span>Total:</span>
+                <span>${totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-top-0">
+          <Button 
+            variant="outline-secondary" 
+            onClick={handleCancelSubmission}
+            disabled={loading}
+          >
+            <IconifyIcon icon="tabler:x" className="me-1" />
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleConfirmSubmission}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <div className="spinner-border spinner-border-sm me-2" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                Adding...
+              </>
+            ) : (
+              <>
+                <IconifyIcon icon="tabler:check" className="me-1" />
+                Confirm & Add Products
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Click outside to close dropdown */}
+      {dropdownOpen && (
+        <div 
+          className="position-fixed top-0 start-0 w-100 h-100"
+          style={{ zIndex: 999 }}
+          onClick={() => setDropdownOpen(false)}
+        />
+      )}
     </div>
   )
 }
