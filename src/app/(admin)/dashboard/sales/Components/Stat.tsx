@@ -115,8 +115,9 @@ const Stat = () => {
           change: data.inventoryValueChange,
           variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
         },
+       
         {
-          title: "Client's Payable Balance (Clients owe to us)",
+          title: "Company Client's Payable Balance (Clients owe to us)",
           permissionKey: 'clients_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
           count: data.ClientoutPayableBalances || '0',
@@ -168,7 +169,22 @@ const Stat = () => {
       const userStats = response.data?.user?.access?.dashboard_stats || {}
       console.log("user?.access?.dashboard_stats",response.data?.user?.access?.dashboard_stats)
       const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
-      setStatData(filteredStats)
+      setStatData([ {
+        title: "My Client's Payables",
+        permissionKey: 'my_clients_payable',
+        icon: 'solar:wallet-money-bold-duotone',
+        count: data.my_clients_payable,
+        change: data.inventoryValueChange,
+        variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
+      },
+      {
+        title: "Client's Payables to Me",
+        permissionKey: 'client_payable_to_me',
+        icon: 'solar:wallet-money-bold-duotone',
+        count: data.client_payable_to_me,
+        change: data.inventoryValueChange,
+        variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
+      },...filteredStats])
     } catch (error) {
       console.error('Error fetching stats:', error)
       showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
