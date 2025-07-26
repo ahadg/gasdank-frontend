@@ -61,9 +61,11 @@ const Stat = () => {
   })
   const [the_user,setuser] = useState<any>()
   const [endDate, setEndDate] = useState(() => {
-    const now = new Date()
-    return toLocalDateTimeString(now)
-  })
+    const now = new Date();
+    now.setDate(now.getDate() + 2); // Add 2 days
+    return toLocalDateTimeString(now);
+  });
+  
 
   const [statData, setStatData] = useState<StatTypeExtended[]>([])
   const [loading, setLoading] = useState(false)
@@ -71,6 +73,7 @@ const Stat = () => {
   // State for editing user balance
   const [editingBalance, setEditingBalance] = useState<string>('')
   const [newBalance, setNewBalance] = useState<string>('')
+  const [reason, setReason] = useState<string>('')
   const { showNotification } = useNotificationContext()
   const [balance, setBalance] = useState<number>()
   const [other_balance, setother_balance] = useState<any>({})
@@ -120,7 +123,7 @@ const Stat = () => {
           title: "Company Client's Payable Balance (Clients owe to us)",
           permissionKey: 'clients_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
-          count: data.ClientoutPayableBalances || '0',
+          count: data.clientPayableBalances || '0',
           change: data.outstandingBalancesChange,
           variant: data.outstandingBalancesChange < 0 ? 'danger' : 'success',
         },
@@ -169,22 +172,24 @@ const Stat = () => {
       const userStats = response.data?.user?.access?.dashboard_stats || {}
       console.log("user?.access?.dashboard_stats",response.data?.user?.access?.dashboard_stats)
       const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
-      setStatData([ {
-        title: "My Client's Payables",
-        permissionKey: 'my_clients_payable',
-        icon: 'solar:wallet-money-bold-duotone',
-        count: data.my_clients_payable,
-        change: data.inventoryValueChange,
-        variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
-      },
-      {
-        title: "Client's Payables to Me",
-        permissionKey: 'client_payable_to_me',
-        icon: 'solar:wallet-money-bold-duotone',
-        count: data.client_payable_to_me,
-        change: data.inventoryValueChange,
-        variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
-      },...filteredStats])
+      setStatData([ 
+      //   {
+      //   title: "My Client's Payables",
+      //   permissionKey: 'my_clients_payable',
+      //   icon: 'solar:wallet-money-bold-duotone',
+      //   count: data.my_clients_payable,
+      //   change: data.inventoryValueChange,
+      //   variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
+      // },
+      // {
+      //   title: "Client's Payables to Me",
+      //   permissionKey: 'client_payable_to_me',
+      //   icon: 'solar:wallet-money-bold-duotone',
+      //   count: data.client_payable_to_me,
+      //   change: data.inventoryValueChange,
+      //   variant: data.inventoryValueChange < 0 ? 'danger' : 'success',
+      // },
+      ...filteredStats])
     } catch (error) {
       console.error('Error fetching stats:', error)
       showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
@@ -223,13 +228,20 @@ const Stat = () => {
       }
       
       await api.put(`/api/users/${user._id}`, update_obj)
+      
+      // Create description with reason if provided
+      let description = `${parseInt(newBalance)} ${payment_method} from dashboard,`
+      if (reason.trim()) {
+        description += ` reason : \n${reason.trim()}`
+      }
+      
       await api.post(`/api/activity/${user._id}`, {
         page : 'dashboard',
         action : "UPDATE",
         resource_type : "balance_modification",
         type : "balance_modification",
         payment_method,
-        description : `${parseInt(newBalance)} ${payment_method} added from dashboard`,
+        description,
         user_id : user?._id,
         user_created_by : user?.created_by,
         amount : parseInt(newBalance)
@@ -239,6 +251,7 @@ const Stat = () => {
       fetchStats()
       setEditingBalance('')
       setNewBalance('')
+      setReason('')
     } catch (error: any) {
       console.error('Error updating balance:', error)
       showNotification({ message: error?.response?.data?.error || 'Error updating balance', variant: 'danger' })
@@ -296,23 +309,36 @@ const Stat = () => {
                     <h3 className="mb-0 fw-bold">{item.count}</h3>
                   </div>
                   {(item.permissionKey === 'user_balance' || item.title === "Eft Balance" || item.title === "Crypto Balance") && (
-                    <div className="d-flex justify-content-center align-items-center mt-2">
+                    <div className="d-flex flex-column justify-content-center align-items-center mt-2">
                       {editingBalance === item.title ? (
-                        <>
+                        <div className="w-100">
                           <Form.Control
                             type="number"
                             placeholder="Add Balance"
                             value={newBalance}
                             onChange={(e) => setNewBalance(e.target.value)}
-                            style={{ width: '100px', marginRight: '8px' }}
+                            className="mb-2"
                           />
-                          <Button variant="success" size="sm" onClick={() => updateBalance(item?.title)}>
-                            Update
-                          </Button>
-                          <Button variant="outline-secondary" size="sm" onClick={() => setEditingBalance('')} className="ms-2">
-                            Cancel
-                          </Button>
-                        </>
+                          <Form.Control
+                            type="text"
+                            placeholder="Reason (optional)"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            className="mb-2"
+                          />
+                          <div className="d-flex justify-content-center gap-2">
+                            <Button variant="success" size="sm" onClick={() => updateBalance(item?.title)}>
+                              Update
+                            </Button>
+                            <Button variant="outline-secondary" size="sm" onClick={() => {
+                              setEditingBalance('')
+                              setNewBalance('')
+                              setReason('')
+                            }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
                         <Button variant="link" size="sm" onClick={() => setEditingBalance(item.title)}>
                           <IconifyIcon icon="tabler:plus" /> Add Balance

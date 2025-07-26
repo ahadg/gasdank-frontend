@@ -214,6 +214,7 @@ const saleTransactionsPage = () => {
                 <th>PRODUCT Name</th>
                 <th>CATEGORY</th>
                 <th>Available Quantity</th>
+                {user.role === "admin" && <th>Price</th>}
                 <th>Unit</th>
                 <th className="text-center" style={{ width: 200 }}>ACTION</th>
               </tr>
@@ -240,6 +241,7 @@ const saleTransactionsPage = () => {
                     <td>{prod.name}</td>
                     <td>{prod?.category?.name}</td>
                     <td>{prod.qty}</td>
+                    {user.role === "admin" && <td>${(prod.price + prod?.shippingCost).toLocaleString()}</td> }
                     <td>{prod.unit}</td>
                     <td className="text-center">
                       <div className="d-flex gap-2 justify-content-center">
