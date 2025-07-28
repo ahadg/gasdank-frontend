@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "tailwindcss";
+
+
+/* Add this to your global CSS or component styles to fix Tailwind conflicts */
+
+/* Ensure Bootstrap Collapse works properly with Tailwind */
+.collapse {
+    transition: height 0.35s ease !important;
+  }
+  
+  .collapse:not(.show) {
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  .collapse.show {
+    height: auto !important;
+  }
+  
+  .collapsing {
+    height: 0 !important;
+    overflow: hidden !important;
+    transition: height 0.35s ease !important;
+  }
+  
+  /* Prevent Tailwind from interfering with menu items */
+  .side-nav {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  .side-nav-item {
+    position: relative !important;
+  }
+  
+  .sub-menu {
+    display: block !important;
+    position: relative !important;
+    overflow: visible !important;
+  }
+  
+  /* Ensure menu arrows and icons are visible */
+  .menu-arrow {
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  
+  .menu-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  
+  /* Fix for nested menu items */
+  .side-nav-item .side-nav-item {
+    margin-left: 1rem !important;
+  }
+  
+  /* Ensure badges are properly positioned */
+  .badge {
+    display: inline-block !important;
+  }
+  
+  /* Override any Tailwind display: none that might conflict */
+  .side-nav .collapse.show > div > ul {
+    display: block !important;
+  }
+  
+  /* Specific fix for menu text alignment */
+  .menu-text {
+    flex: 1 !important;
+    text-align: left !important;
+  }

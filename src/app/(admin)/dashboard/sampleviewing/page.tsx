@@ -7,6 +7,7 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 import { useAuthStore } from '@/store/authStore'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
 import Modal from 'react-bootstrap/Modal'
+import SampleViewingAdminComponent from './SampleViewingAdminComponent'
 
 export default function SampleViewingToolPage() {
   const { showNotification } = useNotificationContext()
@@ -249,9 +250,14 @@ export default function SampleViewingToolPage() {
 
   return (
     <div className="container py-5">
+   
       <div className="mb-3 text-end">
+              
+       {user.role == "admin" && <SampleViewingAdminComponent currentUserId={user._id}/> }
+    
         <Button
-          className="mb-3 text-end"
+          className="ml-4 mb-3 text-end"
+          style={{marginLeft : '6px'}}
           variant="outline-primary"
           onClick={async () => {
             try {
@@ -359,7 +365,7 @@ export default function SampleViewingToolPage() {
                         // step="0.01"
                         // min="0"
                         //value={profitMargin}
-                        onChange={e => setProfitMargin(parseInt(e.target.value) || 0)}
+                        onChange={e => setProfitMargin(parseInt(e.target.value))}
                         placeholder="e.g., 200"
                       />
                       <Form.Text className="text-muted">
@@ -549,7 +555,7 @@ export default function SampleViewingToolPage() {
                         <Form.Control
                           type="number"
                           value={item.qty}
-                          onChange={e => handleUpdateItem(index, 'qty', (e.target.value) || 1)}
+                          onChange={e => handleUpdateItem(index, 'qty', (e.target.value))}
                           style={{ width: '80px' }}
                         />
                       </td>
@@ -558,9 +564,9 @@ export default function SampleViewingToolPage() {
                       <td>
                         <Form.Control
                           type="number"
-                          step="0.01"
+                          //step="0.01"
                           value={item.sale_price}
-                          onChange={e => handleUpdateItem(index, 'sale_price', (e.target.value) || 0)}
+                          onChange={e => handleUpdateItem(index, 'sale_price', (e.target.value))}
                           style={{ width: '120px' }}
                         />
                       </td>
@@ -659,6 +665,7 @@ export default function SampleViewingToolPage() {
           <Button variant="secondary" onClick={() => setShowHistory(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
+
     </div>
   )
 }

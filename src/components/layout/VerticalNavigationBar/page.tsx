@@ -66,22 +66,32 @@ const VerticalNavigationBar = () => {
       url: '/dashboard/expenses/add',
     },
     {
-      key: 'sampleholdings',
-      label: 'Sample Holdings',
-      icon: 'tabler:zoom-question',
-      url: '/dashboard/samplesholdings',
-    },
-    {
-      key: 'sampleviewing',
-      label: 'Sample Viewing Tool',
+      key: 'sample_management',
+      label: 'Sample Management',
       icon: 'tabler:eye-search',
-      url: '/dashboard/sampleviewing',
-    },
-    {
-      key: 'sampleviewingmanagement',
-      label: 'Sample Viewing Management',
-      icon: 'tabler:eye-search',
-      url: '/dashboard/sampleviewingworker',
+      children: [
+        {
+          key: 'sampleholdings',
+          label: 'Sample Holdings',
+          // icon: 'tabler:zoom-question',
+          url: '/dashboard/samplesholdings',
+          parentKey: 'sample_management',
+        },
+        {
+          key: 'sampleviewing',
+          label: 'Sample Viewing Tool',
+          // icon: 'tabler:eye-search',
+          url: '/dashboard/sampleviewing',
+          parentKey: 'sample_management',
+        },
+        {
+          key: 'sampleviewingmanagement',
+          label: 'Sample Viewing Management',
+          // icon: 'tabler:eye-search',
+          url: '/dashboard/sampleviewingworker',
+          parentKey: 'sample_management',
+        },
+      ]
     },
     {
       key: 'notifications',

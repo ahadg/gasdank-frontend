@@ -15,6 +15,13 @@ interface Access {
   delete: boolean;
   create: boolean;
 }
+interface SampleViewingAccess {
+  read: boolean
+  edit: boolean
+  delete: boolean
+  create: boolean,
+  pricesVisible: boolean
+}
 interface Config {
   categories : {
   read: boolean;
@@ -49,7 +56,7 @@ interface AccessData {
   reports: Access;
   sampleholdings: Access
   sampleviewing: Access
-  sampleviewingmanagement: Access
+  sampleviewingmanagement: SampleViewingAccess
   expenses : Access
 }
 const defaultAccess: AccessData = {
@@ -75,7 +82,7 @@ const defaultAccess: AccessData = {
   sampleholdings: { read: true, edit: true, delete: true, create: true },
   expenses: { read: true, edit: true, delete: true, create: true },
   sampleviewing: { read: true, edit: true, delete: true, create: true },
-  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true },
+  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible : true  },
 }
 
 const pages = ["dashboard", "sale", "wholesale", "inventory","analytics", "reports","expenses","sampleholdings","sampleviewing","sampleviewingmanagement"]
@@ -247,13 +254,26 @@ export default function EditUserPage() {
                       <label>
                         <input
                           type="checkbox"
-                          checked={accessData?.[page]?.[perm] || false}
+                          checked={accessData[page][perm]}
                           onChange={(e) => handleAccessChange(page, perm, e.target.checked)}
                         />{' '}
                         {perm}
                       </label>
                     </div>
                   ))}
+                  {/* Add pricesVisible checkbox only for sampleviewingmanagement */}
+                  {page === 'sampleviewingmanagement' && (
+                    <div>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={accessData.sampleviewingmanagement.pricesVisible}
+                          onChange={(e) => handleAccessChange(page, 'pricesVisible', e.target.checked)}
+                        />{' '}
+                        pricesVisible
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

@@ -211,6 +211,7 @@ const saleTransactionsPage = () => {
                   />
                 </th>
                 <th>PRODUCT ID</th>
+                <th>REFERENCE ID</th>
                 <th>PRODUCT Name</th>
                 <th>CATEGORY</th>
                 <th>Available Quantity</th>
@@ -238,6 +239,7 @@ const saleTransactionsPage = () => {
                       />
                     </td>
                     <td>{prod.product_id}</td>
+                    <td>{prod.reference_number}</td>
                     <td>{prod.name}</td>
                     <td>{prod?.category?.name}</td>
                     <td>{prod.qty}</td>

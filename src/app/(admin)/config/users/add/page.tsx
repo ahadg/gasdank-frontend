@@ -16,6 +16,14 @@ interface Access {
   create: boolean
 }
 
+interface SampleViewingAccess {
+  read: boolean
+  edit: boolean
+  delete: boolean
+  create: boolean,
+  pricesVisible: boolean
+}
+
 interface Config {
   categories: {
     read: boolean
@@ -53,7 +61,7 @@ interface AccessData {
   sampleholdings: Access
   sampleviewing: Access
   expenses: Access
-  sampleviewingmanagement: Access
+  sampleviewingmanagement: SampleViewingAccess
 }
 
 const defaultAccess: AccessData = {
@@ -79,7 +87,7 @@ const defaultAccess: AccessData = {
   sampleholdings: { read: true, edit: true, delete: true, create: true },
   expenses: { read: true, edit: true, delete: true, create: true },
   sampleviewing: { read: true, edit: true, delete: true, create: true },
-  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true },
+  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible : true },
 }
 
 const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'reports', 'expenses', 'sampleholdings', 'sampleviewing', 'sampleviewingmanagement']
@@ -247,6 +255,19 @@ export default function AddUserPage() {
                       </label>
                     </div>
                   ))}
+                  {/* Add pricesVisible checkbox only for sampleviewingmanagement */}
+                  {page === 'sampleviewingmanagement' && (
+                    <div>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={accessData.sampleviewingmanagement.pricesVisible}
+                          onChange={(e) => handleAccessChange(page, 'pricesVisible', e.target.checked)}
+                        />{' '}
+                        pricesVisible
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

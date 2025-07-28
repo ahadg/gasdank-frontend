@@ -272,6 +272,9 @@ export default function WorkerSampleManagementPage() {
               />
             </Form.Group>
           </Col>
+          {
+            user?.access?.sampleviewingmanagement?.pricesVisible
+          &&
           <Col xs={6}>
             <Form.Group>
               <Form.Label className="small">Cost Price</Form.Label>
@@ -283,6 +286,7 @@ export default function WorkerSampleManagementPage() {
               />
             </Form.Group>
           </Col>
+          }
           <Col xs={12}>
             <Form.Group>
               <Form.Label className="small">Sale Price</Form.Label>
@@ -392,8 +396,12 @@ export default function WorkerSampleManagementPage() {
                         <tr>
                           <th>Product</th>
                           <th>Qty</th>
-                          <th>Unit</th>
-                          <th>Price</th>
+                          <th>Unit</th> 
+                          {
+                          user?.access?.sampleviewingmanagement?.pricesVisible
+                          && 
+                          <th>Price</th> 
+                          }
                         </tr>
                       </thead>
                       <tbody>
@@ -402,7 +410,11 @@ export default function WorkerSampleManagementPage() {
                             <td>{item.name}</td>
                             <td>{item.qty}</td>
                             <td>{item.unit}</td>
-                            <td>₹{item?.sale_price?.toFixed(2)}</td>
+                            {
+                            user?.access?.sampleviewingmanagement?.pricesVisible
+                            &&
+                            <td>₹{item?.sale_price?.toFixed(2)}</td> 
+                            }
                           </tr>
                         ))}
                       </tbody>
@@ -442,8 +454,16 @@ export default function WorkerSampleManagementPage() {
                   <th>Qty</th>
                   <th>Measurement</th>
                   <th>Unit</th>
-                  <th>Cost Price</th>
-                  <th>Sale Price</th>
+                  {
+                  user?.access?.sampleviewingmanagement?.pricesVisible
+                    &&
+                  <th>Cost Price</th> 
+                  }
+                  {
+                  user?.access?.sampleviewingmanagement?.pricesVisible
+                    &&
+                  <th>Sale Price</th> 
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -467,6 +487,9 @@ export default function WorkerSampleManagementPage() {
                       />
                     </td>
                     <td>{item.unit}</td>
+                    {
+                    user?.access?.sampleviewingmanagement?.pricesVisible
+                    &&
                     <td>
                       <Form.Control
                         type="number"
@@ -475,6 +498,10 @@ export default function WorkerSampleManagementPage() {
                         size="sm"
                       />
                     </td>
+                    }
+                    {
+                    user?.access?.sampleviewingmanagement?.pricesVisible
+                    &&
                     <td>
                       <Form.Control
                         type="number"
@@ -483,6 +510,7 @@ export default function WorkerSampleManagementPage() {
                         size="sm"
                       />
                     </td>
+                    }
                   </tr>
                 ))}
               </tbody>
@@ -509,6 +537,9 @@ export default function WorkerSampleManagementPage() {
                 />
               </Form.Group>
             </Col>
+            {
+            user?.access?.sampleviewingmanagement?.pricesVisible
+            &&
             <Col lg={6}>
               <div className="border rounded p-3">
                 <h6>Sale Summary</h6>
@@ -528,7 +559,8 @@ export default function WorkerSampleManagementPage() {
                   </strong>
                 </div>
               </div>
-            </Col>
+            </Col> 
+            }
           </Row>
         </Modal.Body>
         <Modal.Footer className="d-flex flex-column flex-sm-row gap-2">

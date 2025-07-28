@@ -13,6 +13,62 @@ import ReturnSaleModal from '../../sale/components/ReturnSaleModal'
 
 export const metadata: Metadata = { title: 'Wholesale Accounts' }
 
+// Balance Status Component
+const BalanceStatusIndicator = ({ balance }: { balance: number }) => {
+  const getBalanceStatus = () => {
+    if (balance < 0) {
+      return {
+        color: '#28a745', // Green - they owe us
+        text: '',
+        amount: Math.abs(balance),
+        bgColor: '#d4edda',
+        icon: 'tabler:arrow-up'
+      }
+    } else if (balance > 0) {
+      return {
+        color: '#dc3545', // Red - we owe them
+        text: '',
+        amount: balance,
+        bgColor: '#f8d7da',
+        icon: 'tabler:arrow-down'
+      }
+    } else {
+      return {
+        color: '#6c757d', // Gray - balanced
+        text: ' ',
+        amount: 0,
+        bgColor: '#e9ecef',
+        icon: 'tabler:check'
+      }
+    }
+  }
+
+  const status = getBalanceStatus()
+
+  return (
+    <div 
+      className="d-flex align-items-center justify-content-between px-2 py-1 rounded-pill"
+      style={{ 
+        backgroundColor: status.bgColor,
+        border: `1px solid ${status.color}`,
+        fontSize: '0.75rem',
+        minWidth: '100px'
+      }}
+    >
+      <IconifyIcon 
+        icon={status.icon} 
+        style={{ color: status.color, fontSize: '14px' }}
+      />
+      {/* <span style={{ color: status.color, fontWeight: '600' }}>
+        {status.text}
+      </span> */}
+      <span style={{ color: status.color, fontWeight: '700' }}>
+        ${status.amount.toLocaleString()}
+      </span>
+    </div>
+  )
+}
+
 export default function WholesaleAccountsPage() {
   const user = useAuthStore((state) => state.user)
   const [accounts, setAccounts] = useState<any[]>([])
@@ -22,6 +78,7 @@ export default function WholesaleAccountsPage() {
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [activeModal,setActiveModal] = useState<string>()
   const { showNotification } = useNotificationContext()
+  
   async function fetchAccounts() {
     if (user?._id) {
       setLoading(true)
@@ -36,11 +93,14 @@ export default function WholesaleAccountsPage() {
       }
     }
   }
+  
   // Fetch buyers for the current user
   useEffect(() => {
     fetchAccounts()
   }, [user?._id])
+  
   console.log("selectedAccount",selectedAccount)
+  
   useEffect(() => {
     if(selectedAccount) {
       let newSelectedAccount = accounts.find((item) => item?._id == selectedAccount?._id)
@@ -76,7 +136,12 @@ export default function WholesaleAccountsPage() {
                   ? `${selectedAccount.firstName} ${selectedAccount.lastName}`
                   : 'Select an Account'}
               </span>
-              <IconifyIcon icon="tabler:chevron-down" className="fs-4" />
+              <div className="d-flex align-items-center gap-2">
+                {selectedAccount && (
+                  <BalanceStatusIndicator balance={selectedAccount.currentBalance} />
+                )}
+                <IconifyIcon icon="tabler:chevron-down" className="fs-4" />
+              </div>
             </Button>
             {dropdownOpen && (
               <div
@@ -98,13 +163,14 @@ export default function WholesaleAccountsPage() {
                     filteredAccounts.map((acc) => (
                       <li
                         key={acc._id}
-                        className="p-2 border-bottom hover-bg-light"
+                        className="p-2 border-bottom hover-bg-light d-flex justify-content-between align-items-center"
                         onClick={() => {
                           setSelectedAccount(acc)
                           setDropdownOpen(false)
                         }}
                       >
-                        {acc.firstName} {acc.lastName}
+                        <span>{acc.firstName} {acc.lastName}</span>
+                        <BalanceStatusIndicator balance={acc.currentBalance} />
                       </li>
                     ))
                   ) : (
@@ -152,14 +218,22 @@ export default function WholesaleAccountsPage() {
             </div>
           </div>
         </div>
-        
-          
-          
           )}
         </Card.Body>
         {selectedAccount && (
           <Card.Footer className="bg-white">
-            <div className="d-flex justify-content-end">
+            <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex align-items-center gap-3">
+                {/* <BalanceStatusIndicator balance={selectedAccount.currentBalance} />
+                <div className="text-muted small">
+                  {selectedAccount.currentBalance < 0 
+                    ? "Customer owes money" 
+                    : selectedAccount.currentBalance > 0 
+                    ? "We owe customer money" 
+                    : "Account is balanced"
+                  }
+                </div> */}
+              </div>
               <div>
                 <strong>Account Balance:</strong> ${Number(selectedAccount.currentBalance).toLocaleString()}
               </div>

@@ -41,10 +41,10 @@ const MenuItemWithChildren = ({ item, className, linkClassName, subMenuClassName
           </span>
         )}
         {level1 ? <span className="menu-text">{item.label}</span> :
-          <Link href="" className='side-nav-link '><span className="menu-text">{item.label}</span>
-            <div className='menu-arrow'>
+          <Link href=""><span >{item.label}</span>
+            {/* <div className='menu-arrow'>
               <IconifyIcon icon="tabler:chevron-right" width={19} height={19} />
-            </div>
+            </div> */}
           </Link>}
         {!item.badge ? (
           <>
@@ -61,31 +61,53 @@ const MenuItemWithChildren = ({ item, className, linkClassName, subMenuClassName
         )}
 
       </div>
-      <Collapse in={open}>
+      <div className={clsx(
+        'overflow-hidden transition-all duration-300 ease-in-out',
+        open ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+      )}>
         <div>
-          <ul className={clsx(subMenuClassName)}>
+          <ul className={clsx(
+            subMenuClassName,
+            'list-none flex flex-col gap-1 pl-0 mt-1'
+          )}>
             {(item.children || []).map((child, idx) => {
               return (
                 <Fragment key={child.key + idx}>
                   {child.children ? (
                     <MenuItemWithChildren
                       item={child}
-                      linkClassName={clsx('nav-link', getActiveClass(child))}
+                      linkClassName={clsx(
+                        'nav-link text-sm px-6 py-2',
+                        'ml-7', // Indent for nested items
+                        getActiveClass(child)
+                      )}
                       activeMenuItems={activeMenuItems}
                       className="side-nav-item"
                       level={level + 1}
-                      subMenuClassName="sub-menu"
+                      subMenuClassName="sub-menu pl-3"
                       toggleMenu={toggleMenu}
                     />
                   ) : (
-                    <MenuItem level={level + 1} item={child} className={clsx('side-nav-item', getActiveClass(child))} linkClassName={clsx('side-nav-link', getActiveClass(child))} />
+                    <MenuItem 
+                      level={level + 1} 
+                      item={child} 
+                      className={clsx(
+                        'side-nav-item',
+                        getActiveClass(child)
+                      )} 
+                      linkClassName={clsx(
+                        'side-nav-link text-sm',
+                        '', // Indent for nested items
+                        getActiveClass(child)
+                      )} 
+                    />
                   )}
                 </Fragment>
               )
             })}
           </ul>
         </div>
-      </Collapse>
+      </div>
     </li>
   )
 }

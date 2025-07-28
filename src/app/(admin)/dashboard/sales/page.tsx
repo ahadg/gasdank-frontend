@@ -17,7 +17,7 @@ import { Metadata } from 'next'
 const SalesPage = () => {
   return (
     <div>
-      <SalesPageTitle />
+      {/* <SalesPageTitle /> */}
       <Row>
         <Col>
           <Stat />

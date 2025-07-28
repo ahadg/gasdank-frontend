@@ -292,7 +292,7 @@ const AccountSelector = () => (
   <div className="mb-4">
     <div className="d-flex align-items-center justify-content-between mb-3">
       <h6 className="mb-0 fw-semibold text-dark">
-        <IconifyIcon icon="tabler:user-circle" className="me-2 text-primary" />
+        {/* <IconifyIcon icon="tabler:user-circle" className="me-2 text-primary" /> */}
         Client Selection
       </h6>
       <span className="badge bg-light text-muted small">Optional</span>
@@ -805,7 +805,7 @@ const AccountSelector = () => (
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Label className="fw-semibold">
-                  <IconifyIcon icon="tabler:truck" className="me-2 text-primary" />
+                  {/* <IconifyIcon icon="tabler:truck" className="me-2 text-primary" /> */}
                   Total Shipping Cost
                 </Form.Label>
                 <Controller
@@ -830,7 +830,7 @@ const AccountSelector = () => (
             <Card className="mb-4 border-light bg-light">
               <CardBody className="p-3">
                 <h6 className="mb-3 text-dark">
-                  <IconifyIcon icon="tabler:calculator" className="me-2 text-primary" />
+                  {/* <IconifyIcon icon="tabler:calculator" className="me-2 text-primary" /> */}
                   Summary
                 </h6>
                 <Row className="g-3">

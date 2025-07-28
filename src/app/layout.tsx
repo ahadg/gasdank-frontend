@@ -10,6 +10,9 @@ import 'flatpickr/dist/flatpickr.css'
 import 'jsvectormap/dist/css/jsvectormap.min.css'
 import '@/assets/scss/app.scss'
 import { logoT } from './(other)/auth/login/components/LoginForm'
+import './globals.css'; // or '../styles/globals.css'
+
+
 
 const inter = Inter({
   subsets: ['latin'],
