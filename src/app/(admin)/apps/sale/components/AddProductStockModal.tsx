@@ -134,6 +134,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
       ],
     }
     try {
+      console.log("payload",payload)
       const response = await api.post('/api/transaction', payload)
       console.log('Transaction processed:', response.data)
       fetchProducts()
@@ -192,7 +193,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                       <th>DATE</th>
                       <th>ITEM</th>
                       <th>QUANTITY</th>
-                      <th>SHIPPING (per unit)</th>
+                      {/* <th>SHIPPING (per unit)</th> */}
                       <th>PRICE</th>
                       <th>SALE PRICE</th>
                     </tr>
@@ -205,11 +206,10 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                           <td>
                             {recentsale?.qty} [{recentsale.unit}]
                           </td>
-                          <td>
-                            {/* {renderTypeWithIcon(recentsale.transaction_id?.type)} */}
-                            {/* {recentsale.transaction_id?.type} */}
+                          {/* <td>
+                         
                             {recentsale.shipping}
-                          </td>
+                          </td> */}
                           <td>${recentsale.price}</td>
                           <td>{recentsale.sale_price ? `$${recentsale.sale_price}` : `-`}</td>
                         </tr>
@@ -271,7 +271,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                   )}
                 />
               </Form.Group>
-              <Form.Group className="mb-3">
+              {/* <Form.Group className="mb-3">
                 <Form.Label>Total Shipping</Form.Label>
                 <Controller
                   control={control}
@@ -280,7 +280,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                     <Form.Control type="number" placeholder="Enter shipping" step="any" {...field} />
                   )}
                 />
-              </Form.Group>
+              </Form.Group> */}
               <Form.Group className="mb-3">
                 <Form.Label>Sale Price</Form.Label>
                 <Controller
@@ -291,7 +291,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                   )}
                 />
               </Form.Group>
-              <Form.Group className="mb-3">
+              {/* <Form.Group className="mb-3">
                 <Form.Label>Price</Form.Label>
                 <Controller
                   control={control}
@@ -300,7 +300,7 @@ export default function AddProductModal({ product, onClose, fetchProducts }: Add
                     <Form.Control type="number" placeholder="Enter price" step="any" {...field} />
                   )}
                 />
-              </Form.Group>
+              </Form.Group> */}
               <div className="mb-3">
                 <strong>Subtotal: </strong>${subtotal.toFixed(2)}
               </div>

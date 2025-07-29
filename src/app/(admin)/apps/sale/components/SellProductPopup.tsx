@@ -427,7 +427,7 @@ export default function SellMultipleProductsModal({
         >
           <div className="modal-header bg-light border-bottom border-light">
             <h5 className={`modal-title ${isMobile ? 'h6' : ''}`}>
-              Selling Products to {user?.firstName + ' ' + user.lastName}
+              Selling Products
             </h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>

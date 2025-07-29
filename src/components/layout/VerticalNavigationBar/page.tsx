@@ -16,7 +16,7 @@ const AppMenu = lazy(() => import('./components/AppMenu'))
 
 const VerticalNavigationBar = () => {
   const { toggleBackdrop } = useLayoutContext()
-  const user = useAuthStore((state) => state.user)
+  const {user,setUser} = useAuthStore((state) => state)
   const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([])
   const setSettings = useAuthStore((state) => state.setSettings)
   // Complete menu items array
@@ -153,73 +153,98 @@ const VerticalNavigationBar = () => {
   ]
 
   // Function to filter menu items based on access permissions
-// Function to filter menu items based on access permissions
-const filterMenuItems = (items, access) => {
-  return items.reduce((filtered, item) => {
-    // Handle config section with nested structure
-    if (item.key === 'config' && access.config) {
-      // Filter config children based on nested access
-      const filteredChildren = item.children?.filter((child) => {
-        console.log("access.config.users?.read", access.config.users?.read)
-        if (child.key === 'users') {
-          return access.config.users?.read
-        }
-        if (child.key === 'categories') {
-          return access.config.categories?.read
-        }
-        return true
-      }) || []
-      
-      // Only include config if it has at least one accessible child
-      if (filteredChildren.length > 0) {
-        filtered.push({
-          ...item,
-          children: filteredChildren
-        })
-      }
-      // If no children, don't add the config item at all
-      return filtered
-    }
-    
-    // Handle reports section (similar nested structure)
-    if (item.key === 'reports' && access.reports) {
-      if (item.children && access.reports.read) {
-        filtered.push({
-          ...item,
-          children: item.children.filter((child) => {
-            // Add specific logic for reports children if needed
-            return true
+  const filterMenuItems = (items, access) => {
+    return items.reduce((filtered, item) => {
+      // Handle sample_management section
+      if (item.key === 'sample_management') {
+        // Filter sample_management children based on individual access
+        const filteredChildren = item.children?.filter((child) => {
+          if (child.key === 'sampleholdings') {
+            return access.sampleholdings?.read
+          }
+          if (child.key === 'sampleviewing') {
+            return access.sampleviewing?.read
+          }
+          if (child.key === 'sampleviewingmanagement') {
+            return access.sampleviewingmanagement?.read
+          }
+          return true
+        }) || []
+        
+        // Only include sample_management if it has at least one accessible child
+        if (filteredChildren.length > 0) {
+          filtered.push({
+            ...item,
+            children: filteredChildren
           })
-        })
+        }
+        return filtered
       }
-      return filtered
-    }
-    
-    // Handle other sections with regular access structure
-    if (access[item.key] !== undefined) {
-      if (access[item.key].read) {
-        if (item.children) {
-          // Include item with filtered children
+      
+      // Handle config section with nested structure
+      if (item.key === 'config' && access.config) {
+        // Filter config children based on nested access
+        const filteredChildren = item.children?.filter((child) => {
+          console.log("access.config.users?.read", access.config.users?.read)
+          if (child.key === 'users') {
+            return access.config.users?.read
+          }
+          if (child.key === 'categories') {
+            return access.config.categories?.read
+          }
+          return true
+        }) || []
+        
+        // Only include config if it has at least one accessible child
+        if (filteredChildren.length > 0) {
+          filtered.push({
+            ...item,
+            children: filteredChildren
+          })
+        }
+        // If no children, don't add the config item at all
+        return filtered
+      }
+      
+      // Handle reports section (similar nested structure)
+      if (item.key === 'reports' && access.reports) {
+        if (item.children && access.reports.read) {
           filtered.push({
             ...item,
             children: item.children.filter((child) => {
-              // Add granular child access logic here if needed
+              // Add specific logic for reports children if needed
               return true
             })
           })
-        } else {
-          // Include simple item
-          filtered.push(item)
         }
+        return filtered
       }
+      
+      // Handle other sections with regular access structure
+      if (access[item.key] !== undefined) {
+        if (access[item.key].read) {
+          if (item.children) {
+            // Include item with filtered children
+            filtered.push({
+              ...item,
+              children: item.children.filter((child) => {
+                // Add granular child access logic here if needed
+                return true
+              })
+            })
+          } else {
+            // Include simple item
+            filtered.push(item)
+          }
+        }
+        return filtered
+      }
+      
+      // Show items that don't have access restrictions (like profile, notifications)
+      filtered.push(item)
       return filtered
-    }
-    
-    // Show items that don't have access restrictions (like profile, notifications)
-    filtered.push(item)
-    return filtered
-  }, [])
-}
+    }, [])
+  }
 let unitOptions = useAuthStore(state => state.settings?.units)
   // Fetch user access data from the backend and filter menu items accordingly.
   useEffect(() => {
@@ -230,9 +255,11 @@ let unitOptions = useAuthStore(state => state.settings?.units)
       //}
       if (user && user._id) {
         try {
-          const response = await api.get(`/api/users/${user._id}`)
-          const userData = response.data
+          const response = await api.get(`/api/users/me`)
+          const userData = response.data?.user
           const access = userData.access || {}
+          console.log("setting_userData",userData)
+          setUser(userData)
           
           // Filter menu items based on access permissions
           const filtered = filterMenuItems(menuItems, access)
@@ -248,7 +275,7 @@ let unitOptions = useAuthStore(state => state.settings?.units)
       }
     }
     fetchUserAccess()
-  }, [user])
+  }, [])
 
   return (
     <div className="sidenav-menu" id="leftside-menu-container">
