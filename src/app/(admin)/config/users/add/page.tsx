@@ -10,58 +10,58 @@ import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 
 interface Access {
-  read: boolean
-  edit: boolean
-  delete: boolean
-  create: boolean
+  read?: boolean
+  edit?: boolean
+  delete?: boolean
+  create?: boolean
 }
 
 interface SampleViewingAccess {
-  read: boolean
-  edit: boolean
-  delete: boolean
-  create: boolean,
-  pricesVisible: boolean
+  read?: boolean
+  edit?: boolean
+  delete?: boolean
+  create?: boolean,
+  pricesVisible?: boolean
 }
 
 interface Config {
-  categories: {
-    read: boolean
-    edit: boolean
-    delete: boolean
-    create: boolean
+  categories?: {
+    read?: boolean
+    edit?: boolean
+    delete?: boolean
+    create?: boolean
   }
-  users: {
-    read: boolean
-    edit: boolean
-    delete: boolean
-    create: boolean
+  users?: {
+    read?: boolean
+    edit?: boolean
+    delete?: boolean
+    create?: boolean
   }
 }
 
 interface DashboardStatAccess {
-  today_sales: boolean
-  today_profit: boolean
-  inventory_value: boolean
-  outstanding_balance: boolean
-  user_balance: boolean
-  company_balance: boolean
-  online_balance: boolean
+  today_sales?: boolean
+  today_profit?: boolean
+  inventory_value?: boolean
+  outstanding_balance?: boolean
+  user_balance?: boolean
+  company_balance?: boolean
+  online_balance?: boolean
 }
 
 interface AccessData {
-  dashboard: Access
-  dashboard_stats: DashboardStatAccess
-  sale: Access
-  wholesale: Access
-  inventory: Access
-  activitylogs: Access
-  config: Config
-  reports: Access
-  sampleholdings: Access
-  sampleviewing: Access
-  expenses: Access
-  sampleviewingmanagement: SampleViewingAccess
+  dashboard?: Access
+  dashboard_stats?: DashboardStatAccess
+  sale?: Access
+  wholesale?: Access
+  inventory?: Access
+  activitylogs?: Access
+  config?: Config
+  reports?: Access
+  sampleholdings?: Access
+  sampleviewing?: Access
+  expenses?: Access
+  sampleviewingmanagement?: SampleViewingAccess
 }
 
 const defaultAccess: AccessData = {
@@ -87,7 +87,7 @@ const defaultAccess: AccessData = {
   sampleholdings: { read: true, edit: true, delete: true, create: true },
   expenses: { read: true, edit: true, delete: true, create: true },
   sampleviewing: { read: true, edit: true, delete: true, create: true },
-  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible : true },
+  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible: true },
 }
 
 const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'reports', 'expenses', 'sampleholdings', 'sampleviewing', 'sampleviewingmanagement']

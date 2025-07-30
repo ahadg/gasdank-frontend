@@ -10,54 +10,54 @@ import { useNotificationContext } from '@/context/useNotificationContext'
 import { useAuthStore } from '@/store/authStore'
 
 interface Access {
-  read: boolean;
-  edit: boolean;
-  delete: boolean;
-  create: boolean;
+  read?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+  create?: boolean;
 }
 interface SampleViewingAccess {
-  read: boolean
-  edit: boolean
-  delete: boolean
-  create: boolean,
-  pricesVisible: boolean
+  read?: boolean
+  edit?: boolean
+  delete?: boolean
+  create?: boolean,
+  pricesVisible?: boolean
 }
 interface Config {
-  categories : {
-  read: boolean;
-  edit: boolean;
-  delete: boolean;
-  create: boolean;
+  categories ?: {
+  read?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+  create?: boolean;
   },
-  users : {
-    read: boolean;
-    edit: boolean;
-    delete: boolean;
-    create: boolean;
+  users ?: {
+    read?: boolean;
+    edit?: boolean;
+    delete?: boolean;
+    create?: boolean;
     }
 }
 interface DashboardStatAccess {
-  today_sales: boolean;
-  today_profit: boolean;
-  inventory_value: boolean;
-  outstanding_balance: boolean;
-  user_balance: boolean;
-  company_balance: boolean;
-  online_balance: boolean;
+  today_sales?: boolean;
+  today_profit?: boolean;
+  inventory_value?: boolean;
+  outstanding_balance?: boolean;
+  user_balance?: boolean;
+  company_balance?: boolean;
+  online_balance?: boolean;
 }
 interface AccessData {
-  dashboard: Access;
-  dashboard_stats: DashboardStatAccess;
-  sale: Access;
-  wholesale: Access;
-  inventory: Access;
-  config: Config;
-  analytics: Access;
-  reports: Access;
-  sampleholdings: Access
-  sampleviewing: Access
-  sampleviewingmanagement: SampleViewingAccess
-  expenses : Access
+  dashboard?: Access;
+  dashboard_stats?: DashboardStatAccess;
+  sale?: Access;
+  wholesale?: Access;
+  inventory?: Access;
+  config?: Config;
+  analytics?: Access;
+  reports?: Access;
+  sampleholdings?: Access
+  sampleviewing?: Access
+  sampleviewingmanagement?: SampleViewingAccess
+  expenses ?: Access
 }
 const defaultAccess: AccessData = {
   dashboard: { read: false, edit: false, delete: false, create: false },
@@ -254,7 +254,7 @@ export default function EditUserPage() {
                       <label>
                         <input
                           type="checkbox"
-                          checked={accessData[page][perm]}
+                          checked={accessData?.[page]?.[perm]}
                           onChange={(e) => handleAccessChange(page, perm, e.target.checked)}
                         />{' '}
                         {perm}
@@ -267,7 +267,7 @@ export default function EditUserPage() {
                       <label>
                         <input
                           type="checkbox"
-                          checked={accessData.sampleviewingmanagement.pricesVisible}
+                          checked={accessData?.sampleviewingmanagement?.pricesVisible || false}
                           onChange={(e) => handleAccessChange(page, 'pricesVisible', e.target.checked)}
                         />{' '}
                         pricesVisible
