@@ -18,11 +18,15 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
   const [productDetails, setProductDetails] = useState<any>(null)
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
-  // Simplified restock form data state - only quantity
+  
+  // Form data state
   const [quantity, setQuantity] = useState<number>(0)
+  const [price, setPrice] = useState<number>(0)
+  const [totalShipping, setTotalShipping] = useState<number>(0)
 
-  // Calculate new total stock
+  // Calculate new total stock and shipping cost per unit
   const newTotalStock = (productDetails?.qty || 0) + (quantity || 0)
+  const shippingCostPerUnit = quantity > 0 ? totalShipping / quantity : 0
 
   // Fetch product details when modal opens
   useEffect(() => {
@@ -35,8 +39,10 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
   useEffect(() => {
     if (show) {
       setQuantity(0)
+      setPrice(productDetails?.price || 0)
+      setTotalShipping(0)
     }
-  }, [show])
+  }, [show, productDetails?.price])
 
   const fetchProductDetails = async () => {
     try {
@@ -50,32 +56,35 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
   const handleRestockSubmit = async () => {
     // Basic validation
     if (!quantity || quantity <= 0) {
-      showNotification({ message: 'Transaction processed successfully', variant: 'danger' })
+      showNotification({ message: 'Please enter a valid quantity', variant: 'danger' })
+      return
+    }
+
+    if (!price || price <= 0) {
+      showNotification({ message: 'Please enter a valid price', variant: 'danger' })
       return
     }
 
     setLoading(true)
     console.log('Restock transaction productDetails:', productDetails)
     try {
-      // Create a restock transaction with simplified payload
+      // Create a restock transaction with updated payload
       const payload = {
         user_id: user._id,
-        buyer_id: productDetails?.buyer_id?._id, // No buyer for restocking
-        //payment: 0, // No payment details since we removed price inputs
+        buyer_id: productDetails?.buyer_id?._id,
         notes: `Restocked ${quantity} ${productDetails.unit} of ${productDetails.name}`,
         type: "restock",
-        price: (productDetails?.price) * quantity, // No price since we removed price input
-        total_shipping: quantity * productDetails?.shippingCost, // No shipping since we removed shipping input
+        price: price * quantity,
+        total_shipping: totalShipping,
         items: [
           {
             inventory_id: product._id,
             qty: quantity,
-            measurement: 1, // Default to full measurement
-            unit: productDetails.unit, // Use existing product unit
+            measurement: 1,
+            unit: productDetails.unit,
             name: productDetails.name,
-            price: productDetails.price, // No price
-            shipping: productDetails.shippingCost, // No shipping
-            //supplier_name: '', // No supplier name
+            price: price,
+            shipping: shippingCostPerUnit.toFixed(2),
           },
         ],
       }
@@ -83,6 +92,7 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
       const response = await api.post('/api/transaction/', payload)
       console.log('Restock transaction created:', response.data)
       showNotification({ message: 'Transaction processed successfully', variant: 'success' })
+      
       // Call completion callback if provided
       if (onRestockComplete) {
         onRestockComplete()
@@ -106,7 +116,7 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
   return (
     <Modal show={show} onHide={handleClose} size="lg" centered>
       <Modal.Header closeButton>
-        <Modal.Title>
+        <Modal.Title className='flex flex-row'>
           <IconifyIcon icon="tabler:package" className="me-2" />
           Restock Product
         </Modal.Title>
@@ -128,14 +138,14 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
                   <div className="col-md-6">
                     <p className="mb-1"><strong>Current Stock:</strong> {productDetails.qty} {productDetails.unit}</p>
                     <p className="mb-1"><strong>Current Price:</strong> ${productDetails.price?.toFixed(2)}</p>
-                    <p className="mb-0"><strong>Shipping Cost:</strong> ${productDetails.shippingCost?.toFixed(2)}</p>
+                    <p className="mb-0"><strong>Current Shipping Cost:</strong> ${productDetails.shippingCost?.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <Form>
-              {/* Only Quantity Input */}
+              {/* Quantity Input */}
               <Form.Group className="mb-3">
                 <Form.Label>Quantity to Add *</Form.Label>
                 <Form.Control 
@@ -146,6 +156,37 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
                   onChange={(e) => setQuantity(Number(e.target.value))}
                   disabled={loading}
                 />
+              </Form.Group>
+
+              {/* Price Input */}
+              <Form.Group className="mb-3">
+                <Form.Label>Price per Unit *</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  placeholder="Enter price per unit" 
+                  step="0.01" 
+                  value={price || ''}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  disabled={loading}
+                />
+              </Form.Group>
+
+              {/* Total Shipping Input */}
+              <Form.Group className="mb-3">
+                <Form.Label>Total Shipping Cost</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  placeholder="Enter total shipping cost" 
+                  step="0.01" 
+                  value={totalShipping || ''}
+                  onChange={(e) => setTotalShipping(Number(e.target.value))}
+                  disabled={loading}
+                />
+                {quantity > 0 && totalShipping > 0 && (
+                  <Form.Text className="text-muted">
+                    Shipping cost per unit: ${shippingCostPerUnit.toFixed(2)}
+                  </Form.Text>
+                )}
               </Form.Group>
 
               {/* Stock Summary */}
@@ -160,10 +201,20 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
                     </div>
                   </div>
                   <div className="row mt-2">
-                    <div className="col-12">
+                    <div className="col-md-6">
                       <strong>New Total Stock:</strong> {newTotalStock} {productDetails.unit}
                     </div>
+                    <div className="col-md-6">
+                      <strong>Total Cost:</strong> ${(price * quantity + totalShipping).toFixed(2)}
+                    </div>
                   </div>
+                  {quantity > 0 && totalShipping > 0 && (
+                    <div className="row mt-1">
+                      <div className="col-12">
+                        <strong>Shipping per Unit:</strong> ${shippingCostPerUnit.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
                 </Alert>
               )}
             </Form>
@@ -191,7 +242,7 @@ export default function RestockModal({ show, onHide, product, onRestockComplete 
         <Button 
           variant="success" 
           onClick={handleRestockSubmit}
-          disabled={loading || !quantity || quantity <= 0}
+          disabled={loading || !quantity || quantity <= 0 || !price || price <= 0}
         >
           {loading ? (
             <>
