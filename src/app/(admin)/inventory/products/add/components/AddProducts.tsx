@@ -184,8 +184,7 @@ function AddProductsPage() {
     setShowValidationErrors(true)
     showNotification({ 
       message: 'Please fix the validation errors before submitting', 
-      variant: 'danger',
-      duration: 5000 
+      variant: 'danger'
     })
     
     // Scroll to the first error
@@ -470,7 +469,7 @@ function AddProductsPage() {
   // Mobile Product Card Component with validation
   const MobileProductCard = ({ field, index }: { field: any; index: number }) => {
     const productErrors = errors.products?.[index];
-    const shouldShowErrors = showValidationErrors || touchedFields.products?.[index];
+    const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
     
     return (
       <Card className="mb-3 d-md-none border-light">
@@ -714,7 +713,7 @@ function AddProductsPage() {
                   <tbody>
                     {fields.map((field, index) => {
                       const productErrors = errors.products?.[index];
-                      const shouldShowErrors = showValidationErrors || touchedFields.products?.[index];
+                      const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
                       
                       return (
                         <tr key={field.id}>
