@@ -56,7 +56,7 @@ const ProductsPage = () => {
   async function fetchProducts() {
     setLoading(true)
     try {
-      let query = `/api/inventory/${user?._id}?page=${page}&limit=${limit}`
+      let query = `/api/inventory/${user?._id}?page=${page}&qty=gt0&limit=${limit}`
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }
@@ -275,8 +275,8 @@ const ProductsPage = () => {
                     <th className="px-3 py-2 text-left font-medium text-yellow-700">ID/Ref</th>
                     <th className="px-3 py-2 text-left font-medium text-yellow-700">Stock</th>
                     <th className="px-3 py-2 text-left font-medium text-yellow-700">Category</th>
-                    <th className="px-3 py-2 text-left font-medium text-yellow-700">Value</th>
-                    <th className="px-3 py-2 text-center font-medium text-yellow-700 w-28">Actions</th>
+                    {/* <th className="px-3 py-2 text-left font-medium text-yellow-700">Value</th>
+                    <th className="px-3 py-2 text-center font-medium text-yellow-700 w-28">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-yellow-50">
@@ -308,7 +308,7 @@ const ProductsPage = () => {
                         <td className="px-3 py-2 whitespace-nowrap">
                           <span className="text-gray-600">{item.category?.name || '-'}</span>
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-gray-800">
+                        {/* <td className="px-3 py-2 whitespace-nowrap text-gray-800">
                           ${getTotalPrice(item).toLocaleString()}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
@@ -326,7 +326,7 @@ const ProductsPage = () => {
                               </button>
                             </Link>
                           </div>
-                        </td>
+                        </td> */}
                       </tr>
                     ))
                   ) : (
