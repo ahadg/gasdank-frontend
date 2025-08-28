@@ -551,13 +551,13 @@ export default function WorkerSampleManagementPage() {
                   <span>Sale Price:</span>
                   <span>₹{calculateTotals().totalSalePrice.toFixed(2)}</span>
                 </div>
-                <hr className="my-2" />
-                <div className="d-flex justify-content-between">
+                {/* <hr className="my-2" /> */}
+                {/* <div className="d-flex justify-content-between">
                   <strong>Profit:</strong>
                   <strong className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
                     ₹{calculateTotals().profit.toFixed(2)}
                   </strong>
-                </div>
+                </div> */}
               </div>
             </Col> 
             }
