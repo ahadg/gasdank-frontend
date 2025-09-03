@@ -233,7 +233,7 @@ export default function SellMultipleProductsModal({
   
       const currentItems = getValues('items')
       currentItems.forEach((item, index) => {
-        const basePrice = Number(item.price) || 0
+        const basePrice = Number(item.price+item.shipping) || 0
         const newSalePrice = basePrice + amount
         setValue(`items.${index}.sale_price`, Number(newSalePrice.toFixed(2)))
       })
