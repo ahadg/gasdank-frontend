@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
-import { Button, Form, Table, Spinner, Card, Row, Col } from 'react-bootstrap'
+import { Button, Form, Table, Spinner, Card, Row, Col, ButtonGroup } from 'react-bootstrap'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import api from '@/utils/axiosInstance'
@@ -63,7 +63,7 @@ export default function SellMultipleProductsModal({
   const params = useParams()
   console.log("selectedProducts",selectedProducts)
   const router = useRouter();
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<SellMultipleFormData>({
+  const { control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<SellMultipleFormData>({
     resolver: yupResolver(sellMultipleSchema),
     defaultValues: {
       items: selectedProducts.map((prod) => ({
@@ -72,7 +72,7 @@ export default function SellMultipleProductsModal({
         qty: prod.qty,
         //quantity: '',
         price: prod.price,
-        //sale_price: prod.price || 0,
+        sale_price: prod.price + prod?.shippingCost, // Initialize with current price
         unit: prod.unit || '',
         shipping: prod?.shippingCost || 0,
         measurement: 1, // default to Full
@@ -131,6 +131,20 @@ export default function SellMultipleProductsModal({
     
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Auto markup function - changed from percentage to fixed amount
+  const applyMarkup = (amount: number) => {
+    const currentItems = getValues('items')
+    currentItems.forEach((item, index) => {
+      const basePrice = Number(item.price) || 0
+      const newSalePrice = basePrice + amount
+      setValue(`items.${index}.sale_price`, Number(newSalePrice.toFixed(2)))
+    })
+    showNotification({ 
+      message: `Added $${amount} markup to all products`, 
+      variant: 'success' 
+    })
+  }
 
   const onSubmit = async (data: SellMultipleFormData) => {
     console.log("submit_being called")
@@ -196,6 +210,77 @@ export default function SellMultipleProductsModal({
     }
   }
 
+  const renderMarkupButtons = () => {
+    const [markupValue, setMarkupValue] = useState('')
+  
+    const handleApplyMarkup = () => {
+      const amount = Number(markupValue)
+      if (isNaN(amount)) {
+        showNotification({ 
+          message: 'Please enter a valid number', 
+          variant: 'danger' 
+        })
+        return
+      }
+      
+      if (amount < 0) {
+        showNotification({ 
+          message: 'Markup amount cannot be negative', 
+          variant: 'danger' 
+        })
+        return
+      }
+  
+      const currentItems = getValues('items')
+      currentItems.forEach((item, index) => {
+        const basePrice = Number(item.price) || 0
+        const newSalePrice = basePrice + amount
+        setValue(`items.${index}.sale_price`, Number(newSalePrice.toFixed(2)))
+      })
+      
+      showNotification({ 
+        message: `Added $${amount} markup to all products`, 
+        variant: 'success' 
+      })
+      
+      // Clear the input after applying
+      setMarkupValue('')
+    }
+  
+    return (
+      <div className="mb-3 p-3 bg-light rounded">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <strong>Quick Markup:</strong>
+          <small className="text-muted">Add fixed amount to all products</small>
+        </div>
+        <div className={`d-flex gap-2 ${isMobile ? 'flex-column' : 'align-items-end'}`}>
+          <div className="flex-grow-1">
+            <Form.Group className="mb-0">
+              <Form.Label className="small mb-1">Markup Amount ($)</Form.Label>
+              <Form.Control
+                type="number"
+                step="any"
+                placeholder="Enter amount (e.g., 25)"
+                value={markupValue}
+                onChange={(e) => setMarkupValue(e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </div>
+          <Button 
+            variant="success" 
+            size="sm"
+            onClick={handleApplyMarkup}
+            disabled={!markupValue.trim()}
+            className={isMobile ? 'mt-2' : ''}
+          >
+            Apply Markup
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   const renderMobileItem = (field: any, index: number) => (
     <Card key={field.id} className="mb-3 shadow-sm">
       <Card.Body>
@@ -212,7 +297,7 @@ export default function SellMultipleProductsModal({
         </div>
         
         <div className="mb-2">
-          <small className="text-muted">Available: {field.qty}</small>
+          <small className="text-muted">Available: {field.qty} | Cost: ${Number(field.price || 0).toFixed(2)}</small>
         </div>
 
         <Row className="g-2">
@@ -284,6 +369,11 @@ export default function SellMultipleProductsModal({
                 placeholder="Sale Price"
                 {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
               />
+              {items[index]?.price && items[index]?.sale_price && (
+                <small className="text-info">
+                  +${(Number(items[index].sale_price) - Number(items[index].price)).toFixed(2)} markup
+                </small>
+              )}
             </Form.Group>
           </Col>
         </Row>
@@ -306,11 +396,13 @@ export default function SellMultipleProductsModal({
       <thead className="table-light">
         <tr>
           <th>Product</th>
-          <th>Quantity Available</th>
+          <th>Available</th>
+          <th>Cost Price</th>
           <th>Quantity</th>
           <th>Unit</th>
           <th>Measurement</th>
           <th>Sale Price</th>
+          {/* <th>Markup</th> */}
           <th>Subtotal</th>
           <th>Action</th>
         </tr>
@@ -320,6 +412,7 @@ export default function SellMultipleProductsModal({
           <tr key={field.id}>
             <td>{field.name}</td>
             <td>{field.qty}</td>
+            <td>${Number(field.price + field.shipping).toFixed(2)}</td>
             <td>
               <Form.Control
                 type="number"
@@ -373,6 +466,17 @@ export default function SellMultipleProductsModal({
                 {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
               />
             </td>
+            {/* <td>
+              {items[index]?.price && items[index]?.sale_price && (
+                <span className={
+                  Number(items[index].sale_price) > Number(items[index].price) 
+                    ? 'text-success' 
+                    : 'text-muted'
+                }>
+                  +${(Number(items[index].sale_price) - Number(items[index].price)).toFixed(2)}
+                </span>
+              )}
+            </td> */}
             <td>
               {(
                 (Number(items[index]?.measurement || 1) *
@@ -380,7 +484,7 @@ export default function SellMultipleProductsModal({
               ).toFixed(2)}
             </td>
             <td>
-              <Button variant="danger" onClick={() => remove(index)}>
+              <Button variant="danger" size="sm" onClick={() => remove(index)}>
                 REMOVE
               </Button>
             </td>
@@ -459,6 +563,9 @@ export default function SellMultipleProductsModal({
             )}
             
             <Form onSubmit={(handleSubmit(onSubmit, (errors) => console.log('Validation Errors:', errors)))}>
+              {/* Auto Markup Buttons */}
+              {renderMarkupButtons()}
+              
               {isMobile ? (
                 <div className="mb-3">
                   {fields.map((field, index) => renderMobileItem(field, index))}

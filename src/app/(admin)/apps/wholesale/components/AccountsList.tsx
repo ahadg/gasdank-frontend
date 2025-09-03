@@ -15,12 +15,13 @@ export const metadata: Metadata = { title: 'Wholesale Accounts' }
 
 // Balance Status Component
 const BalanceStatusIndicator = ({ balance }: { balance: number }) => {
+  console.log("balance",balance)
   const getBalanceStatus = () => {
     if (balance < 0) {
       return {
         color: '#28a745', // Green - they owe us
         text: '',
-        amount: Math.abs(balance),
+        amount: (balance),
         bgColor: '#d4edda',
         icon: 'tabler:arrow-up'
       }
