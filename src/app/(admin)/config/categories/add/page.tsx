@@ -27,6 +27,17 @@ export default function AddCategoryPage() {
         user_id : user?._id
       })
 
+      await api.post(`/api/activity/${user._id}`, {
+        page: 'categories',
+        action: "UPDATE",
+        resource_type: "category_modification",
+        type: "category_modification",
+        //payment_method: paymentMethod,
+        description: "Category added",
+        user_id: user._id,
+        user_created_by: user.created_by,
+      })
+
       if (response.status === 200 || response.status === 201) {
         showNotification({ message: 'Category added successfully', variant: 'success' })
         router.back()
