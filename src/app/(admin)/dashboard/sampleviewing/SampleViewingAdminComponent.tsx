@@ -3,8 +3,6 @@ import { Button, Card, Table, Form, Row, Col, Modal, Spinner, Badge } from 'reac
 import axios from 'axios' // Make sure axios is installed
 import api from '@/utils/axiosInstance'
 
-// Replace with your actual API base URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000'
 
 const SampleViewingAdminComponent = ({ currentUserId }) => {
     const [showModal, setShowModal] = useState(false)

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Calendar, TrendingUp, TrendingDown, Plus, X, GripVertical, LayoutGrid, Info, Wallet, CreditCard, Bitcoin, DollarSign, Package, Users, Building, FileText } from 'lucide-react'
+import { Calendar, TrendingUp, TrendingDown, Plus, X, GripVertical, LayoutGrid, Info, Wallet, CreditCard, Bitcoin, DollarSign, Package, Users, Building, FileText, Lock, EyeOff, Shield } from 'lucide-react'
 import api from '@/utils/axiosInstance'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import { useAuthStore } from '@/store/authStore'
@@ -88,6 +88,52 @@ const getIconComponent = (iconName: string) => {
     case 'solar:card-bold-duotone': return CreditCard
     default: return FileText
   }
+}
+
+// Access Denied/Locked Page Component
+const AccessDeniedPage = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full text-center">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+          {/* Icon Container */}
+          <div className="mb-6">
+            <div className="relative inline-flex">
+              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                <Lock className="w-10 h-10 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-md">
+                <Shield className="w-4 h-4 text-gray-800" />
+              </div>
+            </div>
+          </div>
+
+          {/* Title and Message */}
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Access Restricted</h1>
+          <p className="text-gray-600 mb-2">
+            You don't have permission to access the dashboard statistics.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            This area requires specific permissions that are not currently granted to your account.
+          </p>
+
+          {/* Additional Info */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <EyeOff className="w-4 h-4" />
+              <span>Dashboard statistics are hidden due to permission restrictions, Try switching to a different page.</span>
+            </div>
+          </div>
+          {/* Contact Support */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              If you believe this is a mistake, please contact your administrator.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // Compact Stats Loader Component
@@ -355,11 +401,15 @@ export default function Stat() {
   const [otherBalance, setOtherBalance] = useState<any>({ EFT: 0, Crypto: 0 })
   const [isCustomizationMode, setIsCustomizationMode] = useState(false)
   const [userData, setUserData] = useState<any>(null)
+  const [accessDenied, setAccessDenied] = useState(false)
   const { showNotification } = useNotificationContext()
+
   const fetchStats = async () => {
     if (!user?._id) return
 
     setLoading(true)
+    setAccessDenied(false) // Reset access denied state
+    
     try {
       const queryParams = new URLSearchParams()
       if (startDate) queryParams.append('startDate', startDate)
@@ -424,16 +474,6 @@ export default function Stat() {
           variant: (data.outstandingBalancesChange || 0) < 0 ? 'danger' : 'success',
           category: 'other',
         },
-        // {
-        //   id: 'user-cash',
-        //   title: `${user?.firstName || 'User'} Cash`,
-        //   permissionKey: 'user_balance',
-        //   icon: 'solar:eye-bold-duotone',
-        //   count: String(data.user?.cash_balance || 0),
-        //   change: 0,
-        //   variant: 'success',
-        //   category: 'financial',
-        // },
         {
           id: 'company-balance',
           title: 'Company Balances',
@@ -444,26 +484,6 @@ export default function Stat() {
           variant: (data.companyBalanceChange || 0) < 0 ? 'danger' : 'success',
           category: 'financial',
         },
-        // {
-        //   id: 'eft-balance',
-        //   title: 'Eft Balance',
-        //   permissionKey: 'online_balance',
-        //   icon: 'solar:eye-bold-duotone',
-        //   count: String(data.user?.other_balance?.EFT || 0),
-        //   change: 0,
-        //   variant: 'success',
-        //   category: 'financial',
-        // },
-        // {
-        //   id: 'crypto-balance',
-        //   title: 'Crypto Balance',
-        //   permissionKey: 'online_balance',
-        //   icon: 'solar:eye-bold-duotone',
-        //   count: String(data.user?.other_balance?.Crypto || 0),
-        //   change: 0,
-        //   variant: 'success',
-        //   category: 'financial',
-        // },
       ]
 
       const userStats = data.user?.access?.dashboard_stats || {}
@@ -486,10 +506,20 @@ export default function Stat() {
       
     } catch (error: any) {
       console.error('Error fetching stats:', error)
-      showNotification({ 
-        message: error.message || 'Error fetching stats', 
-        variant: 'danger' 
-      })
+      
+      // Check if it's a 403 Access Denied error
+      if (error.response?.status === 403 || error.message?.includes('Access Denied') || error.message?.includes('403')) {
+        setAccessDenied(true)
+        showNotification({ 
+          message: 'Access denied: You do not have permission to view dashboard statistics', 
+          variant: 'danger' 
+        })
+      } else {
+        showNotification({ 
+          message: error.message || 'Error fetching stats', 
+          variant: 'danger' 
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -501,7 +531,7 @@ export default function Stat() {
     try {
       let paymentMethod = ''
       let updateObj = {}
-      console.log("title",title)
+      
       if (title === "EFT Balance") {
         updateObj = {
           other_balance: { 
@@ -591,6 +621,10 @@ export default function Stat() {
     fetchStats()
   }, [user, startDate, endDate])
 
+  // If access is denied, show the locked page
+  if (accessDenied) {
+    return <AccessDeniedPage />
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

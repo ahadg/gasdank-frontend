@@ -56,7 +56,9 @@ export const useSignIn = () => {
         const response = await api.get('/api/personal-settings')
         setSettings(response.data)
         showNotification({ message: 'Login successful', variant: 'success' })
-        router.push(queryParams['redirectTo'] ?? '/dashboard/sales')
+        console.log("user_user",user)
+        const currentPath = user?.access?.dashboard?.read ? '/dashboard/sales' : '/apps/sale'
+        router.push(queryParams['redirectTo'] ?? currentPath)
       } else {
         showNotification({ message: 'Invalid login response', variant: 'danger' })
       }
