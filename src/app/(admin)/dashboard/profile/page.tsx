@@ -63,10 +63,10 @@ export default function ProfilePage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault()
     setSaving(true)
-  
+
     try {
       const updatePayload = { ...formData }
-  
+
       // Check if password is provided
       if (updatePayload.password) {
         const passwordRegex = /^\d{4}$/ // exactly 4 digits
@@ -78,7 +78,7 @@ export default function ProfilePage() {
       } else {
         delete updatePayload.password // if empty, don't send password
       }
-  
+
       const res = await api.patch(`/api/users/${user._id}`, updatePayload)
 
       showNotification({ message: 'Profile updated successfully!', variant: 'success' })
@@ -99,16 +99,16 @@ export default function ProfilePage() {
       confirmButtonText: 'Yes, cancel it!',
       cancelButtonText: 'Keep it',
     });
-  
+
     if (confirm.isConfirmed) {
       setSaving(true);
       try {
         const res = await api.post('/api/stripe/cancel-subscription', {
           user_id: user._id,
         });
-  
+
         showNotification({ message: 'Subscription cancelled. You will retain access until the end of the billing cycle.', variant: 'success' });
-  
+
         // Optionally: Refresh the profile
         const updated = await api.get('/api/users/me');
         setUser(updated.data.user);
@@ -120,8 +120,56 @@ export default function ProfilePage() {
       }
     }
   };
-  
-  
+
+  const handleCleanData = async () => {
+    const confirm = await Swal.fire({
+      title: 'Delete All Data?',
+      html: `
+        <p>This will permanently delete <strong>ALL</strong> your data </p>
+        <p class="text-danger mt-3"><strong>This action cannot be undone!</strong></p>
+      `,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete everything!',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+    });
+
+    if (confirm.isConfirmed) {
+      setSaving(true);
+      try {
+        await api.delete(`/api/users/clean-data/${user._id}`);
+
+        showNotification({
+          message: 'All data has been successfully deleted.',
+          variant: 'success'
+        });
+
+        // Show success message
+        await Swal.fire({
+          title: 'Deleted!',
+          text: 'All your data has been permanently removed.',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+
+        // Optionally refresh the profile to reflect changes
+        const updated = await api.get('/api/users/me');
+        setUser(updated.data.user);
+      } catch (err: any) {
+        console.error('Clean data error:', err);
+        showNotification({
+          message: err.response?.data?.message || 'Failed to delete data. Please try again.',
+          variant: 'danger'
+        });
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+
 
   return (
     <div className="profile-page">
@@ -131,9 +179,9 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>First Name</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="First Name" 
+                <Form.Control
+                  type="text"
+                  placeholder="First Name"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
@@ -144,9 +192,9 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Last Name</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Last Name" 
+                <Form.Control
+                  type="text"
+                  placeholder="Last Name"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -157,9 +205,9 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Username</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Username" 
+                <Form.Control
+                  type="text"
+                  placeholder="Username"
                   name="userName"
                   value={formData.userName}
                   onChange={handleChange}
@@ -170,9 +218,9 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Email Address</Form.Label>
-                <Form.Control 
-                  type="email" 
-                  placeholder="Email Address" 
+                <Form.Control
+                  type="email"
+                  placeholder="Email Address"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
@@ -184,9 +232,9 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Phone Number</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Phone Number" 
+                <Form.Control
+                  type="text"
+                  placeholder="Phone Number"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
@@ -197,8 +245,8 @@ export default function ProfilePage() {
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Password (optional)</Form.Label>
-                <Form.Control 
-                  type="password" 
+                <Form.Control
+                  type="password"
                   placeholder="New Password (leave empty to keep current)"
                   name="password"
                   value={formData.password}
@@ -263,26 +311,53 @@ export default function ProfilePage() {
                 )}
               </Row>
               <div className="text-center mt-4">
-                <Button 
-                  variant="success" 
-                  size="lg" 
+                <Button
+                  variant="success"
+                  size="lg"
                   className="px-5 py-2 rounded-4 fw-bold"
                   onClick={() => router.push('/plans')} // or your upgrade page
                 >
                   Upgrade My Plan 🚀
                 </Button>
+              </div>
+              <div className="text-center mt-4">
+                <Button
+                  variant="outline-danger"
+                  size="lg"
+                  className="px-5 py-2 rounded-4 fw-bold mt-3"
+                  onClick={handleCancelSubscription}
+                  disabled={saving}
+                >
+                  Cancel My Subscription ❌
+                </Button>
+              </div>
             </div>
-            <div className="text-center mt-4">
-            <Button 
-            variant="outline-danger" 
-            size="lg" 
-            className="px-5 py-2 rounded-4 fw-bold mt-3"
-            onClick={handleCancelSubscription}
-            disabled={saving}
-          >
-            Cancel My Subscription ❌
-          </Button>
           </div>
+
+          {/* Danger Zone Section */}
+          <div className="mt-5">
+            <h5 className="fw-bold mb-3 text-danger">⚠️ Danger Zone</h5>
+            <div className="p-4 border border-danger rounded bg-light">
+              <Row className="align-items-center">
+                <Col md={8}>
+                  <h6 className="fw-semibold mb-2">Clean All Data</h6>
+                  <p className="text-muted mb-0 small">
+                    Permanently delete all your data.
+                    This action cannot be undone.
+                  </p>
+                </Col>
+                <Col md={4} className="text-md-end mt-3 mt-md-0">
+                  <Button
+                    variant="danger"
+                    size="lg"
+                    className="px-4 py-2 rounded-3 fw-bold"
+                    onClick={handleCleanData}
+                    disabled={saving}
+                  >
+                    {saving ? 'Processing...' : 'Clean All Data 🗑️'}
+                  </Button>
+                </Col>
+              </Row>
             </div>
           </div>
 
