@@ -31,7 +31,7 @@ interface ITransactionItem {
 interface ITransaction {
   payment: number;
   price: number;
-  sale_reference_id : string;
+  sale_reference_id: string;
   sale_price: number;
   status: number;
   datePaid?: string;
@@ -42,7 +42,7 @@ interface ITransaction {
   total_shipping: number;
   type?: string; // "sale" | "return" | "payment" | "inventory_addition"
   items?: ITransactionItem[];
-  sample_id : any;
+  sample_id: any;
   created_at: string;
   payment_direction: string;
   transactionpayment_id?: {
@@ -85,9 +85,9 @@ const AccountHistory = () => {
 
   // New state for date range selection with single inputs
   const [dateRange, setDateRange] = useState<DateRange>({
-    startDateTime: moment().subtract(1, 'month').startOf('day').format('YYYY-MM-DDTHH:mm'),
+    startDateTime: moment().subtract(2, 'day').startOf('day').format('YYYY-MM-DDTHH:mm'),
     //startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
-    endDateTime: moment().add(1, 'day').endOf('day').format('YYYY-MM-DDTHH:mm')
+    endDateTime: moment().add(2, 'day').endOf('day').format('YYYY-MM-DDTHH:mm')
   });
 
   // New state: if true, exclude shipping cost from totals.
@@ -105,8 +105,8 @@ const AccountHistory = () => {
   const applyQuickFilter = (period: string) => {
     let start, end;
     const now = moment();
-    
-    switch(period) {
+
+    switch (period) {
       case 'today':
         start = now.clone().startOf('day');
         end = now.clone().endOf('day');
@@ -139,7 +139,7 @@ const AccountHistory = () => {
       startDateTime: start.format('YYYY-MM-DDTHH:mm'),
       endDateTime: end.format('YYYY-MM-DDTHH:mm')
     });
-    
+
     // Automatically fetch when quick filter is applied
     fetchHistory(start.format('YYYY-MM-DDTHH:mm:00'), end.format('YYYY-MM-DDTHH:mm:00'));
   }
@@ -150,7 +150,7 @@ const AccountHistory = () => {
       // Use provided parameters or fallback to state values
       const startDateTime = start || `${dateRange.startDateTime}:00`
       const endDateTime = end || `${dateRange.endDateTime}:00`
-      
+
       const response = await api.get(
         `/api/transaction/history/${id}/${user?._id}`,
         { params: { startDateTime, endDateTime } }
@@ -172,7 +172,7 @@ const AccountHistory = () => {
   // Helper function to calculate shipping from items - MODIFIED
   const calculateShippingFromItems = (tx: ITransaction): number => {
     if (!tx.items || tx.items.length === 0) return 0;
-    
+
     return tx.items.reduce((total, item) => {
       const txItem = item.transactionitem_id;
       const shipping = txItem?.shipping || 0;
@@ -181,11 +181,11 @@ const AccountHistory = () => {
       return total + ((shipping) * qty);
     }, 0);
   }
-  
+
   const calculateTotalPriceWithShippingFromItems = (tx: ITransaction): number => {
     //if (!tx.items || tx.items.length === 0) return 0;
-    console.log("tx_tx",tx)
-    if(tx?.type == "sample_recieved") {
+    console.log("tx_tx", tx)
+    if (tx?.type == "sample_recieved") {
       return tx.sample_id?.products?.reduce((total, item) => {
         const txItem = item;
         const shipping = txItem?.shippingCost || 0;
@@ -209,18 +209,18 @@ const AccountHistory = () => {
         // Changed: Add shipping to price first, then multiply by quantity
         return total + ((txItem?.sale_price) * qty);
       }, 0);
-    } 
+    }
     else {
-    return tx.items.reduce((total, item) => {
-      const txItem = item.transactionitem_id;
-      const shipping = txItem?.shipping || 0;
-      const qty = txItem?.qty || 0;
-      // Changed: Add shipping to price first, then multiply by quantity
-      return total + ((txItem?.price + shipping) * qty);
-    }, 0);
+      return tx.items.reduce((total, item) => {
+        const txItem = item.transactionitem_id;
+        const shipping = txItem?.shipping || 0;
+        const qty = txItem?.qty || 0;
+        // Changed: Add shipping to price first, then multiply by quantity
+        return total + ((txItem?.price + shipping) * qty);
+      }, 0);
     }
   }
-  
+
 
   // Compute totals
   const totalsaleAmount = useMemo(() => {
@@ -232,10 +232,10 @@ const AccountHistory = () => {
             return sum + (tx?.price || 0)
           }
           return sum
-        } 
-        else if(tx.type === 'sample_recieved') {
+        }
+        else if (tx.type === 'sample_recieved') {
           return calculateTotalPriceWithShippingFromItems(tx)
-        } 
+        }
         else {
           return sum + (tx?.sale_price || 0)
         }
@@ -260,11 +260,11 @@ const AccountHistory = () => {
           return sum
         } else if (tx.type === 'inventory_addition') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if(tx.type === 'sample_recieved') {
+        } else if (tx.type === 'sample_recieved') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if(tx.type === "restock") {
+        } else if (tx.type === "restock") {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if(tx.type === "return") {
+        } else if (tx.type === "return") {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
         }
         else {
@@ -275,8 +275,8 @@ const AccountHistory = () => {
 
   // Final amount due is calculated differently based on the checkbox.
   const finalAmountDue = useMemo(() => {
-      // Exclude shipping cost entirely.
-      return totalsaleAmount - totalPaymentReceived 
+    // Exclude shipping cost entirely.
+    return totalsaleAmount - totalPaymentReceived
     // Otherwise, include total shipping and any additional shipping payment.
     //return (totalsaleAmount ) - (totalPaymentReceived + totalShipping_client)
   }, [totalPaymentReceived, totalsaleAmount, totalShipping_client])
@@ -288,14 +288,14 @@ const AccountHistory = () => {
   const handleShowSMSModal = () => {
     // Generate default message
     const dateRangeText = `${moment(dateRange.startDateTime).format('MMM DD, YYYY')} to ${moment(dateRange.endDateTime).format('MMM DD, YYYY')}`;
-    
+
     const defaultMessage = `Invoice Summary:\n` +
       `Period: ${dateRangeText}\n` +
       `Transactions: ${transactions.length}\n` +
       `Total Sales: ${formatCurrency(totalsaleAmount)}\n` +
       `Amount ${finalAmountDue > 0 ? 'Due' : finalAmountDue < 0 ? 'Credit' : 'Paid'}: ${formatCurrency(Math.abs(finalAmountDue))}\n\n` +
       `Please contact us for any questions regarding your account.`;
-    
+
     setSmsMessage(defaultMessage);
     setSmsResult(null);
     setShowSMSModal(true);
@@ -312,7 +312,7 @@ const AccountHistory = () => {
 
     try {
       const dateRangeText = `${moment(dateRange.startDateTime).format('MMM DD, YYYY')} to ${moment(dateRange.endDateTime).format('MMM DD, YYYY')}`;
-      
+
       const response = await api.post(`/api/notification/send-invoice/${id}`, {
         customMessage: smsMessage,
         totalAmount: totalsaleAmount,
@@ -344,7 +344,7 @@ const AccountHistory = () => {
 
   // Build detailed content for the Details column - MODIFIED
   const getDetailsContent = (tx: ITransaction) => {
-    console.log("tx",tx)
+    console.log("tx", tx)
     if (tx.type === 'payment') {
       const method = tx.transactionpayment_id?.payment_method || 'N/A'
       let content = `Payment of ${formatCurrency(tx.transactionpayment_id?.amount_paid)} ${tx.payment_direction} via ${method}`
@@ -387,14 +387,14 @@ const AccountHistory = () => {
             {tx.items.map((item, index) => {
               const txItem = item.transactionitem_id
               const name = txItem?.name || txItem?.inventory_id?.name || 'Item'
-              
+
               // MODIFIED: Calculate price including shipping per unit, then multiply by quantity
               const basePrice = txItem.sale_price || txItem?.price || 0;
               const shippingPerUnit = tx.type !== "sale" ? txItem.shipping || 0 : 0;
               const priceWithShipping = basePrice + shippingPerUnit;
               const totalPrice = priceWithShipping * txItem.qty;
-              
-              return ( 
+
+              return (
                 <div key={index}>
                   {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(priceWithShipping)} each = {formatCurrency(totalPrice)})
                 </div>
@@ -413,73 +413,73 @@ const AccountHistory = () => {
       <h5 className="mb-3 mt-2">
         Transaction History
       </h5>
-      
+
       <Card className="mb-3">
-      <CardBody>
-  {/* Quick Filters */}
-  <Row className="mb-3">
-    <Col xs={12}>
-      <ButtonGroup className="d-flex flex-wrap w-100 gap-2">
-        {[
-          { label: 'Today', value: 'today' },
-          { label: 'Yesterday', value: 'yesterday' },
-          { label: 'This Week', value: 'thisWeek' },
-          { label: 'Last Week', value: 'lastWeek' },
-          { label: 'This Month', value: 'thisMonth' },
-          { label: 'Last Month', value: 'lastMonth' },
-        ].map(({ label, value }) => (
-          <Button
-            key={value}
-            variant="outline-secondary"
-            onClick={() => applyQuickFilter(value)}
-            className="flex-grow-1"
-          >
-            {label}
-          </Button>
-        ))}
-      </ButtonGroup>
-    </Col>
-  </Row>
+        <CardBody>
+          {/* Quick Filters */}
+          <Row className="mb-3">
+            <Col xs={12}>
+              <ButtonGroup className="d-flex flex-wrap w-100 gap-2">
+                {[
+                  { label: 'Today', value: 'today' },
+                  { label: 'Yesterday', value: 'yesterday' },
+                  { label: 'This Week', value: 'thisWeek' },
+                  { label: 'Last Week', value: 'lastWeek' },
+                  { label: 'This Month', value: 'thisMonth' },
+                  { label: 'Last Month', value: 'lastMonth' },
+                ].map(({ label, value }) => (
+                  <Button
+                    key={value}
+                    variant="outline-secondary"
+                    onClick={() => applyQuickFilter(value)}
+                    className="flex-grow-1"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </Col>
+          </Row>
 
-  {/* Date Pickers + Search */}
-  <Row className="gy-3">
-    <Col xs={12} md={5}>
-      <Form.Group>
-        <Form.Label>Start Date & Time</Form.Label>
-        <Form.Control
-          type="datetime-local"
-          name="startDateTime"
-          value={dateRange.startDateTime}
-          onChange={handleDateRangeChange}
-        />
-      </Form.Group>
-    </Col>
+          {/* Date Pickers + Search */}
+          <Row className="gy-3">
+            <Col xs={12} md={5}>
+              <Form.Group>
+                <Form.Label>Start Date & Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="startDateTime"
+                  value={dateRange.startDateTime}
+                  onChange={handleDateRangeChange}
+                />
+              </Form.Group>
+            </Col>
 
-    <Col xs={12} md={5}>
-      <Form.Group>
-        <Form.Label>End Date & Time</Form.Label>
-        <Form.Control
-          type="datetime-local"
-          name="endDateTime"
-          value={dateRange.endDateTime}
-          onChange={handleDateRangeChange}
-        />
-      </Form.Group>
-    </Col>
+            <Col xs={12} md={5}>
+              <Form.Group>
+                <Form.Label>End Date & Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="endDateTime"
+                  value={dateRange.endDateTime}
+                  onChange={handleDateRangeChange}
+                />
+              </Form.Group>
+            </Col>
 
-    <Col xs={12} md={2} className="d-flex align-items-end">
-      <Button
-        onClick={() => fetchHistory()}
-        variant="primary"
-        className="bg-gradient w-100"
-      >
-        Search
-      </Button>
-    </Col>
-  </Row>
+            <Col xs={12} md={2} className="d-flex align-items-end">
+              <Button
+                onClick={() => fetchHistory()}
+                variant="primary"
+                className="bg-gradient w-100"
+              >
+                Search
+              </Button>
+            </Col>
+          </Row>
 
-  {/* Optional Checkbox */}
-  {/* 
+          {/* Optional Checkbox */}
+          {/* 
   <Row className="mt-3">
     <Col xs={12}>
       <Form.Check
@@ -492,10 +492,10 @@ const AccountHistory = () => {
     </Col>
   </Row> 
   */}
-</CardBody>
+        </CardBody>
 
       </Card>
-      
+
       {loading ? (
         <p>Loading transactions...</p>
       ) : (
@@ -525,16 +525,16 @@ const AccountHistory = () => {
                     <td>
                       {tx.type === 'payment'
                         ? tx.payment_direction === 'received' &&
-                          ('- ' + formatCurrency(tx.price))
+                        ('- ' + formatCurrency(tx.price))
                         : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved' || tx.type === "restock") &&
-                          ('- ' +  (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
+                        ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
                     </td>
                     <td>
                       {tx.type === 'sale'
                         ? ('+ ' + (formatCurrency(tx.sale_price)))
-                        : tx.type === "sample_returned" ? 
+                        : tx.type === "sample_returned" ?
                           ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
-                        : tx.type === 'payment' &&
+                          : tx.type === 'payment' &&
                           tx.payment_direction === 'given' &&
                           ('+ ' + formatCurrency(tx.price))}
                     </td>
@@ -579,11 +579,11 @@ const AccountHistory = () => {
           </div>
         </div>
       )}
-      
+
       <div className="mt-3 d-flex justify-content-end gap-2">
-        <Button 
-          onClick={handleShowSMSModal} 
-          variant="success" 
+        <Button
+          onClick={handleShowSMSModal}
+          variant="success"
           className="bg-gradient"
           disabled={transactions.length === 0}
         >
@@ -619,16 +619,16 @@ const AccountHistory = () => {
               )}
             </Alert>
           )}
-          
+
           <Form.Group className="mb-3">
             <Form.Label>
               <strong>Invoice Summary</strong>
             </Form.Label>
             <div className="p-2 bg-light rounded mb-2">
               <small>
-                Period: {moment(dateRange.startDateTime).format('MMM DD, YYYY')} to {moment(dateRange.endDateTime).format('MMM DD, YYYY')}<br/>
-                Transactions: {transactions.length}<br/>
-                Total Sales: {formatCurrency(totalsaleAmount)}<br/>
+                Period: {moment(dateRange.startDateTime).format('MMM DD, YYYY')} to {moment(dateRange.endDateTime).format('MMM DD, YYYY')}<br />
+                Transactions: {transactions.length}<br />
+                Total Sales: {formatCurrency(totalsaleAmount)}<br />
                 Amount {finalAmountDue > 0 ? 'Due' : finalAmountDue < 0 ? 'Credit' : 'Paid'}: {formatCurrency(Math.abs(finalAmountDue))}
               </small>
             </div>
@@ -655,9 +655,9 @@ const AccountHistory = () => {
           <Button variant="secondary" onClick={handleCloseSMSModal} disabled={smsLoading}>
             Cancel
           </Button>
-          <Button 
-            variant="success" 
-            onClick={handleSendSMS} 
+          <Button
+            variant="success"
+            onClick={handleSendSMS}
             disabled={smsLoading || !smsMessage.trim()}
           >
             {smsLoading ? (

@@ -52,11 +52,16 @@ const ActivityLogsPage = () => {
     const localDate = new Date(offsetMs)
     return localDate.toISOString().slice(0, 16)
   }
-  
+
+  function localToUTCISOString(localDateTime: string) {
+    return new Date(localDateTime).toISOString()
+  }
+
+
   const { showNotification } = useNotificationContext()
   // State for logs, pagination and loading indicator
   const [activityData, setActivityData] = useState<any[]>([])
-  console.log("activityData",activityData)
+  console.log("activityData", activityData)
   // Set default start date to three days in the past
   const [startDate, setStartDate] = useState(() => {
     const threeDaysPast = new Date()
@@ -64,15 +69,17 @@ const ActivityLogsPage = () => {
     threeDaysPast.setHours(0, 0, 0, 0)
     return toLocalDateTimeString(threeDaysPast)
   })
-  
+
   const [endDate, setEndDate] = useState(() => {
-    const now = new Date()
-    return toLocalDateTimeString(now)
+    const threeDaysPast = new Date()
+    threeDaysPast.setDate(threeDaysPast.getDate() + 2)
+    threeDaysPast.setHours(0, 0, 0, 0)
+    return toLocalDateTimeString(threeDaysPast)
   })
-  
+
   // New state for filtering by activity type
   const [activityType, setActivityType] = useState("")
-  
+
   const [page, setPage] = useState(1)
   const [totalLogs, setTotalLogs] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -81,12 +88,12 @@ const ActivityLogsPage = () => {
   // Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
-  console.log("editingTransactionId",editingTransactionId)
+  console.log("editingTransactionId", editingTransactionId)
   // History Modal States
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showViewTransactionModal, setShowViewTransactionModal] = useState(false)
   const [viewingTransactionId, setViewingTransactionId] = useState<string | null>(null)
-  console.log("viewingTransactionId",viewingTransactionId)
+  console.log("viewingTransactionId", viewingTransactionId)
   // State to track edited transactions
   const [editedTransactions, setEditedTransactions] = useState<Set<string>>(new Set())
 
@@ -96,16 +103,16 @@ const ActivityLogsPage = () => {
     setLoading(true)
     try {
       const res = await api.get(
-        `/api/activity/${user?._id}?page=${page}&limit=${limit}&type=${activityType}&from=${startDate}&end=${endDate}`
+        `/api/activity/${user?._id}?page=${page}&limit=${limit}&type=${activityType}&from=${startDate}&to=${endDate}`
       )
       setActivityData(res.data.logs)
       setTotalLogs(res.data.totallogs)
-      console.log("res.data",res.data)
+      console.log("res.data", res.data)
       // Check which transactions are edited
       const transactionIds = res.data.logs
         .filter((log: any) => log.transaction_id)
         .map((log: any) => log.transaction_id)
-      
+
       if (transactionIds.length > 0) {
         checkEditedTransactions(transactionIds)
       }
@@ -121,7 +128,7 @@ const ActivityLogsPage = () => {
     try {
       // You might want to create a batch endpoint for this, but for now we'll check individually
       const editedSet = new Set<string>()
-      
+
       // For demonstration, we'll check a few transactions
       // In production, you might want to add an endpoint that returns edited status for multiple transactions
       const promises = transactionIds.slice(0, 5).map(async (id) => {
@@ -134,7 +141,7 @@ const ActivityLogsPage = () => {
           // Transaction might not exist or access denied, ignore
         }
       })
-      
+
       await Promise.all(promises)
       setEditedTransactions(editedSet)
     } catch (error) {
@@ -143,30 +150,30 @@ const ActivityLogsPage = () => {
   }
 
   const handleEditClick = (activityItem: any) => {
-    if ( (activityItem.type === 'inventory_addition'  || activityItem.type === 'sale') && activityItem.transaction_id) {
-      console.log("activityItem.transaction_id",activityItem.transaction_id[0]?._id)
+    if ((activityItem.type === 'inventory_addition' || activityItem.type === 'sale') && activityItem.transaction_id) {
+      console.log("activityItem.transaction_id", activityItem.transaction_id[0]?._id)
       setEditingTransactionId(activityItem.transaction_id[0]?._id)
       setShowEditModal(true)
     } else {
-      showNotification({ 
-        message: 'This activity cannot be edited or missing transaction ID', 
-        variant: 'warning' 
+      showNotification({
+        message: 'This activity cannot be edited or missing transaction ID',
+        variant: 'warning'
       })
     }
   }
 
   const handleViewHistoryClick = (activityItem: any) => {
     if (activityItem.transaction_id) {
-     
+
       setViewingTransactionId(activityItem.transaction_id[0]?._id)
       setShowViewTransactionModal(true)
     }
   }
 
   const handleViewTransactionClick = (activityItem: any) => {
-    console.log("activityItem",activityItem)
+    console.log("activityItem", activityItem)
     if (activityItem.transaction_id[0]?._id) {
-      console.log("adsadasdsa",activityItem.transaction_id[0]?._id)
+      console.log("adsadasdsa", activityItem.transaction_id[0]?._id)
       setViewingTransactionId(activityItem.transaction_id[0]?._id)
       setShowViewTransactionModal(true)
     }
@@ -191,7 +198,7 @@ const ActivityLogsPage = () => {
   useEffect(() => {
     fetchActivityData()
   }, [page, startDate, endDate, activityType])
-  
+
 
   return (
     <>
@@ -278,8 +285,8 @@ const ActivityLogsPage = () => {
                                 />
                               )}
                               <Link href="" className="text-dark">
-                              {item?.worker?.length > 0 ? `${item?.worker?.[0]?.firstName} ${item?.worker?.[0]?.lastName || ""} (W)`: `${item.user_id?.firstName} ${item.user_id?.lastName || ""}`}
-                               
+                                {item?.worker?.length > 0 ? `${item?.worker?.[0]?.firstName} ${item?.worker?.[0]?.lastName || ""} (W)` : `${item.user_id?.firstName} ${item.user_id?.lastName || ""}`}
+
                               </Link>
                             </h5>
                           </td>
@@ -324,7 +331,7 @@ const ActivityLogsPage = () => {
                                   View Transaction
                                 </Button>
                               )}
-                              
+
                               {item.transaction_id?.[0]?.edited && (
                                 <Button
                                   variant="outline-info"
