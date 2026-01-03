@@ -3,7 +3,7 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
 
   images: {
-    domains: ['manapnl.com'],
+    domains: ['pnlsystem.ca'],
   },
 };
 
