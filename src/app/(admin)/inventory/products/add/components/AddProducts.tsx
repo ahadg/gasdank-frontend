@@ -47,12 +47,419 @@ const multipleProductSchema = yup.object({
 
 type MultipleProductFormData = yup.InferType<typeof multipleProductSchema>
 
+const measurementOptions = [
+  { label: 'Full', value: 1 },
+  { label: 'Half', value: 0.5 },
+  { label: 'Quarter', value: 0.25 },
+]
+
+// Enhanced Account Selector Component
+const AccountSelector = ({
+  dropdownOpen,
+  setDropdownOpen,
+  selectedAccount,
+  setSelectedAccount,
+  searchQuery,
+  setSearchQuery,
+  filteredAccounts
+}: {
+  dropdownOpen: boolean;
+  setDropdownOpen: (open: boolean) => void;
+  selectedAccount: any;
+  setSelectedAccount: (acc: any) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  filteredAccounts: any[];
+}) => (
+  <div className="mb-4">
+    <div className="d-flex align-items-center justify-content-between mb-3">
+      <h6 className="mb-0 fw-semibold text-dark">
+        Client Selection
+      </h6>
+      <span className="badge bg-light text-muted small">Optional</span>
+    </div>
+
+    <div className="position-relative">
+      <div
+        className={`form-control d-flex align-items-center justify-content-between cursor-pointer ${dropdownOpen ? 'border-primary shadow-sm' : ''}`}
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        style={{ cursor: 'pointer', minHeight: '48px' }}
+      >
+        <div className="d-flex align-items-center flex-grow-1">
+          {selectedAccount ? (
+            <div className="d-flex align-items-center">
+              <div
+                className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
+              >
+                {selectedAccount.firstName.charAt(0)}{selectedAccount.lastName.charAt(0)}
+              </div>
+              <div>
+                <div className="fw-semibold text-dark">
+                  {selectedAccount.firstName} {selectedAccount.lastName}
+                </div>
+                <div className="small text-muted">Assigned Account</div>
+              </div>
+            </div>
+          ) : (
+            <div className="d-flex align-items-center">
+              <div
+                className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
+                style={{ width: '36px', height: '36px' }}
+              >
+                <IconifyIcon icon="tabler:building-store" className="text-muted" />
+              </div>
+              <div>
+                <div className="text-muted">General Inventory</div>
+                <div className="small text-muted">No specific account assigned</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <IconifyIcon
+          icon={dropdownOpen ? "tabler:chevron-up" : "tabler:chevron-down"}
+          className="text-muted"
+        />
+      </div>
+
+      {dropdownOpen && (
+        <div
+          className="position-absolute w-100 bg-white border rounded-3 shadow-lg mt-1"
+          style={{ zIndex: 1000 }}
+        >
+          {/* Search Input - Fixed */}
+          <div className="p-3 border-bottom bg-light rounded-top">
+            <div className="position-relative">
+              <IconifyIcon
+                icon="tabler:search"
+                className="position-absolute text-muted"
+                style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+              />
+              <Form.Control
+                type="text"
+                placeholder="Search accounts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ps-5 border-0 shadow-none"
+                style={{ backgroundColor: 'white' }}
+                onClick={(e) => e.stopPropagation()} // Prevent dropdown from closing
+                onFocus={(e) => e.stopPropagation()} // Prevent dropdown from closing
+                autoFocus // Auto focus when dropdown opens
+              />
+            </div>
+          </div>
+
+          {/* Account List */}
+          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+            {/* General Inventory Option */}
+            <div
+              className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${!selectedAccount ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedAccount(null);
+                setDropdownOpen(false);
+                setSearchQuery('');
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div
+                className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
+                style={{ width: '40px', height: '40px' }}
+              >
+                <IconifyIcon icon="tabler:building-store" className="text-primary" />
+              </div>
+              <div className="flex-grow-1">
+                <div className="fw-semibold text-primary">General Inventory</div>
+                <div className="small text-muted">Products without specific account assignment</div>
+              </div>
+              {!selectedAccount && (
+                <IconifyIcon icon="tabler:check" className="text-primary" />
+              )}
+            </div>
+
+            {/* Account Options */}
+            {filteredAccounts.length > 0 ? (
+              filteredAccounts.map((acc) => (
+                <div
+                  key={acc._id}
+                  className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${selectedAccount?._id === acc._id ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAccount(acc);
+                    setDropdownOpen(false);
+                    setSearchQuery('');
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div
+                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                    style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
+                  >
+                    {acc.firstName.charAt(0)}{acc.lastName.charAt(0)}
+                  </div>
+                  <div className="flex-grow-1">
+                    <div className="fw-semibold text-dark">{acc.firstName} {acc.lastName}</div>
+                  </div>
+                  {selectedAccount?._id === acc._id && (
+                    <IconifyIcon icon="tabler:check" className="text-primary" />
+                  )}
+                </div>
+              ))
+            ) : searchQuery ? (
+              <div className="p-4 text-center text-muted">
+                <IconifyIcon icon="tabler:search-off" className="mb-2" style={{ fontSize: '32px' }} />
+                <div>No accounts found matching "{searchQuery}"</div>
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted">
+                <IconifyIcon icon="tabler:users-off" className="mb-2" style={{ fontSize: '32px' }} />
+                <div>No accounts available</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)
+
+// Mobile Product Card Component with validation
+const MobileProductCard = ({
+  index,
+  control,
+  errors,
+  touchedFields,
+  showValidationErrors,
+  remove,
+  fieldsCount,
+  unitOptions,
+  userCategories
+}: {
+  index: number;
+  control: any;
+  errors: any;
+  touchedFields: any;
+  showValidationErrors: boolean;
+  remove: (index: number) => void;
+  fieldsCount: number;
+  unitOptions: string[];
+  userCategories: any[];
+}) => {
+  const productErrors = errors.products?.[index];
+  const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
+
+  return (
+    <Card className="mb-3 d-md-none border-light">
+      <CardBody>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h6 className="mb-0">Product {index + 1}</h6>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => remove(index)}
+            disabled={fieldsCount === 1}
+          >
+            <IconifyIcon icon="tabler:trash" />
+          </Button>
+        </div>
+
+        <Row className="g-2">
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Reference #</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.referenceNumber` as const}
+              render={({ field }) => (
+                <Form.Control
+                  type="text"
+                  placeholder="Enter reference number"
+                  size="sm"
+                  isInvalid={!!productErrors?.referenceNumber && shouldShowErrors}
+                  {...field}
+                />
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.referenceNumber?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Product Name</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.name` as const}
+              render={({ field }) => (
+                <Form.Control
+                  type="text"
+                  placeholder="(optional)"
+                  size="sm"
+                  isInvalid={!!productErrors?.name && shouldShowErrors}
+                  {...field}
+                />
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.name?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Quantity *</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.qty` as const}
+              render={({ field }) => (
+                <Form.Control
+                  type="number"
+                  placeholder="Enter quantity"
+                  step="any"
+                  size="sm"
+                  isInvalid={!!productErrors?.qty && shouldShowErrors}
+                  {...field}
+                />
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.qty?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Unit *</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.unit` as const}
+              render={({ field }) => (
+                <Form.Select
+                  size="sm"
+                  isInvalid={!!productErrors?.unit && shouldShowErrors}
+                  {...field}
+                >
+                  <option value="">Select unit</option>
+                  {unitOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+                </Form.Select>
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.unit?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Measurement *</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.measurement` as const}
+              render={({ field }) => (
+                <Form.Select
+                  size="sm"
+                  isInvalid={!!productErrors?.measurement && shouldShowErrors}
+                  {...field}
+                >
+                  <option value="">Select measurement</option>
+                  {measurementOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Form.Select>
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.measurement?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={6}>
+            <Form.Label className="small fw-semibold">Price *</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.price` as const}
+              render={({ field }) => (
+                <Form.Control
+                  type="number"
+                  placeholder="Enter price"
+                  step="any"
+                  size="sm"
+                  isInvalid={!!productErrors?.price && shouldShowErrors}
+                  {...field}
+                />
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.price?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={12}>
+            <Form.Label className="small fw-semibold">Category *</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.category` as const}
+              render={({ field }) => (
+                <Form.Select
+                  size="sm"
+                  isInvalid={!!productErrors?.category && shouldShowErrors}
+                  {...field}
+                >
+                  <option value="">Select category</option>
+                  {userCategories.map((cat: any) => (
+                    <option key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.category?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+          <Col xs={12}>
+            <Form.Label className="small fw-semibold">Strain Type</Form.Label>
+            <Controller
+              control={control}
+              name={`products.${index}.strain_type` as const}
+              render={({ field }) => (
+                <Form.Select
+                  size="sm"
+                  isInvalid={!!productErrors?.strain_type && shouldShowErrors}
+                  {...field}
+                >
+                  <option value="">Select strain type</option>
+                  <option value="indica">Indica</option>
+                  <option value="sativa">Sativa</option>
+                  <option value="hybrid">Hybrid</option>
+                </Form.Select>
+              )}
+            />
+            {shouldShowErrors && (
+              <Form.Control.Feedback type="invalid" className="small">
+                {productErrors?.strain_type?.message}
+              </Form.Control.Feedback>
+            )}
+          </Col>
+        </Row>
+      </CardBody>
+    </Card>
+  )
+}
+
 function AddProductsPage() {
   const router = useRouter()
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
-  let {units : unitOptions, default_unit} = useAuthStore(state => state.settings)
-  
+  let { units: unitOptions, default_unit } = useAuthStore(state => state.settings)
+
   const { control, handleSubmit, getValues, reset, formState: { errors, touchedFields } } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
@@ -116,7 +523,7 @@ function AddProductsPage() {
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showValidationErrors, setShowValidationErrors] = useState(false)
-  
+
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingFormData, setPendingFormData] = useState<MultipleProductFormData | null>(null)
@@ -159,20 +566,17 @@ function AddProductsPage() {
     fetchUserCategories()
   }, [user?._id])
 
-  const measurementOptions = [
-    { label: 'Full', value: 1 },
-    { label: 'Half', value: 0.5 },
-    { label: 'Quarter', value: 0.25 },
-  ]
+
+
 
   const handleAddRow = () => {
-    append({ 
-      referenceNumber: "", 
-      name: '', 
-      qty: 0, 
-      unit: default_unit, 
-      category: '', 
-      price: 0, 
+    append({
+      referenceNumber: "",
+      name: '',
+      qty: 0,
+      unit: default_unit,
+      category: '',
+      price: 0,
       measurement: 1,
       strain_type: ""
     })
@@ -182,11 +586,11 @@ function AddProductsPage() {
   const onError = (errors: any) => {
     console.log("Form errors", errors)
     setShowValidationErrors(true)
-    showNotification({ 
-      message: 'Please fix the validation errors before submitting', 
+    showNotification({
+      message: 'Please fix the validation errors before submitting',
       variant: 'danger'
     })
-    
+
     // Scroll to the first error
     const firstErrorElement = document.querySelector('.is-invalid')
     if (firstErrorElement) {
@@ -213,7 +617,7 @@ function AddProductsPage() {
       const productsTotal = productsData.reduce((sum, item) => {
         const qty = Number(item?.qty || 0);
         const price = Number(item?.price || 0);
-    
+
         const itemTotal = qty * (price);
         return sum + itemTotal;
       }, 0);
@@ -242,17 +646,17 @@ function AddProductsPage() {
   // Main form submission handler
   const processFormSubmission = async (data: MultipleProductFormData) => {
     setLoading(true)
-    
+
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
     const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
-    
+
     console.log("Calculation details:", {
       avg_shipping,
       total_quantity,
       shippingCost,
       totalAmount
     })
-    
+
     try {
       let products: any[] = []
       const calls = data.products.map(async (prod) => {
@@ -272,7 +676,7 @@ function AddProductsPage() {
           status: "",
           notes: "",
         })
-        products.push({...res.data, measurement: prod.measurement, qty: prod.qty})
+        products.push({ ...res.data, measurement: prod.measurement, qty: prod.qty })
       })
       await Promise.all(calls)
       console.log('Created products =>', products)
@@ -294,7 +698,7 @@ function AddProductsPage() {
       setShowConfirmModal(true)
       return
     }
-    
+
     // Proceed with submission if account is selected
     await processFormSubmission(data)
   }
@@ -312,384 +716,31 @@ function AddProductsPage() {
     setPendingFormData(null)
   }
 
-  // Enhanced Account Selector Component - Fixed Version
-  const AccountSelector = () => (
-    <div className="mb-4">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h6 className="mb-0 fw-semibold text-dark">
-          Client Selection
-        </h6>
-        <span className="badge bg-light text-muted small">Optional</span>
-      </div>
-      
-      <div className="position-relative">
-        <div 
-          className={`form-control d-flex align-items-center justify-content-between cursor-pointer ${dropdownOpen ? 'border-primary shadow-sm' : ''}`}
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          style={{ cursor: 'pointer', minHeight: '48px' }}
-        >
-          <div className="d-flex align-items-center flex-grow-1">
-            {selectedAccount ? (
-              <div className="d-flex align-items-center">
-                <div 
-                  className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                  style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
-                >
-                  {selectedAccount.firstName.charAt(0)}{selectedAccount.lastName.charAt(0)}
-                </div>
-                <div>
-                  <div className="fw-semibold text-dark">
-                    {selectedAccount.firstName} {selectedAccount.lastName}
-                  </div>
-                  <div className="small text-muted">Assigned Account</div>
-                </div>
-              </div>
-            ) : (
-              <div className="d-flex align-items-center">
-                <div 
-                  className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
-                  style={{ width: '36px', height: '36px' }}
-                >
-                  <IconifyIcon icon="tabler:building-store" className="text-muted" />
-                </div>
-                <div>
-                  <div className="text-muted">General Inventory</div>
-                  <div className="small text-muted">No specific account assigned</div>
-                </div>
-              </div>
-            )}
-          </div>
-          <IconifyIcon 
-            icon={dropdownOpen ? "tabler:chevron-up" : "tabler:chevron-down"} 
-            className="text-muted"
-          />
-        </div>
 
-        {dropdownOpen && (
-          <div
-            className="position-absolute w-100 bg-white border rounded-3 shadow-lg mt-1"
-            style={{ zIndex: 1000 }}
-          >
-            {/* Search Input - Fixed */}
-            <div className="p-3 border-bottom bg-light rounded-top">
-              <div className="position-relative">
-                <IconifyIcon 
-                  icon="tabler:search" 
-                  className="position-absolute text-muted"
-                  style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }}
-                />
-                <Form.Control
-                  type="text"
-                  placeholder="Search accounts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="ps-5 border-0 shadow-none"
-                  style={{ backgroundColor: 'white' }}
-                  onClick={(e) => e.stopPropagation()} // Prevent dropdown from closing
-                  onFocus={(e) => e.stopPropagation()} // Prevent dropdown from closing
-                  autoFocus // Auto focus when dropdown opens
-                />
-              </div>
-            </div>
 
-            {/* Account List */}
-            <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
-              {/* General Inventory Option */}
-              <div
-                className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${!selectedAccount ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedAccount(null);
-                  setDropdownOpen(false);
-                  setSearchQuery('');
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <div 
-                  className="rounded-circle bg-light border d-flex align-items-center justify-content-center me-3"
-                  style={{ width: '40px', height: '40px' }}
-                >
-                  <IconifyIcon icon="tabler:building-store" className="text-primary" />
-                </div>
-                <div className="flex-grow-1">
-                  <div className="fw-semibold text-primary">General Inventory</div>
-                  <div className="small text-muted">Products without specific account assignment</div>
-                </div>
-                {!selectedAccount && (
-                  <IconifyIcon icon="tabler:check" className="text-primary" />
-                )}
-              </div>
 
-              {/* Account Options */}
-              {filteredAccounts.length > 0 ? (
-                filteredAccounts.map((acc) => (
-                  <div
-                    key={acc._id}
-                    className={`p-3 d-flex align-items-center cursor-pointer border-bottom ${selectedAccount?._id === acc._id ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedAccount(acc);
-                      setDropdownOpen(false);
-                      setSearchQuery('');
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div 
-                      className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                      style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: '600' }}
-                    >
-                      {acc.firstName.charAt(0)}{acc.lastName.charAt(0)}
-                    </div>
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold text-dark">{acc.firstName} {acc.lastName}</div>
-                    </div>
-                    {selectedAccount?._id === acc._id && (
-                      <IconifyIcon icon="tabler:check" className="text-primary" />
-                    )}
-                </div>
-                ))
-              ) : searchQuery ? (
-                <div className="p-4 text-center text-muted">
-                  <IconifyIcon icon="tabler:search-off" className="mb-2" style={{ fontSize: '32px' }} />
-                  <div>No accounts found matching "{searchQuery}"</div>
-                </div>
-              ) : (
-                <div className="p-4 text-center text-muted">
-                  <IconifyIcon icon="tabler:users-off" className="mb-2" style={{ fontSize: '32px' }} />
-                  <div>No accounts available</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  // Mobile Product Card Component with validation
-  const MobileProductCard = ({ field, index }: { field: any; index: number }) => {
-    const productErrors = errors.products?.[index];
-    const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
-    
-    return (
-      <Card className="mb-3 d-md-none border-light">
-        <CardBody>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h6 className="mb-0">Product {index + 1}</h6>
-            <Button 
-              variant="outline-danger" 
-              size="sm"
-              onClick={() => remove(index)}
-              disabled={fields.length === 1}
-            >
-              <IconifyIcon icon="tabler:trash" />
-            </Button>
-          </div>
-          
-          <Row className="g-2">
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Reference #</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.referenceNumber` as const}
-                render={({ field }) => (
-                  <Form.Control 
-                    type="text" 
-                    placeholder="Enter reference number"
-                    size="sm"
-                    isInvalid={!!productErrors?.referenceNumber && shouldShowErrors}
-                    {...field}
-                  />
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.referenceNumber?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Product Name</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.name` as const}
-                render={({ field }) => (
-                  <Form.Control 
-                    type="text" 
-                    placeholder="(optional)" 
-                    size="sm"
-                    isInvalid={!!productErrors?.name && shouldShowErrors}
-                    {...field} 
-                  />
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.name?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Quantity *</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.qty` as const}
-                render={({ field }) => (
-                  <Form.Control 
-                    type="number" 
-                    placeholder="Enter quantity" 
-                    step="any" 
-                    size="sm"
-                    isInvalid={!!productErrors?.qty && shouldShowErrors}
-                    {...field} 
-                  />
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.qty?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Unit *</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.unit` as const}
-                render={({ field }) => (
-                  <Form.Select 
-                    size="sm" 
-                    isInvalid={!!productErrors?.unit && shouldShowErrors}
-                    {...field}
-                  >
-                    <option value="">Select unit</option>
-                    {unitOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </Form.Select>
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.unit?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Measurement *</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.measurement` as const}
-                render={({ field }) => (
-                  <Form.Select 
-                    size="sm" 
-                    isInvalid={!!productErrors?.measurement && shouldShowErrors}
-                    {...field}
-                  >
-                    <option value="">Select measurement</option>
-                    {measurementOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Form.Select>
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.measurement?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={6}>
-              <Form.Label className="small fw-semibold">Price *</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.price` as const}
-                render={({ field }) => (
-                  <Form.Control 
-                    type="number" 
-                    placeholder="Enter price" 
-                    step="any" 
-                    size="sm"
-                    isInvalid={!!productErrors?.price && shouldShowErrors}
-                    {...field} 
-                  />
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.price?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={12}>
-              <Form.Label className="small fw-semibold">Category *</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.category` as const}
-                render={({ field }) => (
-                  <Form.Select 
-                    size="sm" 
-                    isInvalid={!!productErrors?.category && shouldShowErrors}
-                    {...field}
-                  >
-                    <option value="">Select category</option>
-                    {userCategories.map((cat: any) => (
-                      <option key={cat._id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.category?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-            <Col xs={12}>
-              <Form.Label className="small fw-semibold">Strain Type</Form.Label>
-              <Controller
-                control={control}
-                name={`products.${index}.strain_type` as const}
-                render={({ field }) => (
-                  <Form.Select 
-                    size="sm" 
-                    isInvalid={!!productErrors?.strain_type && shouldShowErrors}
-                    {...field}
-                  >
-                    <option value="">Select strain type</option>
-                    <option value="indica">Indica</option>
-                    <option value="sativa">Sativa</option>
-                    <option value="hybrid">Hybrid</option>
-                  </Form.Select>
-                )}
-              />
-              {shouldShowErrors && (
-                <Form.Control.Feedback type="invalid" className="small">
-                  {productErrors?.strain_type?.message}
-                </Form.Control.Feedback>
-              )}
-            </Col>
-          </Row>
-        </CardBody>
-      </Card>
-    )
-  }
 
   return (
     <div className="container-fluid px-2 px-md-3">
       <div className="d-flex align-items-center mb-3 mb-md-4">
         <h4 className="mb-0 fs-5 fs-md-4">Add Products</h4>
       </div>
-      
+
       <Card>
         <CardHeader className="border-bottom border-light">
           <CardTitle as="h5" className="mb-0 fs-6 fs-md-5">Add Multiple Products</CardTitle>
         </CardHeader>
         <CardBody className="p-2 p-md-3">
           {/* Enhanced Account Selector */}
-          <AccountSelector />
+          <AccountSelector
+            dropdownOpen={dropdownOpen}
+            setDropdownOpen={setDropdownOpen}
+            selectedAccount={selectedAccount}
+            setSelectedAccount={setSelectedAccount}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filteredAccounts={filteredAccounts}
+          />
 
           {/* Product Form */}
           <Form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
@@ -714,7 +765,7 @@ function AddProductsPage() {
                     {fields.map((field, index) => {
                       const productErrors = errors.products?.[index];
                       const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
-                      
+
                       return (
                         <tr key={field.id}>
                           <td>
@@ -722,8 +773,8 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.referenceNumber` as const}
                               render={({ field }) => (
-                                <Form.Control 
-                                  type="text" 
+                                <Form.Control
+                                  type="text"
                                   placeholder="Reference number"
                                   size="sm"
                                   isInvalid={!!productErrors?.referenceNumber && shouldShowErrors}
@@ -742,12 +793,12 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.name` as const}
                               render={({ field }) => (
-                                <Form.Control 
-                                  type="text" 
-                                  placeholder="Product Name" 
+                                <Form.Control
+                                  type="text"
+                                  placeholder="Product Name"
                                   size="sm"
                                   isInvalid={!!productErrors?.name && shouldShowErrors}
-                                  {...field} 
+                                  {...field}
                                 />
                               )}
                             />
@@ -762,13 +813,13 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.qty` as const}
                               render={({ field }) => (
-                                <Form.Control 
-                                  type="number" 
-                                  placeholder="Enter quantity" 
-                                  step="any" 
+                                <Form.Control
+                                  type="number"
+                                  placeholder="Enter quantity"
+                                  step="any"
                                   size="sm"
                                   isInvalid={!!productErrors?.qty && shouldShowErrors}
-                                  {...field} 
+                                  {...field}
                                 />
                               )}
                             />
@@ -783,8 +834,8 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.unit` as const}
                               render={({ field }) => (
-                                <Form.Select 
-                                  size="sm" 
+                                <Form.Select
+                                  size="sm"
                                   isInvalid={!!productErrors?.unit && shouldShowErrors}
                                   {...field}
                                 >
@@ -804,8 +855,8 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.measurement` as const}
                               render={({ field }) => (
-                                <Form.Select 
-                                  size="sm" 
+                                <Form.Select
+                                  size="sm"
                                   isInvalid={!!productErrors?.measurement && shouldShowErrors}
                                   {...field}
                                 >
@@ -829,8 +880,8 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.category` as const}
                               render={({ field }) => (
-                                <Form.Select 
-                                  size="sm" 
+                                <Form.Select
+                                  size="sm"
                                   isInvalid={!!productErrors?.category && shouldShowErrors}
                                   {...field}
                                 >
@@ -854,13 +905,13 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.price` as const}
                               render={({ field }) => (
-                                <Form.Control 
-                                  type="number" 
-                                  placeholder="Enter price" 
-                                  step="any" 
+                                <Form.Control
+                                  type="number"
+                                  placeholder="Enter price"
+                                  step="any"
                                   size="sm"
                                   isInvalid={!!productErrors?.price && shouldShowErrors}
-                                  {...field} 
+                                  {...field}
                                 />
                               )}
                             />
@@ -875,8 +926,8 @@ function AddProductsPage() {
                               control={control}
                               name={`products.${index}.strain_type` as const}
                               render={({ field }) => (
-                                <Form.Select 
-                                  size="sm" 
+                                <Form.Select
+                                  size="sm"
                                   isInvalid={!!productErrors?.strain_type && shouldShowErrors}
                                   {...field}
                                 >
@@ -894,8 +945,8 @@ function AddProductsPage() {
                             )}
                           </td>
                           <td>
-                            <Button 
-                              variant="outline-danger" 
+                            <Button
+                              variant="outline-danger"
                               size="sm"
                               onClick={() => remove(index)}
                               disabled={fields.length === 1}
@@ -914,7 +965,18 @@ function AddProductsPage() {
             {/* Mobile Cards - Hidden on desktop */}
             <div className="d-md-none">
               {fields.map((field, index) => (
-                <MobileProductCard key={field.id} field={field} index={index} />
+                <MobileProductCard
+                  key={field.id}
+                  index={index}
+                  control={control}
+                  errors={errors}
+                  touchedFields={touchedFields}
+                  showValidationErrors={showValidationErrors}
+                  remove={remove}
+                  fieldsCount={fields.length}
+                  unitOptions={unitOptions}
+                  userCategories={userCategories}
+                />
               ))}
             </div>
 
@@ -925,9 +987,9 @@ function AddProductsPage() {
               </div>
             )}
 
-            <Button 
-              variant="outline-primary" 
-              onClick={handleAddRow} 
+            <Button
+              variant="outline-primary"
+              onClick={handleAddRow}
               className="mb-3 w-md-auto"
               size="sm"
             >
@@ -945,12 +1007,12 @@ function AddProductsPage() {
                   control={control}
                   name="shippingCost"
                   render={({ field }) => (
-                    <Form.Control 
-                      type="number" 
-                      placeholder="Enter total shipping cost" 
+                    <Form.Control
+                      type="number"
+                      placeholder="Enter total shipping cost"
                       step="any"
                       isInvalid={!!errors.shippingCost && showValidationErrors}
-                      {...field} 
+                      {...field}
                     />
                   )}
                 />
@@ -1002,8 +1064,8 @@ function AddProductsPage() {
 
             {/* Action Buttons */}
             <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
-              <Button 
-                variant="outline-secondary" 
+              <Button
+                variant="outline-secondary"
                 onClick={() => router.back()}
                 disabled={loading}
                 className="order-2 order-md-1"
@@ -1011,9 +1073,9 @@ function AddProductsPage() {
                 <IconifyIcon icon="tabler:arrow-left" className="me-1" />
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                variant="primary" 
+              <Button
+                type="submit"
+                variant="primary"
                 disabled={loading}
                 className="order-1 order-md-2"
               >
@@ -1037,8 +1099,8 @@ function AddProductsPage() {
       </Card>
 
       {/* Confirmation Modal */}
-      <Modal 
-        show={showConfirmModal} 
+      <Modal
+        show={showConfirmModal}
         onHide={handleCancelSubmission}
         backdrop="static"
         keyboard={false}
@@ -1057,13 +1119,13 @@ function AddProductsPage() {
               <div>
                 <strong>No Account Selected</strong>
                 <p className="mb-0 mt-1">
-                  You haven't assigned these products to a specific account. 
+                  You haven't assigned these products to a specific account.
                   They will be added to your general inventory instead.
                 </p>
               </div>
             </div>
           </div>
-          
+
           <div className="mt-3">
             <h6 className="mb-2">Products to be added:</h6>
             <ul className="list-unstyled">
@@ -1088,7 +1150,7 @@ function AddProductsPage() {
                 </li>
               ))}
             </ul>
-            
+
             <div className="border-top pt-2 mt-3">
               <div className="d-flex justify-content-between">
                 <span>Subtotal:</span>
@@ -1106,16 +1168,16 @@ function AddProductsPage() {
           </div>
         </Modal.Body>
         <Modal.Footer className="border-top-0">
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             onClick={handleCancelSubmission}
             disabled={loading}
           >
             <IconifyIcon icon="tabler:x" className="me-1" />
             Cancel
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleConfirmSubmission}
             disabled={loading}
           >
@@ -1138,7 +1200,7 @@ function AddProductsPage() {
 
       {/* Click outside to close dropdown */}
       {dropdownOpen && (
-        <div 
+        <div
           className="position-fixed top-0 start-0 w-100 h-100"
           style={{ zIndex: 999 }}
           onClick={() => setDropdownOpen(false)}

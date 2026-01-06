@@ -31,15 +31,15 @@ const saleTransactionsPage = () => {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedProducts, setSelectedProducts] = useState<any[]>([])
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [Buyer, setBuyer] = useState<any>()
   const [pageLimit, setPageLimit] = useState<number>(50)
   const [totalProducts, setTotalProducts] = useState<number>(0)
   const { showNotification } = useNotificationContext()
-  console.log('Buyer',Buyer)
-  
+  console.log('products', products)
+
   // Fetch user-specific categories
   useEffect(() => {
     async function fetchCategories() {
@@ -65,7 +65,7 @@ const saleTransactionsPage = () => {
       //setLoading(false)
     }
   }
-  
+
   // Fetch products for the user with pagination
   async function fetchProducts() {
     setLoading(true)
@@ -83,7 +83,7 @@ const saleTransactionsPage = () => {
       setLoading(false)
     }
   }
-  
+
   // Refetch products when user_id, filterCategory or currentPage changes
   useEffect(() => {
     fetchProducts()
@@ -91,14 +91,14 @@ const saleTransactionsPage = () => {
 
   useEffect(() => {
     fetchBuyer()
-  },[])
-  
+  }, [])
+
   // Filter products on the front end by search query
   const filteredProducts = products.filter((prod) => {
     const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesSearch
   })
-  
+
   // Handle product checkbox toggle
   const handleCheckboxChange = (prod: any, checked: boolean) => {
     if (checked) {
@@ -140,9 +140,9 @@ const saleTransactionsPage = () => {
                   </option>
                 ))}
               </Form.Select>
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 className="d-none d-sm-block"
                 onClick={() => {
                   setFilterCategory('')
@@ -151,9 +151,9 @@ const saleTransactionsPage = () => {
               >
                 CLEAR
               </Button>
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   setFilterCategory('')
@@ -185,8 +185,8 @@ const saleTransactionsPage = () => {
       {/* Sell Selected Button */}
       {selectedProducts.length > 0 && (
         <div className="mt-3">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => setActiveModal('sellMultiple')}
             className=" w-sm-auto"
           >
@@ -243,7 +243,7 @@ const saleTransactionsPage = () => {
                     <td>{prod.name}</td>
                     <td>{prod?.category?.name}</td>
                     <td>{prod.qty}</td>
-                    {user.role === "admin" && <td>${(prod.price + prod?.shippingCost).toLocaleString()}</td> }
+                    {user.role === "admin" && <td>${(prod.price + prod?.shippingCost).toLocaleString()}</td>}
                     <td>{prod.unit}</td>
                     <td className="text-center">
                       <div className="d-flex gap-2 justify-content-center">
@@ -328,7 +328,7 @@ const saleTransactionsPage = () => {
                       </label>
                     </div>
                   </div>
-                  
+
                   <div className="row g-2 mb-3">
                     <div className="col-6">
                       <small className="text-muted">Product ID:</small>
@@ -347,7 +347,7 @@ const saleTransactionsPage = () => {
                       <div className="fw-medium">{prod.unit}</div>
                     </div>
                   </div>
-                  
+
                   <div className="d-flex gap-2 justify-content-center">
                     <Button
                       variant="primary"
@@ -390,7 +390,7 @@ const saleTransactionsPage = () => {
                 </Card.Body>
               </Card>
             ))}
-            
+
             {/* Mobile Pagination */}
             <div className="d-flex justify-content-center mt-3">
               <CustomPagination
