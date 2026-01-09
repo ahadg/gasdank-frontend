@@ -27,12 +27,12 @@ export default function SampleViewingToolPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageLimit] = useState(10)
   const [totalProducts, setTotalProducts] = useState(0)
-  
+
   // New state for profit margin functionality
   const [activeTab, setActiveTab] = useState('bulk')
   const [profitMargin, setProfitMargin] = useState<any>(0)
   const [selectedBuyerName, setSelectedBuyerName] = useState('')
-  
+
   console.log("workers", workers)
   const user = useAuthStore((state) => state.user)
 
@@ -43,9 +43,9 @@ export default function SampleViewingToolPage() {
         const response = await api.get(`/api/categories/${user._id}`)
         setCategories(response.data)
       } catch (error: any) {
-        showNotification({ 
-          message: error?.response?.data?.error || 'Error fetching categories', 
-          variant: 'danger' 
+        showNotification({
+          message: error?.response?.data?.error || 'Error fetching categories',
+          variant: 'danger'
         })
         console.error('Error fetching categories:', error)
       }
@@ -58,12 +58,12 @@ export default function SampleViewingToolPage() {
   // Fetch products for the user with pagination and category filter
   const fetchProducts = async () => {
     if (!user?._id) return
-    
+
     setProductsLoading(true)
     try {
       // Build query string with pagination and category filter if set
       let query = `/api/inventory/${user._id}?page=${currentPage}&limit=${pageLimit}`
-      console.log("filterCategory",filterCategory)
+      console.log("filterCategory", filterCategory)
       if (filterCategory) {
         query += `&category=${filterCategory}`
       }
@@ -74,9 +74,9 @@ export default function SampleViewingToolPage() {
       setTotalProducts(response.data.totalProducts || 0)
     } catch (error: any) {
       console.error('Error fetching products:', error)
-      showNotification({ 
-        message: 'Failed to load products.', 
-        variant: 'danger' 
+      showNotification({
+        message: 'Failed to load products.',
+        variant: 'danger'
       })
     } finally {
       setProductsLoading(false)
@@ -137,11 +137,11 @@ export default function SampleViewingToolPage() {
     if (!selectedItems.find(item => item._id === product._id)) {
       const basePrice = (parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)
       const finalPrice = activeTab === 'bulk' ? basePrice + profitMargin : basePrice
-      
-      setSelectedItems([...selectedItems, { 
-        ...product, 
-        price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(), 
-        sale_price: finalPrice.toString(), 
+
+      setSelectedItems([...selectedItems, {
+        ...product,
+        price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(),
+        sale_price: finalPrice.toString(),
         qty: 1,
         shippingCost: product.shippingCost,
         appliedProfit: activeTab === 'bulk' ? profitMargin : 0
@@ -187,9 +187,9 @@ export default function SampleViewingToolPage() {
       }
     })
     setSelectedItems(updated)
-    showNotification({ 
-      message: `Applied $${profitMargin} profit to ${updated.length} items.`, 
-      variant: 'success' 
+    showNotification({
+      message: `Applied $${profitMargin} profit to ${updated.length} items.`,
+      variant: 'success'
     })
   }
 
@@ -240,7 +240,8 @@ export default function SampleViewingToolPage() {
       setSelectedBuyerName('')
     } catch (err: any) {
       console.error('Error submitting session:', err)
-      showNotification({ message: 'Failed to submit sample session.', variant: 'danger' })
+      const errorMessage = err.response?.data?.error || err.response?.data?.details || err.message || 'Failed to submit sample session.'
+      showNotification({ message: errorMessage, variant: 'danger' })
     } finally {
       setLoading(false)
     }
@@ -250,14 +251,14 @@ export default function SampleViewingToolPage() {
 
   return (
     <div className="container py-5">
-   
+
       <div className="mb-3 text-end">
-              
-       {user.role == "admin" && <SampleViewingAdminComponent currentUserId={user._id}/> }
-    
+
+        {user.role == "admin" && <SampleViewingAdminComponent currentUserId={user._id} />}
+
         <Button
           className="ml-4 mb-3 text-end"
-          style={{marginLeft : '6px'}}
+          style={{ marginLeft: '6px' }}
           variant="outline-primary"
           onClick={async () => {
             try {
@@ -306,8 +307,8 @@ export default function SampleViewingToolPage() {
         <Col md={4}>
           <Form.Group>
             <Form.Label>Filter by Category</Form.Label>
-            <Form.Select 
-              value={filterCategory} 
+            <Form.Select
+              value={filterCategory}
               onChange={e => handleCategoryFilter(e.target.value)}
             >
               <option value="">All Categories</option>
@@ -374,8 +375,8 @@ export default function SampleViewingToolPage() {
                     </Form.Group>
                   </Col>
                   <Col md={4}>
-                    <Button 
-                      variant="success" 
+                    <Button
+                      variant="success"
                       onClick={applyBulkProfit}
                       disabled={selectedItems.length === 0 || profitMargin <= 0}
                       className="me-2"
@@ -385,8 +386,8 @@ export default function SampleViewingToolPage() {
                     </Button>
                   </Col>
                   <Col md={4}>
-                    <Button 
-                      variant="outline-secondary" 
+                    <Button
+                      variant="outline-secondary"
                       onClick={resetPrices}
                       disabled={selectedItems.length === 0}
                     >
@@ -397,7 +398,7 @@ export default function SampleViewingToolPage() {
                 </Row>
                 {profitMargin > 0 && selectedItems.length > 0 && (
                   <div className="mt-3 p-3 bg-light rounded">
-                    <strong>Preview:</strong> Adding ${profitMargin} to {selectedItems.length} items = 
+                    <strong>Preview:</strong> Adding ${profitMargin} to {selectedItems.length} items =
                     <span className="text-success fw-bold"> +${(profitMargin * selectedItems.length).toFixed(2)} total profit</span>
                   </div>
                 )}
@@ -413,7 +414,7 @@ export default function SampleViewingToolPage() {
             <h5>Available Products</h5>
             {productsLoading && <Spinner animation="border" size="sm" />}
           </div>
-          
+
           {productsLoading ? (
             <div className="text-center py-4">
               <Spinner animation="border" />
@@ -424,69 +425,69 @@ export default function SampleViewingToolPage() {
           ) : (
             <>
               <div className="row g-3 mb-3">
-              {products.map(product => {
-                const basePrice = (parseFloat(product.price || 0) + parseFloat(product.shippingCost || 0))
-                const priceWithProfit = activeTab === 'bulk' && profitMargin > 0 ? basePrice + profitMargin : basePrice
-                const isSelected = selectedItems.find(item => item._id === product._id)
-                
-                return (
-                  <div key={product._id} className="col-md-4 col-lg-3 mb-3">
-                    <Card className="h-100 border-0 shadow-sm hover-shadow-lg transition-all">
-                      <Card.Body className="p-3 d-flex flex-column">
-                        <div className="mb-3">
-                          <h6 className="card-title fw-semibold text-truncate mb-1" title={product.name}>
-                            {product.name}
-                          </h6>
-                          <div className="d-flex justify-content-between align-items-center text-sm">
-                            <span className="text-muted">
-                              {product.qty} {product.unit}
-                            </span>
-                            <div className="text-end">
-                              {activeTab === 'bulk' && profitMargin > 0 && !isSelected ? (
-                                <>
-                                  <div className="text-muted text-decoration-line-through small">
+                {products.map(product => {
+                  const basePrice = (parseFloat(product.price || 0) + parseFloat(product.shippingCost || 0))
+                  const priceWithProfit = activeTab === 'bulk' && profitMargin > 0 ? basePrice + profitMargin : basePrice
+                  const isSelected = selectedItems.find(item => item._id === product._id)
+
+                  return (
+                    <div key={product._id} className="col-md-4 col-lg-3 mb-3">
+                      <Card className="h-100 border-0 shadow-sm hover-shadow-lg transition-all">
+                        <Card.Body className="p-3 d-flex flex-column">
+                          <div className="mb-3">
+                            <h6 className="card-title fw-semibold text-truncate mb-1" title={product.name}>
+                              {product.name}
+                            </h6>
+                            <div className="d-flex justify-content-between align-items-center text-sm">
+                              <span className="text-muted">
+                                {product.qty} {product.unit}
+                              </span>
+                              <div className="text-end">
+                                {activeTab === 'bulk' && profitMargin > 0 && !isSelected ? (
+                                  <>
+                                    <div className="text-muted text-decoration-line-through small">
+                                      ${basePrice.toFixed(2)}
+                                    </div>
+                                    <div className="fw-bold text-success fs-6">
+                                      ${priceWithProfit.toFixed(2)}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <span className="fw-bold text-primary fs-6">
                                     ${basePrice.toFixed(2)}
-                                  </div>
-                                  <div className="fw-bold text-success fs-6">
-                                    ${priceWithProfit.toFixed(2)}
-                                  </div>
-                                </>
-                              ) : (
-                                <span className="fw-bold text-primary fs-6">
-                                  ${basePrice.toFixed(2)}
-                                </span>
-                              )}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        <Button
-                          variant={isSelected ? "success" : "primary"}
-                          size="sm"
-                          className="mt-auto d-flex align-items-center justify-content-center gap-1"
-                          onClick={() => handleAddItem(product)}
-                          disabled={isSelected}
-                        >
-                          {isSelected ? (
-                            <>
-                              <IconifyIcon icon="tabler:check" className="fs-6" />
-                              Added
-                            </>
-                          ) : (
-                            <>
-                              <IconifyIcon icon="tabler:plus" className="fs-6" />
-                              Add
-                              {activeTab === 'bulk' && profitMargin > 0 && (
-                                <small className="ms-1">(+${profitMargin})</small>
-                              )}
-                            </>
-                          )}
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                )
-              })}
+
+                          <Button
+                            variant={isSelected ? "success" : "primary"}
+                            size="sm"
+                            className="mt-auto d-flex align-items-center justify-content-center gap-1"
+                            onClick={() => handleAddItem(product)}
+                            disabled={isSelected}
+                          >
+                            {isSelected ? (
+                              <>
+                                <IconifyIcon icon="tabler:check" className="fs-6" />
+                                Added
+                              </>
+                            ) : (
+                              <>
+                                <IconifyIcon icon="tabler:plus" className="fs-6" />
+                                Add
+                                {activeTab === 'bulk' && profitMargin > 0 && (
+                                  <small className="ms-1">(+${profitMargin})</small>
+                                )}
+                              </>
+                            )}
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    </div>
+                  )
+                })}
               </div>
 
               {/* Pagination */}
@@ -547,7 +548,7 @@ export default function SampleViewingToolPage() {
                   const basePrice = parseFloat(item.price) || 0
                   const salePrice = parseFloat(item.sale_price) || 0
                   const profit = salePrice - basePrice
-                  
+
                   return (
                     <tr key={item._id}>
                       <td>{item.name}</td>
@@ -595,8 +596,8 @@ export default function SampleViewingToolPage() {
       )}
 
       <div className="d-grid">
-        <Button 
-          onClick={handleSubmit} 
+        <Button
+          onClick={handleSubmit}
           disabled={loading || selectedItems.length === 0}
           size="lg"
         >
@@ -642,7 +643,7 @@ export default function SampleViewingToolPage() {
                       ))}
                     </td>
                     <td className="fw-bold">
-                      ${session.items.reduce((total: number, item: any) => 
+                      ${session.items.reduce((total: number, item: any) =>
                         total + ((parseFloat(item.sale_price) || 0) * (parseFloat(item.qty) || 1)), 0
                       ).toFixed(2)}
                     </td>

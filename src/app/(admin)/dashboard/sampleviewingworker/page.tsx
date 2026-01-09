@@ -48,6 +48,97 @@ interface SaleItem {
   shipping: number
 }
 
+// Mobile-friendly item card component
+const MobileItemCard = ({ item }: { item: SampleItem }) => (
+  <Card className="mb-2">
+    <Card.Body className="py-2">
+      <div className="d-flex justify-content-between align-items-start">
+        <div className="flex-grow-1">
+          <h6 className="mb-1 text-truncate">{item.name}</h6>
+          <small className="text-muted">
+            {item.qty} {item.unit} • ₹{item?.sale_price?.toFixed(2)}
+          </small>
+        </div>
+      </div>
+    </Card.Body>
+  </Card>
+)
+
+interface MobileSaleItemProps {
+  item: SaleItem
+  index: number
+  handleSaleItemChange: (index: number, field: keyof SaleItem, value: string | number) => void
+  pricesVisible?: boolean
+}
+
+// Mobile-friendly sale item component
+const MobileSaleItem = ({ item, index, handleSaleItemChange, pricesVisible }: MobileSaleItemProps) => (
+  <Card className="mb-3">
+    <Card.Body>
+      <h6 className="mb-3">{item.name}</h6>
+      <Row className="g-2">
+        <Col xs={6}>
+          <Form.Group>
+            <Form.Label className="small">Quantity</Form.Label>
+            <Form.Control
+              type="number"
+              value={item.quantity}
+              onChange={(e) => handleSaleItemChange(index, 'quantity', e.target.value)}
+              size="sm"
+            />
+          </Form.Group>
+        </Col>
+        <Col xs={6}>
+          <Form.Group>
+            <Form.Label className="small">Measurement</Form.Label>
+            <Form.Control
+              type="number"
+              value={item.measurement}
+              onChange={(e) => handleSaleItemChange(index, 'measurement', e.target.value)}
+              size="sm"
+            />
+          </Form.Group>
+        </Col>
+        <Col xs={6}>
+          <Form.Group>
+            <Form.Label className="small">Unit</Form.Label>
+            <Form.Control
+              type="text"
+              value={item.unit}
+              disabled
+              size="sm"
+            />
+          </Form.Group>
+        </Col>
+        {pricesVisible && (
+          <Col xs={6}>
+            <Form.Group>
+              <Form.Label className="small">Cost Price</Form.Label>
+              <Form.Control
+                type="number"
+                value={item.price}
+                onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
+                size="sm"
+              />
+            </Form.Group>
+          </Col>
+        )}
+        <Col xs={12}>
+          <Form.Group>
+            <Form.Label className="small">Sale Price</Form.Label>
+            <Form.Control
+              type="number"
+              value={item.sale_price}
+              onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
+              size="sm"
+            />
+          </Form.Group>
+        </Col>
+      </Row>
+    </Card.Body>
+  </Card>
+)
+
 export default function WorkerSampleManagementPage() {
   const { showNotification } = useNotificationContext()
   const [sampleSessions, setSampleSessions] = useState<SampleSession[]>([])
@@ -58,7 +149,7 @@ export default function WorkerSampleManagementPage() {
   const [saleNotes, setSaleNotes] = useState('')
   const [saleLoading, setSaleLoading] = useState(false)
   const [processingSession, setProcessingSession] = useState<string | null>(null)
-  
+
   const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -83,17 +174,17 @@ export default function WorkerSampleManagementPage() {
   const rejectSession = async (session: SampleSession) => {
     try {
       setProcessingSession(session._id)
-      
+
       // Update session status to rejected
       await api.patch(`/api/sampleviewingclient/${session._id}/status`, {
         status: 'rejected'
       })
-      
+
       // Remove the session from state after successful rejection
-      setSampleSessions(prev => 
+      setSampleSessions(prev =>
         prev.filter(sessionItem => sessionItem._id !== session._id)
       )
-      
+
       showNotification({
         message: 'Sample session rejected successfully',
         variant: 'success'
@@ -155,7 +246,7 @@ export default function WorkerSampleManagementPage() {
 
     try {
       setSaleLoading(true)
-    
+
       // Then create the sale transaction
       const transformedItems = saleItems.map(item => ({
         inventory_id: item.productId,
@@ -170,7 +261,7 @@ export default function WorkerSampleManagementPage() {
 
       const { orgPrice, totalSalePrice, totalShipping, profit } = calculateTotals()
       const caltotalShipping = selectedSession?.items?.reduce((sum, item) => sum + Number(item?.shippingCost), 0)
-      
+
       const transactionPayload = {
         worker_id: user._id,
         user_id: user?.created_by,
@@ -185,24 +276,24 @@ export default function WorkerSampleManagementPage() {
       }
 
       let resp = await api.post('/api/transaction', transactionPayload)
-      
+
       // Remove the session from state after successful sale
-      setSampleSessions(prev => 
+      setSampleSessions(prev =>
         prev.filter(sessionItem => sessionItem._id !== selectedSession._id)
       )
-      
+
       showNotification({
         message: 'Sale processed successfully',
         variant: 'success'
       })
-      console.log("resp",resp)
+      console.log("resp", resp)
       // First, update session status to accepted
       await api.patch(`/api/sampleviewingclient/${selectedSession._id}/status`, {
         status: 'accepted',
-        transaction_id : resp?.data?.transaction_id
+        transaction_id: resp?.data?.transaction_id
       })
-      
-      
+
+
       setShowSaleModal(false)
       setSaleItems([])
       setSaleNotes('')
@@ -217,92 +308,6 @@ export default function WorkerSampleManagementPage() {
     }
   }
 
-  // Mobile-friendly item card component
-  const MobileItemCard = ({ item }: { item: SampleItem }) => (
-    <Card className="mb-2">
-      <Card.Body className="py-2">
-        <div className="d-flex justify-content-between align-items-start">
-          <div className="flex-grow-1">
-            <h6 className="mb-1 text-truncate">{item.name}</h6>
-            <small className="text-muted">
-              {item.qty} {item.unit} • ₹{item?.sale_price?.toFixed(2)}
-            </small>
-          </div>
-        </div>
-      </Card.Body>
-    </Card>
-  )
-
-  // Mobile-friendly sale item component
-  const MobileSaleItem = ({ item, index }: { item: SaleItem; index: number }) => (
-    <Card className="mb-3">
-      <Card.Body>
-        <h6 className="mb-3">{item.name}</h6>
-        <Row className="g-2">
-          <Col xs={6}>
-            <Form.Group>
-              <Form.Label className="small">Quantity</Form.Label>
-              <Form.Control
-                type="number"
-                value={item.quantity}
-                onChange={(e) => handleSaleItemChange(index, 'quantity', e.target.value)}
-                size="sm"
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={6}>
-            <Form.Group>
-              <Form.Label className="small">Measurement</Form.Label>
-              <Form.Control
-                type="number"
-                value={item.measurement}
-                onChange={(e) => handleSaleItemChange(index, 'measurement', e.target.value)}
-                size="sm"
-              />
-            </Form.Group>
-          </Col>
-          <Col xs={6}>
-            <Form.Group>
-              <Form.Label className="small">Unit</Form.Label>
-              <Form.Control
-                type="text"
-                value={item.unit}
-                disabled
-                size="sm"
-              />
-            </Form.Group>
-          </Col>
-          {
-            user?.access?.sampleviewingmanagement?.pricesVisible
-          &&
-          <Col xs={6}>
-            <Form.Group>
-              <Form.Label className="small">Cost Price</Form.Label>
-              <Form.Control
-                type="number"
-                value={item.price}
-                onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
-                size="sm"
-              />
-            </Form.Group>
-          </Col>
-          }
-          <Col xs={12}>
-            <Form.Group>
-              <Form.Label className="small">Sale Price</Form.Label>
-              <Form.Control
-                type="number"
-                value={item.sale_price}
-                onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
-                size="sm"
-              />
-            </Form.Group>
-          </Col>
-        </Row>
-      </Card.Body>
-    </Card>
-  )
-
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -315,9 +320,9 @@ export default function WorkerSampleManagementPage() {
     <div className="container-fluid px-2 px-md-4 py-3">
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
         <h3 className="mb-0">Sample Sessions</h3>
-        <Button 
-          variant="outline-primary" 
-          onClick={fetchSampleSessions} 
+        <Button
+          variant="outline-primary"
+          onClick={fetchSampleSessions}
           disabled={loading}
           className="d-flex align-items-center"
         >
@@ -381,14 +386,14 @@ export default function WorkerSampleManagementPage() {
                     </div>
                   </div>
                 </Card.Header>
-                
+
                 <Card.Body className="p-3">
                   {session.notes && (
                     <Alert variant="info" className="mb-3">
                       <strong>Notes:</strong> {session.notes}
                     </Alert>
                   )}
-                  
+
                   {/* Desktop Table */}
                   <div className="d-none d-md-block">
                     <Table striped responsive>
@@ -396,11 +401,11 @@ export default function WorkerSampleManagementPage() {
                         <tr>
                           <th>Product</th>
                           <th>Qty</th>
-                          <th>Unit</th> 
+                          <th>Unit</th>
                           {
-                          user?.access?.sampleviewingmanagement?.pricesVisible
-                          && 
-                          <th>Price</th> 
+                            user?.access?.sampleviewingmanagement?.pricesVisible
+                            &&
+                            <th>Price</th>
                           }
                         </tr>
                       </thead>
@@ -411,9 +416,9 @@ export default function WorkerSampleManagementPage() {
                             <td>{item.qty}</td>
                             <td>{item.unit}</td>
                             {
-                            user?.access?.sampleviewingmanagement?.pricesVisible
-                            &&
-                            <td>₹{item?.sale_price?.toFixed(2)}</td> 
+                              user?.access?.sampleviewingmanagement?.pricesVisible
+                              &&
+                              <td>₹{item?.sale_price?.toFixed(2)}</td>
                             }
                           </tr>
                         ))}
@@ -435,9 +440,9 @@ export default function WorkerSampleManagementPage() {
       )}
 
       {/* Sale Modal */}
-      <Modal 
-        show={showSaleModal} 
-        onHide={() => setShowSaleModal(false)} 
+      <Modal
+        show={showSaleModal}
+        onHide={() => setShowSaleModal(false)}
         size="xl"
         fullscreen="md-down"
       >
@@ -455,14 +460,14 @@ export default function WorkerSampleManagementPage() {
                   <th>Measurement</th>
                   <th>Unit</th>
                   {
-                  user?.access?.sampleviewingmanagement?.pricesVisible
+                    user?.access?.sampleviewingmanagement?.pricesVisible
                     &&
-                  <th>Cost Price</th> 
+                    <th>Cost Price</th>
                   }
                   {
-                  user?.access?.sampleviewingmanagement?.pricesVisible
+                    user?.access?.sampleviewingmanagement?.pricesVisible
                     &&
-                  <th>Sale Price</th> 
+                    <th>Sale Price</th>
                   }
                 </tr>
               </thead>
@@ -488,28 +493,28 @@ export default function WorkerSampleManagementPage() {
                     </td>
                     <td>{item.unit}</td>
                     {
-                    user?.access?.sampleviewingmanagement?.pricesVisible
-                    &&
-                    <td>
-                      <Form.Control
-                        type="number"
-                        value={item.price}
-                        onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
-                        size="sm"
-                      />
-                    </td>
+                      user?.access?.sampleviewingmanagement?.pricesVisible
+                      &&
+                      <td>
+                        <Form.Control
+                          type="number"
+                          value={item.price}
+                          onChange={(e) => handleSaleItemChange(index, 'price', e.target.value)}
+                          size="sm"
+                        />
+                      </td>
                     }
                     {
-                    user?.access?.sampleviewingmanagement?.pricesVisible
-                    &&
-                    <td>
-                      <Form.Control
-                        type="number"
-                        value={item.sale_price}
-                        onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
-                        size="sm"
-                      />
-                    </td>
+                      user?.access?.sampleviewingmanagement?.pricesVisible
+                      &&
+                      <td>
+                        <Form.Control
+                          type="number"
+                          value={item.sale_price}
+                          onChange={(e) => handleSaleItemChange(index, 'sale_price', e.target.value)}
+                          size="sm"
+                        />
+                      </td>
                     }
                   </tr>
                 ))}
@@ -520,7 +525,13 @@ export default function WorkerSampleManagementPage() {
           {/* Mobile Cards */}
           <div className="d-lg-none">
             {saleItems.map((item, index) => (
-              <MobileSaleItem key={item.productId} item={item} index={index} />
+              <MobileSaleItem
+                key={item.productId}
+                item={item}
+                index={index}
+                handleSaleItemChange={handleSaleItemChange}
+                pricesVisible={user?.access?.sampleviewingmanagement?.pricesVisible}
+              />
             ))}
           </div>
 
@@ -538,41 +549,41 @@ export default function WorkerSampleManagementPage() {
               </Form.Group>
             </Col>
             {
-            user?.access?.sampleviewingmanagement?.pricesVisible
-            &&
-            <Col lg={6}>
-              <div className="border rounded p-3">
-                <h6>Sale Summary</h6>
-                <div className="d-flex justify-content-between mb-1">
-                  <span>Cost Price:</span>
-                  <span>₹{calculateTotals().orgPrice.toFixed(2)}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Sale Price:</span>
-                  <span>₹{calculateTotals().totalSalePrice.toFixed(2)}</span>
-                </div>
-                {/* <hr className="my-2" /> */}
-                {/* <div className="d-flex justify-content-between">
+              user?.access?.sampleviewingmanagement?.pricesVisible
+              &&
+              <Col lg={6}>
+                <div className="border rounded p-3">
+                  <h6>Sale Summary</h6>
+                  <div className="d-flex justify-content-between mb-1">
+                    <span>Cost Price:</span>
+                    <span>₹{calculateTotals().orgPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span>Sale Price:</span>
+                    <span>₹{calculateTotals().totalSalePrice.toFixed(2)}</span>
+                  </div>
+                  {/* <hr className="my-2" /> */}
+                  {/* <div className="d-flex justify-content-between">
                   <strong>Profit:</strong>
                   <strong className={calculateTotals().profit >= 0 ? 'text-success' : 'text-danger'}>
                     ₹{calculateTotals().profit.toFixed(2)}
                   </strong>
                 </div> */}
-              </div>
-            </Col> 
+                </div>
+              </Col>
             }
           </Row>
         </Modal.Body>
         <Modal.Footer className="d-flex flex-column flex-sm-row gap-2">
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowSaleModal(false)}
             className="w-100 w-sm-auto order-2 order-sm-1"
           >
             Cancel
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleSaleSubmit}
             disabled={saleLoading || saleItems.length === 0}
             className="w-100 w-sm-auto order-1 order-sm-2"

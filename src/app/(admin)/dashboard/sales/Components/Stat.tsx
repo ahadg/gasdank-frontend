@@ -59,24 +59,24 @@ const handleDragLeave = (e: React.DragEvent) => {
 const handleDrop = (e: React.DragEvent, dropIndex: number, items: any[], setItems: (items: any[]) => void) => {
   e.preventDefault()
   e.currentTarget.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-50')
-  
+
   const dragIndex = parseInt(e.dataTransfer.getData('text/plain'))
-  
+
   if (dragIndex === dropIndex) return
-  
+
   const newItems = [...items]
   const [draggedItem] = newItems.splice(dragIndex, 1)
   newItems.splice(dropIndex, 0, draggedItem)
-  
+
   setItems(newItems)
-  
+
   // In a real app, save layout preference
   console.log('Saving layout:', newItems.map(item => item.id))
 }
 
 // Icon utility function
 const getIconComponent = (iconName: string) => {
-  switch(iconName) {
+  switch (iconName) {
     case 'wallet': return Wallet
     case 'creditcard': return CreditCard
     case 'bitcoin': return Bitcoin
@@ -139,7 +139,7 @@ const AccessDeniedPage = () => {
 // Compact Stats Loader Component
 const StatsLoader = () => {
   const placeholders = Array(6).fill(0)
-  
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
       {placeholders.map((_, idx) => (
@@ -157,15 +157,15 @@ const StatsLoader = () => {
 }
 
 // Compact Financial Overview Widget Component
-const FinancialOverview = ({ 
-  balances, 
-  editingBalance, 
-  setEditingBalance, 
-  newBalance, 
-  setNewBalance, 
-  reason, 
-  setReason, 
-  updateBalance 
+const FinancialOverview = ({
+  balances,
+  editingBalance,
+  setEditingBalance,
+  newBalance,
+  setNewBalance,
+  reason,
+  setReason,
+  updateBalance
 }: {
   balances: FinancialBalance[]
   editingBalance: string
@@ -177,18 +177,18 @@ const FinancialOverview = ({
   updateBalance: (type: string) => void
 }) => {
   const [activeTab, setActiveTab] = useState('all')
-  
+
   const totalAmount = balances.reduce((sum, balance) => sum + parseFloat(balance.amount || '0'), 0)
-  
+
   const getColorClasses = (color: string) => {
-    switch(color) {
+    switch (color) {
       case 'success': return 'bg-emerald-50 text-emerald-600'
       case 'info': return 'bg-blue-50 text-blue-600'
       case 'warning': return 'bg-amber-50 text-amber-600'
       default: return 'bg-gray-50 text-gray-600'
     }
   }
-  
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:col-span-2">
       <div className="flex items-center justify-between mb-2">
@@ -197,7 +197,7 @@ const FinancialOverview = ({
           <Wallet className="w-3 h-3 text-white" />
         </div>
       </div>
-      
+
       <div className="mb-3">
         <h2 className="text-xl font-bold text-gray-900">${totalAmount.toLocaleString()}</h2>
         <p className="text-xs text-gray-500">Total Balance</p>
@@ -208,11 +208,10 @@ const FinancialOverview = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-1 px-2 font-medium rounded transition-all duration-200 ${
-              activeTab === tab 
-                ? 'bg-white text-gray-900 shadow-sm' 
+            className={`flex-1 py-1 px-2 font-medium rounded transition-all duration-200 ${activeTab === tab
+                ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
@@ -251,7 +250,7 @@ const FinancialOverview = ({
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">${selectedBalance.amount}</h3>
                 <p className="text-xs text-gray-500 mb-2">{selectedBalance.type} Balance</p>
-                
+
                 {editingBalance === `${selectedBalance.type} Balance` ? (
                   <div className="space-y-2">
                     <input
@@ -269,13 +268,13 @@ const FinancialOverview = ({
                       className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent text-xs"
                     />
                     <div className="flex gap-1">
-                      <button 
+                      <button
                         onClick={() => updateBalance(`${selectedBalance.type} Balance`)}
                         className="flex-1 bg-emerald-600 text-white py-1 px-2 rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
                       >
                         Update
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           setEditingBalance('')
                           setNewBalance('')
@@ -288,7 +287,7 @@ const FinancialOverview = ({
                     </div>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => setEditingBalance(`${selectedBalance.type} Balance`)}
                     className="inline-flex items-center gap-1 bg-blue-600 text-white py-1 px-2 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
                   >
@@ -306,14 +305,14 @@ const FinancialOverview = ({
 }
 
 // Compact Regular Stat Widget Component
-const StatWidget = ({ 
-  item, 
-  index, 
-  onDragStart, 
+const StatWidget = ({
+  item,
+  index,
+  onDragStart,
   onDragEnd,
-  onDragOver, 
+  onDragOver,
   onDragLeave,
-  onDrop, 
+  onDrop,
   isCustomizationMode
 }: {
   item: StatTypeExtended
@@ -326,12 +325,11 @@ const StatWidget = ({
   isCustomizationMode: boolean
 }) => {
   const IconComponent = getIconComponent(item.icon)
-  
+
   return (
-    <div 
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 transition-all duration-200 hover:shadow-md hover:border-gray-300 ${
-        isCustomizationMode ? 'cursor-move hover:ring-1 hover:ring-blue-400' : ''
-      }`}
+    <div
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 transition-all duration-200 hover:shadow-md hover:border-gray-300 ${isCustomizationMode ? 'cursor-move hover:ring-1 hover:ring-blue-400' : ''
+        }`}
       draggable={isCustomizationMode}
       onDragStart={(e) => onDragStart(e, index)}
       onDragEnd={onDragEnd}
@@ -352,18 +350,17 @@ const StatWidget = ({
           )}
         </div>
       </div>
-      
+
       <div className="mb-1">
         <h2 className="text-lg font-bold text-gray-900 leading-tight">{item.count}</h2>
       </div>
-      
+
       {item.change !== 0 && (
         <div className="flex items-center gap-1">
-          <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-            item.variant === 'success' 
-              ? 'text-emerald-600' 
+          <span className={`inline-flex items-center gap-1 text-xs font-medium ${item.variant === 'success'
+              ? 'text-emerald-600'
               : 'text-red-600'
-          }`}>
+            }`}>
             {item.change > 0 ? (
               <TrendingUp className="w-3 h-3" />
             ) : (
@@ -385,7 +382,7 @@ export default function Stat() {
     oneWeekAgo.setHours(0, 0, 0, 0)
     return toLocalDateTimeString(oneWeekAgo)
   })
-  
+
   const [endDate, setEndDate] = useState(() => {
     const now = new Date()
     now.setDate(now.getDate() + 2)
@@ -409,19 +406,19 @@ export default function Stat() {
 
     setLoading(true)
     setAccessDenied(false) // Reset access denied state
-    
+
     try {
       const queryParams = new URLSearchParams()
       if (startDate) queryParams.append('startDate', startDate)
       if (endDate) queryParams.append('endDate', endDate)
-      
+
       const url = `/api/users/stats/${user._id}?${queryParams.toString()}`
       const response = await api.get(url)
       const data = response.data
-      
+
       setUserData(data.user)
-      setBalance(data.user?.cash_balance || 0)
-      setOtherBalance(data.user?.other_balance || { EFT: 0, Crypto: 0 })
+      setBalance(data.groupCashBalance || 0)
+      setOtherBalance(data?.other_balance || { EFT: 0, Crypto: 0 })
 
       const stats: StatTypeExtended[] = [
         {
@@ -488,36 +485,36 @@ export default function Stat() {
 
       const userStats = data.user?.access?.dashboard_stats || {}
       const filteredStats = stats.filter(stat => userStats[stat.permissionKey] === true)
-      
+
       // Apply saved layout order if exists
       const savedLayout = localStorage.getItem('dashboardLayout')
       if (savedLayout) {
         const layoutOrder = JSON.parse(savedLayout)
-        const orderedStats = layoutOrder.map((id: string) => 
+        const orderedStats = layoutOrder.map((id: string) =>
           filteredStats.find(stat => stat.id === id)
         ).filter(Boolean)
-        const remainingStats = filteredStats.filter(stat => 
+        const remainingStats = filteredStats.filter(stat =>
           !layoutOrder.includes(stat.id)
         )
         setStatData([...orderedStats, ...remainingStats])
       } else {
         setStatData(filteredStats)
       }
-      
+
     } catch (error: any) {
       console.error('Error fetching stats:', error)
-      
+
       // Check if it's a 403 Access Denied error
       if (error.response?.status === 403 || error.message?.includes('Access Denied') || error.message?.includes('403')) {
         setAccessDenied(true)
-        showNotification({ 
-          message: 'Access denied: You do not have permission to view dashboard statistics', 
-          variant: 'danger' 
+        showNotification({
+          message: 'Access denied: You do not have permission to view dashboard statistics',
+          variant: 'danger'
         })
       } else {
-        showNotification({ 
-          message: error.message || 'Error fetching stats', 
-          variant: 'danger' 
+        showNotification({
+          message: error.message || 'Error fetching stats',
+          variant: 'danger'
         })
       }
     } finally {
@@ -527,14 +524,14 @@ export default function Stat() {
 
   const updateBalance = async (title: string) => {
     if (!newBalance || !user?._id) return
-    
+
     try {
       let paymentMethod = ''
       let updateObj = {}
-      
+
       if (title === "EFT Balance") {
         updateObj = {
-          other_balance: { 
+          other_balance: {
             ...otherBalance,
             EFT: (otherBalance?.EFT || 0) + parseInt(newBalance),
           }
@@ -554,15 +551,15 @@ export default function Stat() {
         }
         paymentMethod = 'Cash'
       }
-      
+
       await api.put(`/api/users/${user._id}`, updateObj)
-      
+
       // Create description with reason if provided
       let description = `${parseInt(newBalance)} ${paymentMethod} from dashboard,`
       if (reason.trim()) {
         description += ` reason : \n${reason.trim()}`
       }
-      
+
       // Log activity
       await api.post(`/api/activity/${user._id}`, {
         page: 'dashboard',
@@ -575,23 +572,23 @@ export default function Stat() {
         user_created_by: user.created_by,
         amount: parseInt(newBalance)
       })
-      
-      showNotification({ 
-        message: 'Balance updated successfully', 
-        variant: 'success' 
+
+      showNotification({
+        message: 'Balance updated successfully',
+        variant: 'success'
       })
-      
+
       // Refresh stats after update
       fetchStats()
       setEditingBalance('')
       setNewBalance('')
       setReason('')
-      
+
     } catch (error: any) {
       console.error('Error updating balance:', error)
-      showNotification({ 
-        message: error.message || 'Error updating balance', 
-        variant: 'danger' 
+      showNotification({
+        message: error.message || 'Error updating balance',
+        variant: 'danger'
       })
     }
   }
@@ -644,7 +641,7 @@ export default function Stat() {
                 <Calendar className="absolute left-2 top-2 w-3 h-3 text-gray-400" />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
               <div className="relative">
@@ -657,15 +654,14 @@ export default function Stat() {
                 <Calendar className="absolute left-2 top-2 w-3 h-3 text-gray-400" />
               </div>
             </div>
-            
+
             <div className="md:col-span-2">
               <button
                 onClick={() => setIsCustomizationMode(!isCustomizationMode)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                  isCustomizationMode
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isCustomizationMode
                     ? 'bg-red-600 text-white hover:bg-red-700'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {isCustomizationMode ? (
                   <>
