@@ -209,8 +209,8 @@ const FinancialOverview = ({
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-1 px-2 font-medium rounded transition-all duration-200 ${activeTab === tab
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -358,8 +358,8 @@ const StatWidget = ({
       {item.change !== 0 && (
         <div className="flex items-center gap-1">
           <span className={`inline-flex items-center gap-1 text-xs font-medium ${item.variant === 'success'
-              ? 'text-emerald-600'
-              : 'text-red-600'
+            ? 'text-emerald-600'
+            : 'text-red-600'
             }`}>
             {item.change > 0 ? (
               <TrendingUp className="w-3 h-3" />
@@ -526,36 +526,25 @@ export default function Stat() {
     if (!newBalance || !user?._id) return
 
     try {
-      let paymentMethod = ''
-      let updateObj = {}
+      let paymentMethod: 'Cash' | 'Crypto' | 'EFT' = 'Cash'
 
       if (title === "EFT Balance") {
-        updateObj = {
-          other_balance: {
-            ...otherBalance,
-            EFT: (otherBalance?.EFT || 0) + parseInt(newBalance),
-          }
-        }
         paymentMethod = 'EFT'
       } else if (title === "Crypto Balance") {
-        updateObj = {
-          other_balance: {
-            ...otherBalance,
-            Crypto: (otherBalance?.Crypto || 0) + parseInt(newBalance),
-          }
-        }
         paymentMethod = 'Crypto'
       } else {
-        updateObj = {
-          cash_balance: balance + parseInt(newBalance)
-        }
         paymentMethod = 'Cash'
       }
 
-      await api.put(`/api/users/${user._id}`, updateObj)
+      const amount = parseInt(newBalance)
+
+      await api.post('/api/balance/update', {
+        amount,
+        method: paymentMethod
+      })
 
       // Create description with reason if provided
-      let description = `${parseInt(newBalance)} ${paymentMethod} from dashboard,`
+      let description = `${amount} ${paymentMethod} from dashboard,`
       if (reason.trim()) {
         description += ` reason : \n${reason.trim()}`
       }
@@ -570,7 +559,7 @@ export default function Stat() {
         description,
         user_id: user._id,
         user_created_by: user.created_by,
-        amount: parseInt(newBalance)
+        amount
       })
 
       showNotification({
@@ -587,7 +576,7 @@ export default function Stat() {
     } catch (error: any) {
       console.error('Error updating balance:', error)
       showNotification({
-        message: error.message || 'Error updating balance',
+        message: error.response?.data?.message || error.message || 'Error updating balance',
         variant: 'danger'
       })
     }
@@ -659,8 +648,8 @@ export default function Stat() {
               <button
                 onClick={() => setIsCustomizationMode(!isCustomizationMode)}
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isCustomizationMode
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
               >
                 {isCustomizationMode ? (
