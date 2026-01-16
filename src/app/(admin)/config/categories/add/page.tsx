@@ -1,7 +1,7 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Row, Col, Card, CardHeader, CardTitle, CardBody, Button, Form } from 'react-bootstrap'
+import { Row, Col, Card, CardHeader, CardBody, Button, Form, CardTitle } from 'react-bootstrap'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 export default function AddCategoryPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [categoryType, setCategoryType] = useState<'general' | 'expenses'>('general')
   const { showNotification } = useNotificationContext()
   const user = useAuthStore((state) => state.user)
 
@@ -17,14 +18,14 @@ export default function AddCategoryPage() {
     setLoading(true)
     const formData = new FormData(event.currentTarget)
     const name = formData.get('name')
-    // Checkbox value: if checked, value will be "on"; otherwise, it will be null.
     const active = formData.get('active') === 'on'
 
     try {
       const response = await api.post('/api/categories', {
         name,
+        type: categoryType,
         active,
-        user_id : user?._id
+        user_id: user?._id
       })
 
       await api.post(`/api/activity/${user._id}`, {
@@ -32,19 +33,24 @@ export default function AddCategoryPage() {
         action: "UPDATE",
         resource_type: "category_modification",
         type: "category_modification",
-        //payment_method: paymentMethod,
-        description: "Category added",
+        description: `Category added (${categoryType})`,
         user_id: user._id,
         user_created_by: user.created_by,
       })
 
       if (response.status === 200 || response.status === 201) {
-        showNotification({ message: 'Category added successfully', variant: 'success' })
+        showNotification({
+          message: `Category added successfully as ${categoryType}`,
+          variant: 'success'
+        })
         router.back()
       }
     } catch (error: any) {
       console.error(error)
-      showNotification({ message: error?.response?.data?.error || 'Error adding category', variant: 'danger' })
+      showNotification({
+        message: error?.response?.data?.error || 'Error adding category',
+        variant: 'danger'
+      })
     } finally {
       setLoading(false)
     }
@@ -78,6 +84,38 @@ export default function AddCategoryPage() {
               </Col>
             </Row>
 
+            {/* Category Type */}
+            <Row className="mb-3">
+              <Col md={6}>
+                <label className="form-label">
+                  Type<span className="text-danger">*</span>
+                </label>
+                <div>
+                  <Form.Check
+                    inline
+                    type="radio"
+                    id="general"
+                    label="General"
+                    name="categoryType"
+                    checked={categoryType === 'general'}
+                    onChange={() => setCategoryType('general')}
+                  />
+                  <Form.Check
+                    inline
+                    type="radio"
+                    id="expenses"
+                    label="Expenses"
+                    name="categoryType"
+                    checked={categoryType === 'expenses'}
+                    onChange={() => setCategoryType('expenses')}
+                  />
+                </div>
+                <small className="text-muted">
+                  General: For regular product categories. Expenses: For tracking business expenses.
+                </small>
+              </Col>
+            </Row>
+
             {/* Active Checkbox */}
             <Row className="mb-3">
               <Col md={6}>
@@ -95,6 +133,9 @@ export default function AddCategoryPage() {
             <div className="mt-4">
               <Button variant="primary" type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'CREATE'}
+              </Button>
+              <Button variant="outline-secondary" className="ms-2" onClick={() => router.back()}>
+                Cancel
               </Button>
             </div>
           </form>

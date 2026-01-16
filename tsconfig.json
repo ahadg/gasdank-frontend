@@ -29,11 +29,14 @@
     "target": "ES2017"
   },
   "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "src/app/(admin)/(layout)/dark-mode/components/DarkMode.tsx", "src/app/(admin)/(layout)/detached/page.tsx"  ],
+    "**/*.tsx",
+    "next-env.d.ts",
+    "next/types/**/*.ts",
+    "src/app/(admin)/(layout)/dark-mode/components/DarkMode.tsx",
+    "src/app/(admin)/(layout)/detached/page.tsx",
+    ".next/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

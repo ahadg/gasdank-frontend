@@ -21,7 +21,7 @@ export default function CategoriesPage() {
     async function fetchCategories() {
       setLoading(true)
       try {
-        const response = await api.get(`/api/categories/${user?._id}`)
+        const response = await api.get(`/api/categories/${user?._id}?type=both`)
         // Assuming the API returns an array of categories
         setCategories(response.data)
       } catch (error) {
@@ -45,6 +45,7 @@ export default function CategoriesPage() {
   const filteredCategories = categories.filter((category) => {
     return (
       category.name.toLowerCase().includes(searchLower) ||
+      (category.type && category.type.toLowerCase().includes(searchLower)) ||
       (category.status && category.status.toLowerCase().includes(searchLower))
     )
   })
@@ -89,6 +90,7 @@ export default function CategoriesPage() {
                 <thead className="bg-light-subtle">
                   <tr>
                     <th>Name</th>
+                    <th>Type</th>
                     <th>Active</th>
                     <th>ACTION</th>
                   </tr>
@@ -96,12 +98,13 @@ export default function CategoriesPage() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="text-center">Loading...</td>
+                      <td colSpan={4} className="text-center">Loading...</td>
                     </tr>
                   ) : filteredCategories.length > 0 ? (
                     filteredCategories.map((category, index) => (
                       <tr key={index}>
                         <td>{category.name}</td>
+                        <td className="text-capitalize">{category.type || 'N/A'}</td>
                         <td>{category.active == true ? "On" : "OFF"}</td>
                         <td>
                           <Link href={`/config/categories/edit/${category._id}`}>
@@ -125,7 +128,7 @@ export default function CategoriesPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={3} className="text-center">No categories found</td>
+                      <td colSpan={4} className="text-center">No categories found</td>
                     </tr>
                   )}
                 </tbody>

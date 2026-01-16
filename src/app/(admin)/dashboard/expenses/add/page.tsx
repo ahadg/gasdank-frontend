@@ -32,7 +32,7 @@ const getPastWeekDateRange = () => {
     const minutes = String(date.getMinutes()).padStart(2, '0')
     return `${year}-${month}-${day}T${hours}:${minutes}`
   }
-  
+
   return {
     startDateTime: formatDateTime(startDate),
     endDateTime: formatDateTime(endDate)
@@ -47,7 +47,7 @@ export default function AddExpensePage() {
   const [userCategories, setUserCategories] = useState<any[]>([])
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summary, setSummary] = useState(null)
-  
+
   // Initialize with past week date range
   const [dateRange, setDateRange] = useState(getPastWeekDateRange())
 
@@ -69,7 +69,7 @@ export default function AddExpensePage() {
     async function fetchUserCategories() {
       if (user?._id) {
         try {
-          const response = await api.get(`/api/categories/${user._id}`)
+          const response = await api.get(`/api/categories/${user._id}?type=expenses`)
           setUserCategories(response.data)
         } catch (error) {
           showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
@@ -172,7 +172,7 @@ export default function AddExpensePage() {
                 />
               </Form.Group>
             </Col>
-            
+
             <Col xs={12} md={5}>
               <Form.Group>
                 <Form.Label>End Date & Time</Form.Label>
@@ -184,7 +184,7 @@ export default function AddExpensePage() {
                 />
               </Form.Group>
             </Col>
-            
+
             <Col xs={12} md={2} className="d-flex align-items-end">
               <Button
                 onClick={fetchSummary}
@@ -198,7 +198,7 @@ export default function AddExpensePage() {
           </Row>
         </CardBody>
       </Card>
-      
+
       {/* Summary Card */}
       {summary && (
         <Card className="mb-4">

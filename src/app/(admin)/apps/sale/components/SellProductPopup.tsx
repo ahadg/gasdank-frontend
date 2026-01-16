@@ -15,7 +15,7 @@ const sellMultipleSchema = yup.object({
     yup.object({
       productId: yup.string().required(),
       name: yup.string().required(),
-      qty : yup.string(),
+      qty: yup.string(),
       quantity: yup
         .number()
         .required('Quantity required')
@@ -32,6 +32,7 @@ const sellMultipleSchema = yup.object({
         .required('Price required')
         .min(0, 'Minimum price is 0'),
       unit: yup.string().required('Unit is required'),
+      markup: yup.number().optional().default(0),
       measurement: yup
         .number()
         .required('Measurement required')
@@ -58,10 +59,10 @@ export default function SellMultipleProductsModal({
 }) {
   useEffect(() => {
     //redirect(`/apps/wholesale/history/${params?.id}`)
-  },[])
+  }, [])
   const user = useAuthStore((state) => state.user)
   const params = useParams()
-  console.log("selectedProducts",selectedProducts)
+  console.log("selectedProducts", selectedProducts)
   const router = useRouter();
   const { control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<SellMultipleFormData>({
     resolver: yupResolver(sellMultipleSchema),
@@ -75,6 +76,7 @@ export default function SellMultipleProductsModal({
         sale_price: prod.price + prod?.shippingCost, // Initialize with current price
         unit: prod.unit || '',
         shipping: prod?.shippingCost || 0,
+        markup: 0,
         measurement: 1, // default to Full
       })),
       payment: 0,
@@ -90,15 +92,15 @@ export default function SellMultipleProductsModal({
   const items = watch('items')
   const totalAmountwithshipping = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) 
-    +  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
+      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price)
+      + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
     0
   )
   const totalAmount = items.reduce(
     (sum: number, item: any) =>
-      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price) 
+      sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price)
     //+  (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1) ,
-    ,0
+    , 0
   )
 
   const totalShipping = items.reduce(
@@ -106,9 +108,9 @@ export default function SellMultipleProductsModal({
       sum + (Number(item.shipping) > 0 ? Number(item.quantity) * Number(item.shipping) : 1),
     0
   );
-  
+
   const unitOptions = useAuthStore(state => state.settings?.units)
-  console.log("useAuthStore(state => state.settings?.units)",useAuthStore(state => state.settings))
+  console.log("useAuthStore(state => state.settings?.units)", useAuthStore(state => state.settings))
   // Define available unit options
   //const unitOptions = ['kg', 'pound', 'per piece', 'gram']
   // Define measurement (fraction) options
@@ -125,10 +127,10 @@ export default function SellMultipleProductsModal({
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
+
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
@@ -139,10 +141,11 @@ export default function SellMultipleProductsModal({
       const basePrice = Number(item.price) || 0
       const newSalePrice = basePrice + amount
       setValue(`items.${index}.sale_price`, Number(newSalePrice.toFixed(2)))
+      setValue(`items.${index}.markup`, Number(amount.toFixed(2)))
     })
-    showNotification({ 
-      message: `Added $${amount} markup to all products`, 
-      variant: 'success' 
+    showNotification({
+      message: `Added $${amount} markup to all products`,
+      variant: 'success'
     })
   }
 
@@ -152,15 +155,17 @@ export default function SellMultipleProductsModal({
     // Transform each item to match backend expected keys:
     const transformedItems = data.items.map((item) => {
       return {
-      inventory_id: item.productId, // Assuming productId corresponds to inventory id
-      qty: Number(item.quantity) * Number(item.measurement),
-      measurement: item.measurement,
-      name : item?.name,
-      unit: item.unit,
-      price: item.price,
-      shipping: item.shipping,
-      sale_price: item.sale_price,
-    }})
+        inventory_id: item.productId, // Assuming productId corresponds to inventory id
+        qty: Number(item.quantity) * Number(item.measurement),
+        measurement: item.measurement,
+        name: item?.name,
+        unit: item.unit,
+        price: item.price,
+        shipping: item.shipping,
+        sale_price: item.sale_price,
+        markup: item.markup,
+      }
+    })
 
     const org_price = items.reduce(
       (sum: number, item: any) =>
@@ -176,7 +181,7 @@ export default function SellMultipleProductsModal({
 
     const totalsale_price_amount = items.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price)  ,
+        sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price),
       0
     )
 
@@ -189,7 +194,7 @@ export default function SellMultipleProductsModal({
       sale_price: totalsale_price_amount,
       profit: totalsale_price_amount - org_price_with_shipping,
       //total_shipping: 0,
-      total_shipping:totalShipping,
+      total_shipping: totalShipping,
       notes: data.notes,
       type: "sale",
     }
@@ -212,41 +217,42 @@ export default function SellMultipleProductsModal({
 
   const renderMarkupButtons = () => {
     const [markupValue, setMarkupValue] = useState('')
-  
+
     const handleApplyMarkup = () => {
       const amount = Number(markupValue)
       if (isNaN(amount)) {
-        showNotification({ 
-          message: 'Please enter a valid number', 
-          variant: 'danger' 
+        showNotification({
+          message: 'Please enter a valid number',
+          variant: 'danger'
         })
         return
       }
-      
+
       if (amount < 0) {
-        showNotification({ 
-          message: 'Markup amount cannot be negative', 
-          variant: 'danger' 
+        showNotification({
+          message: 'Markup amount cannot be negative',
+          variant: 'danger'
         })
         return
       }
-  
+
       const currentItems = getValues('items')
       currentItems.forEach((item, index) => {
-        const basePrice = Number(item.price+item.shipping) || 0
+        const basePrice = Number(item.price + item.shipping) || 0
         const newSalePrice = basePrice + amount
         setValue(`items.${index}.sale_price`, Number(newSalePrice.toFixed(2)))
+        setValue(`items.${index}.markup`, Number(amount.toFixed(2)))
       })
-      
-      showNotification({ 
-        message: `Added $${amount} markup to all products`, 
-        variant: 'success' 
+
+      showNotification({
+        message: `Added $${amount} markup to all products`,
+        variant: 'success'
       })
-      
+
       // Clear the input after applying
       setMarkupValue('')
     }
-  
+
     return (
       <div className="mb-3 p-3 bg-light rounded">
         <div className="d-flex justify-content-between align-items-center mb-2">
@@ -267,8 +273,8 @@ export default function SellMultipleProductsModal({
               />
             </Form.Group>
           </div>
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             size="sm"
             onClick={handleApplyMarkup}
             disabled={!markupValue.trim()}
@@ -286,16 +292,16 @@ export default function SellMultipleProductsModal({
       <Card.Body>
         <div className="d-flex justify-content-between align-items-start mb-2">
           <Card.Title className="h6 mb-0">{field.name}</Card.Title>
-          <Button 
-            variant="outline-danger" 
-            size="sm" 
+          <Button
+            variant="outline-danger"
+            size="sm"
             onClick={() => remove(index)}
             className="ms-2"
           >
             Remove
           </Button>
         </div>
-        
+
         <div className="mb-2">
           <small className="text-muted">Available: {field.qty} | Cost: ${Number(field.price || 0).toFixed(2)}</small>
         </div>
@@ -318,7 +324,7 @@ export default function SellMultipleProductsModal({
               )}
             </Form.Group>
           </Col>
-          
+
           <Col xs={6}>
             <Form.Group>
               <Form.Label className="small">Unit</Form.Label>
@@ -338,7 +344,7 @@ export default function SellMultipleProductsModal({
               />
             </Form.Group>
           </Col>
-          
+
           <Col xs={6}>
             <Form.Group>
               <Form.Label className="small">Measurement</Form.Label>
@@ -358,7 +364,7 @@ export default function SellMultipleProductsModal({
               />
             </Form.Group>
           </Col>
-          
+
           <Col xs={6}>
             <Form.Group>
               <Form.Label className="small">Sale Price</Form.Label>
@@ -369,20 +375,20 @@ export default function SellMultipleProductsModal({
                 placeholder="Sale Price"
                 {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
               />
-              {items[index]?.price && items[index]?.sale_price && (
+              {items[index]?.markup !== undefined && (
                 <small className="text-info">
-                  +${(Number(items[index].sale_price) - Number(items[index].price)).toFixed(2)} markup
+                  +${Number(items[index].markup).toFixed(2)} markup
                 </small>
               )}
             </Form.Group>
           </Col>
         </Row>
-        
+
         <div className="mt-2 text-end">
           <strong className="text-primary">
             Subtotal: ${(
               Number(items[index]?.measurement || 1) *
-              Number(items[index]?.sale_price || 0) * 
+              Number(items[index]?.sale_price || 0) *
               Number(items[index]?.quantity || 0)
             ).toFixed(2)}
           </strong>
@@ -463,24 +469,19 @@ export default function SellMultipleProductsModal({
                 type="number"
                 step="any"
                 placeholder="Sale Price"
-                {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
+                {...control.register(`items.${index}.sale_price` as const)}
               />
-            </td>
-            {/* <td>
-              {items[index]?.price && items[index]?.sale_price && (
-                <span className={
-                  Number(items[index].sale_price) > Number(items[index].price) 
-                    ? 'text-success' 
-                    : 'text-muted'
-                }>
-                  +${(Number(items[index].sale_price) - Number(items[index].price)).toFixed(2)}
-                </span>
+              {items[index]?.markup !== undefined && (
+                <div className="text-info small">
+                  +${Number(items[index].markup).toFixed(2)} markup
+                </div>
               )}
-            </td> */}
+            </td>
+
             <td>
               {(
                 (Number(items[index]?.measurement || 1) *
-                Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0) )
+                  Number(items[index]?.sale_price || 0) * Number(items[index]?.quantity || 0))
               ).toFixed(2)}
             </td>
             <td>
@@ -506,11 +507,11 @@ export default function SellMultipleProductsModal({
       }}
       role="dialog"
     >
-      <div 
-        className="modal-dialog" 
-        role="document" 
-        style={{ 
-          maxWidth: isMobile ? '100%' : '90vw', 
+      <div
+        className="modal-dialog"
+        role="document"
+        style={{
+          maxWidth: isMobile ? '100%' : '90vw',
           width: isMobile ? '100%' : '85%',
           margin: isMobile ? '0' : '1.75rem auto',
           height: isMobile ? '100vh' : 'auto',
@@ -519,10 +520,10 @@ export default function SellMultipleProductsModal({
           flexDirection: 'column',
         }}
       >
-        <div 
-          className="modal-content shadow-lg rounded border border-light" 
-          style={{ 
-            backgroundColor: '#fff', 
+        <div
+          className="modal-content shadow-lg rounded border border-light"
+          style={{
+            backgroundColor: '#fff',
             position: 'relative',
             height: isMobile ? '100%' : 'auto',
             display: 'flex',
@@ -535,10 +536,10 @@ export default function SellMultipleProductsModal({
             </h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
-          
-          <div 
-            className="modal-body" 
-            style={{ 
+
+          <div
+            className="modal-body"
+            style={{
               position: 'relative',
               flex: 1,
               overflowY: 'auto',
@@ -561,11 +562,11 @@ export default function SellMultipleProductsModal({
                 <Spinner animation="border" variant="primary" />
               </div>
             )}
-            
+
             <Form onSubmit={(handleSubmit(onSubmit, (errors) => console.log('Validation Errors:', errors)))}>
               {/* Auto Markup Buttons */}
               {renderMarkupButtons()}
-              
+
               {isMobile ? (
                 <div className="mb-3">
                   {fields.map((field, index) => renderMobileItem(field, index))}
@@ -573,7 +574,7 @@ export default function SellMultipleProductsModal({
               ) : (
                 renderDesktopTable()
               )}
-              
+
               <div className="mt-3 p-3 bg-light rounded">
                 <Row>
                   <Col xs={12} md={6}>
@@ -581,7 +582,7 @@ export default function SellMultipleProductsModal({
                   </Col>
                 </Row>
               </div>
-              
+
               <div className="mt-3">
                 <Form.Group className="mb-3">
                   <Form.Label>Notes</Form.Label>
@@ -589,20 +590,20 @@ export default function SellMultipleProductsModal({
                     control={control}
                     name="notes"
                     render={({ field }) => (
-                      <Form.Control 
-                        as="textarea" 
-                        rows={isMobile ? 2 : 3} 
-                        placeholder="Enter any notes" 
-                        {...field} 
+                      <Form.Control
+                        as="textarea"
+                        rows={isMobile ? 2 : 3}
+                        placeholder="Enter any notes"
+                        {...field}
                       />
                     )}
                   />
                 </Form.Group>
               </div>
-              
+
               <div className="mt-3 d-flex justify-content-end">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   variant="success"
                   className={isMobile ? 'w-100' : ''}
                 >
@@ -611,10 +612,10 @@ export default function SellMultipleProductsModal({
               </div>
             </Form>
           </div>
-          
+
           <div className="modal-footer bg-light border-top border-light">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={onClose}
               className={isMobile ? 'w-100' : ''}
             >

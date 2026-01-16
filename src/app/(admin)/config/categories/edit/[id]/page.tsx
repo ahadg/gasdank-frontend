@@ -15,6 +15,7 @@ export default function EditCategoryPage() {
 
   const [formData, setFormData] = useState({
     name: '',
+    type: 'general',
     active: true,
   })
   const [loading, setLoading] = useState(false)
@@ -28,6 +29,7 @@ export default function EditCategoryPage() {
         const categoryData = response.data
         setFormData({
           name: categoryData.name || '',
+          type: categoryData.type || 'general',
           active: categoryData.active !== undefined ? categoryData.active : true,
         })
       } catch (error) {
@@ -50,7 +52,7 @@ export default function EditCategoryPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await api.put(`/api/categories`, {id : categoryId, formData})
+      const response = await api.put(`/api/categories`, { id: categoryId, formData })
       if (response.status === 200 || response.status === 204) {
         showNotification({ message: 'Category updated successfully', variant: 'success' })
         router.back()
@@ -88,6 +90,37 @@ export default function EditCategoryPage() {
                   onChange={handleChange}
                   required
                 />
+              </Col>
+            </Row>
+            {/* Category Type */}
+            <Row className="mb-3">
+              <Col md={6}>
+                <label className="form-label">
+                  Type<span className="text-danger">*</span>
+                </label>
+                <div>
+                  <Form.Check
+                    inline
+                    type="radio"
+                    id="general"
+                    label="General"
+                    name="type"
+                    checked={formData.type === 'general'}
+                    onChange={() => setFormData(prev => ({ ...prev, type: 'general' }))}
+                  />
+                  <Form.Check
+                    inline
+                    type="radio"
+                    id="expenses"
+                    label="Expenses"
+                    name="type"
+                    checked={formData.type === 'expenses'}
+                    onChange={() => setFormData(prev => ({ ...prev, type: 'expenses' }))}
+                  />
+                </div>
+                <small className="text-muted">
+                  General: For regular product categories. Expenses: For tracking business expenses.
+                </small>
               </Col>
             </Row>
             {/* Active Checkbox */}
