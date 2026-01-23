@@ -52,8 +52,26 @@ const SignupPage = () => {
     fetchPlans()
   }, [])
 
-  const onSubmitStepOne = () => {
-    setCurrentStep(2)
+  const onSubmitStepOne = async () => {
+    const { email, userName } = getValues()
+    setLoading(true)
+    try {
+      const { data } = await api.post('/api/users/check-exists', { email, userName })
+      if (data.exists) {
+        if (data.emailExists) {
+          form.setError('email', { type: 'manual', message: 'Email already exists' })
+        }
+        if (data.userNameExists) {
+          form.setError('userName', { type: 'manual', message: 'Username already exists' })
+        }
+        return
+      }
+      setCurrentStep(2)
+    } catch (error: any) {
+      showNotification({ message: 'Error checking availability', variant: 'danger' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleFinalSignup = async () => {
@@ -66,7 +84,7 @@ const SignupPage = () => {
 
     setLoading(true)
     try {
-      const userres = await api.post('/api/users/signup', {...payload,plan: selectedPlan})
+      const userres = await api.post('/api/users/signup', { ...payload, plan: selectedPlan })
       const checkoutRes = await api.post('/api/stripe/create-checkout-session', {
         priceId: plans.find(p => p.name === selectedPlan)?.stripePriceId,
         user_id: userres?.data?.user?.id,
@@ -104,9 +122,8 @@ const SignupPage = () => {
               {[1, 2].map((step) => (
                 <div className="text-center" key={step}>
                   <div
-                    className={`rounded-circle border d-flex justify-content-center align-items-center mx-auto shadow ${
-                      currentStep === step ? 'bg-primary text-white' : 'bg-light text-muted'
-                    }`}
+                    className={`rounded-circle border d-flex justify-content-center align-items-center mx-auto shadow ${currentStep === step ? 'bg-primary text-white' : 'bg-light text-muted'
+                      }`}
                     style={{
                       width: '45px',
                       height: '45px',
@@ -200,8 +217,8 @@ const SignupPage = () => {
                   </Form.Group>
 
                   <div className="d-grid mb-2">
-                    <Button type="submit" className="btn btn-primary py-2 fw-semibold">
-                      Next
+                    <Button type="submit" className="btn btn-primary py-2 fw-semibold" disabled={loading}>
+                      {loading ? 'Checking...' : 'Next'}
                     </Button>
                   </div>
                 </>
@@ -219,9 +236,8 @@ const SignupPage = () => {
                     return (
                       <Card
                         key={plan.name}
-                        className={`position-relative mb-3 p-4 rounded-4 shadow-sm ${
-                          isSelected ? 'border-primary bg-light' : 'border-0 bg-white'
-                        }`}
+                        className={`position-relative mb-3 p-4 rounded-4 shadow-sm ${isSelected ? 'border-primary bg-light' : 'border-0 bg-white'
+                          }`}
                         style={{
                           cursor: 'pointer',
                           transition: 'all 0.3s ease',

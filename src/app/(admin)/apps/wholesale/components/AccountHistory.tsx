@@ -523,13 +523,6 @@ const AccountHistory = () => {
                     <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type === "sale" ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}` : tx.type}</td>
                     <td>{tx.notes}</td>
                     <td>
-                      {tx.type === 'payment'
-                        ? tx.payment_direction === 'received' &&
-                        ('- ' + formatCurrency(tx.price))
-                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved' || tx.type === "restock") &&
-                        ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
-                    </td>
-                    <td>
                       {tx.type === 'sale'
                         ? ('+ ' + (formatCurrency(tx.sale_price)))
                         : tx.type === "sample_returned" ?
@@ -537,6 +530,13 @@ const AccountHistory = () => {
                           : tx.type === 'payment' &&
                           tx.payment_direction === 'given' &&
                           ('+ ' + formatCurrency(tx.price))}
+                    </td>
+                    <td>
+                      {tx.type === 'payment'
+                        ? tx.payment_direction === 'received' &&
+                        ('- ' + formatCurrency(tx.price))
+                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved' || tx.type === "restock") &&
+                        ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
                     </td>
                   </tr>
                 ))

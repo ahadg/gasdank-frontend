@@ -23,7 +23,7 @@ const sellMultipleSchema = yup.object({
       sale_price: yup
         .number()
         .required('Sale price required')
-        .min(1, 'Minimum sale price is 1'),
+        .min(0, 'Minimum sale price is 0'),
       shipping: yup.number()
         .required('Sale price required')
         .min(0, 'Minimum sale price is 0'),
