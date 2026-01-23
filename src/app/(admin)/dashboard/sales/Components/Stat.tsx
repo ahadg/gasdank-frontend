@@ -4,6 +4,7 @@ import { Calendar, TrendingUp, TrendingDown, Plus, X, GripVertical, LayoutGrid, 
 import api from '@/utils/axiosInstance'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import { useAuthStore } from '@/store/authStore'
+import { useLanguageStore, translations, Language } from '@/store/languageStore'
 
 // Mock data for demonstration - replace with your actual API calls
 const mockUser = { _id: '123', access: { dashboard_stats: { today_sales: true, today_profit: true, inventory_value: true, clients_outstanding_balance: true, company_outstanding_balance: true, company_balance: true } } }
@@ -92,6 +93,9 @@ const getIconComponent = (iconName: string) => {
 
 // Access Denied/Locked Page Component
 const AccessDeniedPage = () => {
+  const { language } = useLanguageStore()
+  const t = translations[language] || translations.en
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center">
@@ -109,25 +113,25 @@ const AccessDeniedPage = () => {
           </div>
 
           {/* Title and Message */}
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Access Restricted</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">{t.accessRestricted}</h1>
           <p className="text-gray-600 mb-2">
-            You don't have permission to access the dashboard statistics.
+            {t.accessDeniedMsg}
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            This area requires specific permissions that are not currently granted to your account.
+            {t.permissionRequiredMsg}
           </p>
 
           {/* Additional Info */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <EyeOff className="w-4 h-4" />
-              <span>Dashboard statistics are hidden due to permission restrictions, Try switching to a different page.</span>
+              <span>{t.hiddenStatsMsg}</span>
             </div>
           </div>
           {/* Contact Support */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500">
-              If you believe this is a mistake, please contact your administrator.
+              {t.contactAdminMsg}
             </p>
           </div>
         </div>
@@ -176,6 +180,8 @@ const FinancialOverview = ({
   setReason: (value: string) => void
   updateBalance: (type: string) => void
 }) => {
+  const { language } = useLanguageStore()
+  const t = translations[language] || translations.en
   const [activeTab, setActiveTab] = useState('all')
 
   const totalAmount = balances.reduce((sum, balance) => sum + parseFloat(balance.amount || '0'), 0)
@@ -192,7 +198,7 @@ const FinancialOverview = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:col-span-2">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wide">Financial Overview</h3>
+        <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t.financialOverview}</h3>
         <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
           <Wallet className="w-3 h-3 text-white" />
         </div>
@@ -200,7 +206,7 @@ const FinancialOverview = ({
 
       <div className="mb-3">
         <h2 className="text-xl font-bold text-gray-900">${totalAmount.toLocaleString()}</h2>
-        <p className="text-xs text-gray-500">Total Balance</p>
+        <p className="text-xs text-gray-500">{t.totalBalance}</p>
       </div>
 
       <div className="flex bg-gray-100 rounded p-0.5 mb-3 text-xs">
@@ -213,7 +219,7 @@ const FinancialOverview = ({
               : 'text-gray-500 hover:text-gray-700'
               }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {t[tab as keyof typeof t] || tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
@@ -249,20 +255,20 @@ const FinancialOverview = ({
                   <SelectedIconComponent className="w-4 h-4" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">${selectedBalance.amount}</h3>
-                <p className="text-xs text-gray-500 mb-2">{selectedBalance.type} Balance</p>
+                <p className="text-xs text-gray-500 mb-2">{t[selectedBalance.type.toLowerCase() as keyof typeof t] || selectedBalance.type} {t.all.toLowerCase() === 'todo' ? 'Saldo' : 'Balance'}</p>
 
                 {editingBalance === `${selectedBalance.type} Balance` ? (
                   <div className="space-y-2">
                     <input
                       type="number"
-                      placeholder="Add Balance"
+                      placeholder={t.addBalance}
                       value={newBalance}
                       onChange={(e) => setNewBalance(e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent text-xs"
                     />
                     <input
                       type="text"
-                      placeholder="Reason (optional)"
+                      placeholder={t.reason}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent text-xs"
@@ -272,7 +278,7 @@ const FinancialOverview = ({
                         onClick={() => updateBalance(`${selectedBalance.type} Balance`)}
                         className="flex-1 bg-emerald-600 text-white py-1 px-2 rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
                       >
-                        Update
+                        {t.update}
                       </button>
                       <button
                         onClick={() => {
@@ -282,7 +288,7 @@ const FinancialOverview = ({
                         }}
                         className="flex-1 bg-gray-100 text-gray-700 py-1 px-2 rounded text-xs font-medium hover:bg-gray-200 transition-colors"
                       >
-                        Cancel
+                        {t.cancel}
                       </button>
                     </div>
                   </div>
@@ -292,7 +298,7 @@ const FinancialOverview = ({
                     className="inline-flex items-center gap-1 bg-blue-600 text-white py-1 px-2 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
-                    Add
+                    {t.add}
                   </button>
                 )}
               </div>
@@ -376,6 +382,9 @@ const StatWidget = ({
 
 export default function Stat() {
   const { user } = useAuthStore()
+  const { language, setLanguage } = useLanguageStore()
+  const t = translations[language] || translations.en
+
   const [startDate, setStartDate] = useState(() => {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
@@ -423,7 +432,7 @@ export default function Stat() {
       const stats: StatTypeExtended[] = [
         {
           id: 'total-sales',
-          title: 'Total Sales',
+          title: t.totalSales,
           permissionKey: 'today_sales',
           icon: 'solar:case-round-minimalistic-bold-duotone',
           count: data.totalSales || '0',
@@ -433,7 +442,7 @@ export default function Stat() {
         },
         {
           id: 'total-profit',
-          title: 'Total Profit',
+          title: t.totalProfit,
           permissionKey: 'today_profit',
           icon: 'solar:bill-list-bold-duotone',
           count: data.totalProfit || '0',
@@ -443,7 +452,7 @@ export default function Stat() {
         },
         {
           id: 'inventory-value',
-          title: 'Inventory Value',
+          title: t.inventoryValue,
           permissionKey: 'inventory_value',
           icon: 'solar:wallet-money-bold-duotone',
           count: data.inventoryValue || '0',
@@ -453,7 +462,7 @@ export default function Stat() {
         },
         {
           id: 'clients-payable',
-          title: "Company Client's Payable Balance (Clients owe to us)",
+          title: t.clientsPayable,
           permissionKey: 'clients_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
           count: data.clientPayableBalances || '0',
@@ -463,7 +472,7 @@ export default function Stat() {
         },
         {
           id: 'company-payable',
-          title: "Company Payable Balance (Total Amount Owed to Clients)",
+          title: t.companyPayable,
           permissionKey: 'company_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
           count: String(Math.abs(Number(data.companyPayableBalance) || 0)),
@@ -473,7 +482,7 @@ export default function Stat() {
         },
         {
           id: 'company-balance',
-          title: 'Company Balances',
+          title: t.companyBalances,
           permissionKey: 'company_balance',
           icon: 'solar:eye-bold-duotone',
           count: data.companyBalance || '0',
@@ -508,12 +517,12 @@ export default function Stat() {
       if (error.response?.status === 403 || error.message?.includes('Access Denied') || error.message?.includes('403')) {
         setAccessDenied(true)
         showNotification({
-          message: 'Access denied: You do not have permission to view dashboard statistics',
+          message: t.accessDeniedToast,
           variant: 'danger'
         })
       } else {
         showNotification({
-          message: error.message || 'Error fetching stats',
+          message: error.message || t.errorFetchingStats,
           variant: 'danger'
         })
       }
@@ -563,7 +572,7 @@ export default function Stat() {
       })
 
       showNotification({
-        message: 'Balance updated successfully',
+        message: t.balanceUpdated,
         variant: 'success'
       })
 
@@ -576,7 +585,7 @@ export default function Stat() {
     } catch (error: any) {
       console.error('Error updating balance:', error)
       showNotification({
-        message: error.response?.data?.message || error.message || 'Error updating balance',
+        message: error.response?.data?.message || error.message || t.errorUpdatingBalance,
         variant: 'danger'
       })
     }
@@ -619,7 +628,7 @@ export default function Stat() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">{t.startDate}</label>
               <div className="relative">
                 <input
                   type="datetime-local"
@@ -632,7 +641,7 @@ export default function Stat() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">{t.endDate}</label>
               <div className="relative">
                 <input
                   type="datetime-local"
@@ -655,12 +664,12 @@ export default function Stat() {
                 {isCustomizationMode ? (
                   <>
                     <X className="w-4 h-4" />
-                    Exit Customize
+                    {t.exitCustomize}
                   </>
                 ) : (
                   <>
                     <LayoutGrid className="w-4 h-4" />
-                    Customize Layout
+                    {t.customizeLayout}
                   </>
                 )}
               </button>
@@ -674,7 +683,7 @@ export default function Stat() {
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-600 flex-shrink-0" />
               <p className="text-sm text-blue-800">
-                <span className="font-medium">Customization Mode:</span> Drag widgets to reorder your dashboard.
+                <span className="font-medium">{t.customizationMode}:</span> {t.dragMsg}
               </p>
             </div>
           </div>
