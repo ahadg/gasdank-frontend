@@ -19,7 +19,7 @@ const sellMultipleSchema = yup.object({
       quantity: yup
         .number()
         .required('Quantity required')
-        .min(1, 'Minimum quantity is 1'),
+        .min(0.01, 'Minimum quantity is 0.01'),
       sale_price: yup
         .number()
         .required('Sale price required')
@@ -83,6 +83,31 @@ export default function SellMultipleProductsModal({
       notes: '',
     },
   })
+
+  const handleUnitChange = (index: number, newUnit: string, fieldOnChange: (val: string) => void) => {
+    const oldUnit = getValues(`items.${index}.unit`)?.toLowerCase()
+    const targetUnit = newUnit?.toLowerCase()
+    const currentQty = Number(getValues(`items.${index}.quantity`)) || 0
+    const currentSalePrice = Number(getValues(`items.${index}.sale_price`)) || 0
+    const currentCostPrice = Number(getValues(`items.${index}.price`)) || 0
+    const currentShipping = Number(getValues(`items.${index}.shipping`)) || 0
+    const currentMarkup = Number(getValues(`items.${index}.markup`)) || 0
+
+    if (oldUnit === 'kg' && targetUnit === 'gram') {
+      setValue(`items.${index}.quantity`, Number((currentQty * 1000).toFixed(2)))
+      setValue(`items.${index}.sale_price`, Number((currentSalePrice / 1000).toFixed(5)))
+      setValue(`items.${index}.price`, Number((currentCostPrice / 1000).toFixed(5)))
+      setValue(`items.${index}.shipping`, Number((currentShipping / 1000).toFixed(5)))
+      setValue(`items.${index}.markup`, Number((currentMarkup / 1000).toFixed(5)))
+    } else if (oldUnit === 'gram' && targetUnit === 'kg') {
+      setValue(`items.${index}.quantity`, Number((currentQty / 1000).toFixed(5)))
+      setValue(`items.${index}.sale_price`, Number((currentSalePrice * 1000).toFixed(2)))
+      setValue(`items.${index}.price`, Number((currentCostPrice * 1000).toFixed(2)))
+      setValue(`items.${index}.shipping`, Number((currentShipping * 1000).toFixed(2)))
+      setValue(`items.${index}.markup`, Number((currentMarkup * 1000).toFixed(2)))
+    }
+    fieldOnChange(newUnit)
+  }
 
   const { fields, remove } = useFieldArray({
     control,
@@ -152,36 +177,66 @@ export default function SellMultipleProductsModal({
   const onSubmit = async (data: SellMultipleFormData) => {
     console.log("submit_being called")
     setLoading(true)
-    // Transform each item to match backend expected keys:
+    // Transform each item to match backend expected keys and convert back to original units:
     const transformedItems = data.items.map((item) => {
+      const originalProduct = selectedProducts.find(p => p._id === item.productId);
+      const originalUnit = originalProduct?.unit?.toLowerCase();
+      const currentUnit = item.unit?.toLowerCase();
+
+      let finalQty = Number(item.quantity) * Number(item.measurement);
+      let finalPrice = item.price;
+      let finalSalePrice = item.sale_price;
+      let finalShipping = item.shipping;
+      let finalMarkup = item.markup;
+      let finalUnit = item.unit;
+
+      // Logic to convert back to original unit if changed between kg/gram
+      if (originalUnit && currentUnit && originalUnit !== currentUnit) {
+        if (originalUnit === 'kg' && currentUnit === 'gram') {
+          finalQty = finalQty / 1000;
+          finalPrice = finalPrice * 1000;
+          finalSalePrice = finalSalePrice * 1000;
+          finalShipping = finalShipping * 1000;
+          finalMarkup = finalMarkup * 1000;
+          finalUnit = originalProduct.unit;
+        } else if (originalUnit === 'gram' && currentUnit === 'kg') {
+          finalQty = finalQty * 1000;
+          finalPrice = finalPrice / 1000;
+          finalSalePrice = finalSalePrice / 1000;
+          finalShipping = finalShipping / 1000;
+          finalMarkup = finalMarkup / 1000;
+          finalUnit = originalProduct.unit;
+        }
+      }
+
       return {
-        inventory_id: item.productId, // Assuming productId corresponds to inventory id
-        qty: Number(item.quantity) * Number(item.measurement),
+        inventory_id: item.productId,
+        qty: finalQty,
         measurement: item.measurement,
         name: item?.name,
-        unit: item.unit,
-        price: item.price,
-        shipping: item.shipping,
-        sale_price: item.sale_price,
-        markup: item.markup,
+        unit: finalUnit,
+        price: finalPrice,
+        shipping: finalShipping,
+        sale_price: finalSalePrice,
+        markup: finalMarkup,
       }
     })
 
-    const org_price = items.reduce(
+    const org_price = transformedItems.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * Number(item.price),
+        sum + Number(item.qty) * Number(item.price),
       0
     )
 
-    const org_price_with_shipping = items.reduce(
+    const org_price_with_shipping = transformedItems.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * (Number(item.price) + item?.shipping),
+        sum + Number(item.qty) * (Number(item.price) + Number(item?.shipping)),
       0
     )
 
-    const totalsale_price_amount = items.reduce(
+    const totalsale_price_amount = transformedItems.reduce(
       (sum: number, item: any) =>
-        sum + Number(item.quantity) * Number(item.measurement) * Number(item.sale_price),
+        sum + Number(item.qty) * Number(item.sale_price),
       0
     )
 
@@ -332,9 +387,19 @@ export default function SellMultipleProductsModal({
                 control={control}
                 name={`items.${index}.unit` as const}
                 render={({ field }) => (
-                  <Form.Select {...field} size="sm">
+                  <Form.Select
+                    {...field}
+                    size="sm"
+                    onChange={(e) => handleUnitChange(index, e.target.value, field.onChange)}
+                  >
                     <option value="">Select unit</option>
-                    {unitOptions?.map((unit) => (
+                    {unitOptions?.filter(u => {
+                      const lowerCurrent = field.value?.toLowerCase();
+                      if (['kg', 'gram'].includes(lowerCurrent)) {
+                        return ['kg', 'gram'].includes(u.toLowerCase());
+                      }
+                      return true;
+                    }).map((unit) => (
                       <option key={unit} value={unit}>
                         {unit}
                       </option>
@@ -437,9 +502,18 @@ export default function SellMultipleProductsModal({
                 control={control}
                 name={`items.${index}.unit` as const}
                 render={({ field }) => (
-                  <Form.Select {...field}>
+                  <Form.Select
+                    {...field}
+                    onChange={(e) => handleUnitChange(index, e.target.value, field.onChange)}
+                  >
                     <option value="">Select unit</option>
-                    {unitOptions?.map((unit) => (
+                    {unitOptions?.filter(u => {
+                      const lowerCurrent = field.value?.toLowerCase();
+                      if (['kg', 'gram'].includes(lowerCurrent)) {
+                        return ['kg', 'gram'].includes(u.toLowerCase());
+                      }
+                      return true;
+                    }).map((unit) => (
                       <option key={unit} value={unit}>
                         {unit}
                       </option>
