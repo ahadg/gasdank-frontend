@@ -35,6 +35,12 @@ export default function SampleViewingToolPage() {
 
   console.log("workers", workers)
   const user = useAuthStore((state) => state.user)
+  const unitOptions = useAuthStore(state => state.settings?.units)
+  const measurementOptions = [
+    { label: 'Full', value: 1 },
+    { label: 'Half', value: 0.5 },
+    { label: 'Quarter', value: 0.25 },
+  ]
 
   // Fetch user-specific categories
   useEffect(() => {
@@ -140,13 +146,53 @@ export default function SampleViewingToolPage() {
 
       setSelectedItems([...selectedItems, {
         ...product,
-        price: ((parseFloat(product.price) || 0) + (parseFloat(product.shippingCost) || 0)).toString(),
+        price: (parseFloat(product.price) || 0).toString(),
         sale_price: finalPrice.toString(),
         qty: 1,
-        shippingCost: product.shippingCost,
-        appliedProfit: activeTab === 'bulk' ? profitMargin : 0
+        shippingCost: (parseFloat(product.shippingCost) || 0).toString(),
+        appliedProfit: activeTab === 'bulk' ? profitMargin : 0,
+        measurement: 1,
+        originalUnit: product.unit
       }])
     }
+  }
+
+  const handleUnitChange = (index: number, newUnit: string) => {
+    const updated = [...selectedItems]
+    const item = updated[index]
+    const oldUnit = item.unit?.toLowerCase()
+    const targetUnit = newUnit?.toLowerCase()
+
+    let qty = parseFloat(item.qty) || 0
+    let sale_price = parseFloat(item.sale_price) || 0
+    let price = parseFloat(item.price) || 0
+    let shippingCost = parseFloat(item.shippingCost) || 0
+    let appliedProfit = parseFloat(item.appliedProfit) || 0
+
+    if (oldUnit === 'kg' && targetUnit === 'gram') {
+      qty = Number((qty * 1000).toFixed(2))
+      sale_price = Number((sale_price / 1000).toFixed(5))
+      price = Number((price / 1000).toFixed(5))
+      shippingCost = Number((shippingCost / 1000).toFixed(5))
+      appliedProfit = Number((appliedProfit / 1000).toFixed(5))
+    } else if (oldUnit === 'gram' && targetUnit === 'kg') {
+      qty = Number((qty / 1000).toFixed(5))
+      sale_price = Number((sale_price * 1000).toFixed(2))
+      price = Number((price * 1000).toFixed(2))
+      shippingCost = Number((shippingCost * 1000).toFixed(2))
+      appliedProfit = Number((appliedProfit * 1000).toFixed(2))
+    }
+
+    updated[index] = {
+      ...item,
+      unit: newUnit,
+      qty: qty.toString(),
+      sale_price: sale_price.toString(),
+      price: price.toString(),
+      shippingCost: shippingCost.toString(),
+      appliedProfit
+    }
+    setSelectedItems(updated)
   }
 
   const handleUpdateItem = (index: number, field: string, value: string | number) => {
@@ -164,7 +210,8 @@ export default function SampleViewingToolPage() {
   const calculateItemTotal = (item: any) => {
     const price = parseFloat(item.sale_price) || 0
     const qty = parseFloat(item.qty) || 0
-    return price * qty
+    const measurement = parseFloat(item.measurement) || 1
+    return price * qty * measurement
   }
 
   const calculateGrandTotal = () => {
@@ -178,7 +225,7 @@ export default function SampleViewingToolPage() {
     }
 
     const updated = selectedItems.map(item => {
-      const basePrice = (parseFloat(item.price) || 0)
+      const basePrice = (parseFloat(item.price) || 0) + (parseFloat(item.shippingCost) || 0)
       const newPrice = basePrice + profitMargin
       return {
         ...item,
@@ -195,7 +242,7 @@ export default function SampleViewingToolPage() {
 
   const resetPrices = () => {
     const updated = selectedItems.map(item => {
-      const basePrice = (parseFloat(item.price) || 0)
+      const basePrice = (parseFloat(item.price) || 0) + (parseFloat(item.shippingCost) || 0)
       return {
         ...item,
         sale_price: basePrice.toString(),
@@ -218,16 +265,47 @@ export default function SampleViewingToolPage() {
         id: user?._id,
         buyer_id: buyerId,
         user_id: workerId,
-        items: selectedItems.map(item => ({
-          productId: item._id,
-          name: item.name,
-          unit: item.unit,
-          qty: item.qty,
-          price: item.price,
-          sale_price: item?.sale_price,
-          shippingCost: item.shippingCost,
-          appliedProfit: item.appliedProfit || 0
-        })),
+        items: selectedItems.map(item => {
+          const originalUnit = item.originalUnit?.toLowerCase()
+          const currentUnit = item.unit?.toLowerCase()
+
+          let finalQty = (parseFloat(item.qty) || 0) * (parseFloat(item.measurement) || 1)
+          let finalPrice = parseFloat(item.price) || 0
+          let finalSalePrice = parseFloat(item.sale_price) || 0
+          let finalShipping = parseFloat(item.shippingCost) || 0
+          let finalProfit = parseFloat(item.appliedProfit) || 0
+          let finalUnit = item.unit
+
+          if (originalUnit && currentUnit && originalUnit !== currentUnit) {
+            if (originalUnit === 'kg' && currentUnit === 'gram') {
+              finalQty = finalQty / 1000
+              finalPrice = finalPrice * 1000
+              finalSalePrice = finalSalePrice * 1000
+              finalShipping = finalShipping * 1000
+              finalProfit = finalProfit * 1000
+              finalUnit = item.originalUnit
+            } else if (originalUnit === 'gram' && currentUnit === 'kg') {
+              finalQty = finalQty * 1000
+              finalPrice = finalPrice / 1000
+              finalSalePrice = finalSalePrice / 1000
+              finalShipping = finalShipping / 1000
+              finalProfit = finalProfit / 1000
+              finalUnit = item.originalUnit
+            }
+          }
+
+          return {
+            productId: item._id,
+            name: item.name,
+            unit: finalUnit,
+            qty: finalQty,
+            price: finalPrice.toString(),
+            sale_price: finalSalePrice.toString(),
+            shippingCost: finalShipping.toString(),
+            appliedProfit: finalProfit || 0,
+            measurement: item.measurement
+          }
+        }),
       }
       console.log("payload", payload)
       await api.post('/api/sampleviewingclient', payload)
@@ -536,6 +614,7 @@ export default function SampleViewingToolPage() {
                   <th>Name</th>
                   <th>Qty</th>
                   <th>Unit</th>
+                  <th>Measurement</th>
                   <th>Base Price</th>
                   <th>Sale Price</th>
                   <th>Profit</th>
@@ -560,8 +639,40 @@ export default function SampleViewingToolPage() {
                           style={{ width: '80px' }}
                         />
                       </td>
-                      <td>{item.unit}</td>
-                      <td className="text-muted">${basePrice.toFixed(2)}</td>
+                      <td>
+                        <Form.Select
+                          value={item.unit}
+                          onChange={e => handleUnitChange(index, e.target.value)}
+                          style={{ width: '100px' }}
+                        >
+                          <option value="">Select unit</option>
+                          {unitOptions?.filter((u: string) => {
+                            const lowerCurrent = item.unit?.toLowerCase();
+                            if (['kg', 'gram'].includes(lowerCurrent)) {
+                              return ['kg', 'gram'].includes(u.toLowerCase());
+                            }
+                            return true;
+                          }).map((unit: string) => (
+                            <option key={unit} value={unit}>
+                              {unit}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </td>
+                      <td>
+                        <Form.Select
+                          value={item.measurement || 1}
+                          onChange={e => handleUpdateItem(index, 'measurement', e.target.value)}
+                          style={{ width: '100px' }}
+                        >
+                          {measurementOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </td>
+                      <td className="text-muted">${(parseFloat(item.price) + parseFloat(item.shippingCost)).toFixed(2)}</td>
                       <td>
                         <Form.Control
                           type="number"
@@ -632,9 +743,9 @@ export default function SampleViewingToolPage() {
                     <td>
                       {session.items.map((item: any) => (
                         <div key={item.productId} className="d-flex justify-content-between mb-1">
-                          <span>{item.name} ({item.qty})</span>
+                          <span>{item.name} ({item.qty}) {item.unit} {item.measurement < 1 ? `(${item.measurement})` : ''}</span>
                           <span className="small">
-                            ${((parseFloat(item.sale_price) || 0) * (parseFloat(item.qty) || 1)).toFixed(2)}
+                            ${((parseFloat(item.sale_price) || 0) * (parseFloat(item.qty) || 1) * (parseFloat(item.measurement) || 1)).toFixed(2)}
                           </span>
                           <span className={`text-${item.status === 'accepted' ? 'success' : item.status === 'rejected' ? 'danger' : 'warning'}`}>
                             {item.status}
@@ -644,14 +755,19 @@ export default function SampleViewingToolPage() {
                     </td>
                     <td className="fw-bold">
                       ${session.items.reduce((total: number, item: any) =>
-                        total + ((parseFloat(item.sale_price) || 0) * (parseFloat(item.qty) || 1)), 0
+                        total + ((parseFloat(item.sale_price) || 0) * (parseFloat(item.qty) || 1) * (parseFloat(item.measurement) || 1)), 0
                       ).toFixed(2)}
                     </td>
                     <td className="text-success fw-bold">
                       ${session.items.reduce((totalProfit: number, item: any) => {
-                        const basePrice = (parseFloat(item.price) || 0)
+                        const costPrice = (parseFloat(item.price) || 0)
+                        const shipping = (parseFloat(item.shippingCost) || 0)
                         const salePrice = (parseFloat(item.sale_price) || 0)
-                        const profit = (salePrice - basePrice) * (parseFloat(item.qty) || 1)
+                        const qty = (parseFloat(item.qty) || 1)
+                        const measurement = (parseFloat(item.measurement) || 1)
+                        // If shippingCost is 0 or missing, costPrice might already include shipping (for old records)
+                        // But with new records, shipping is separate.
+                        const profit = (salePrice - (costPrice + shipping)) * qty * measurement
                         return totalProfit + profit
                       }, 0).toFixed(2)}
                     </td>
