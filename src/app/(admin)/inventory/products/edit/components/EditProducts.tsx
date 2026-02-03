@@ -512,64 +512,68 @@ const EditProduct = () => {
                   </Col>
 
                   {/* Price Field */}
-                  <Col lg={6} md={6} className="mb-3">
-                    <div className="position-relative">
-                      <TextFormInput
-                        control={control}
-                        name="price"
-                        type="number"
-                        placeholder="Enter price"
-                        label={
-                          <div className="d-flex align-items-center">
-                            <span>Price ($)</span>
-                            {renderChangeIndicator('price')}
+                  {user?.showProductPrice !== false && (
+                    <Col lg={6} md={6} className="mb-3">
+                      <div className="position-relative">
+                        <TextFormInput
+                          control={control}
+                          name="price"
+                          type="number"
+                          placeholder="Enter price"
+                          label={
+                            <div className="d-flex align-items-center">
+                              <span>Price ($)</span>
+                              {renderChangeIndicator('price')}
+                            </div>
+                          }
+                        />
+                        {changeTracker.price.direction !== 'unchanged' && (
+                          <div
+                            className="previous-value"
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#6c757d',
+                              marginTop: '2px'
+                            }}
+                          >
+                            Previous: ${changeTracker.price.previous.toFixed(2)}
                           </div>
-                        }
-                      />
-                      {changeTracker.price.direction !== 'unchanged' && (
-                        <div
-                          className="previous-value"
-                          style={{
-                            fontSize: '0.75rem',
-                            color: '#6c757d',
-                            marginTop: '2px'
-                          }}
-                        >
-                          Previous: ${changeTracker.price.previous.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </Col>
+                        )}
+                      </div>
+                    </Col>
+                  )}
 
                   {/* Shipping Cost Field */}
-                  <Col lg={6} md={6} className="mb-3">
-                    <div className="position-relative">
-                      <TextFormInput
-                        control={control}
-                        name="shippingCost"
-                        type="number"
-                        placeholder="Enter shipping cost"
-                        label={
-                          <div className="d-flex align-items-center">
-                            <span>Shipping Cost ($)</span>
-                            {renderChangeIndicator('shippingCost')}
+                  {user?.showProductPrice !== false && (
+                    <Col lg={6} md={6} className="mb-3">
+                      <div className="position-relative">
+                        <TextFormInput
+                          control={control}
+                          name="shippingCost"
+                          type="number"
+                          placeholder="Enter shipping cost"
+                          label={
+                            <div className="d-flex align-items-center">
+                              <span>Shipping Cost ($)</span>
+                              {renderChangeIndicator('shippingCost')}
+                            </div>
+                          }
+                        />
+                        {changeTracker.shippingCost.direction !== 'unchanged' && (
+                          <div
+                            className="previous-value"
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#6c757d',
+                              marginTop: '2px'
+                            }}
+                          >
+                            Previous: ${changeTracker.shippingCost.previous.toFixed(2)}
                           </div>
-                        }
-                      />
-                      {changeTracker.shippingCost.direction !== 'unchanged' && (
-                        <div
-                          className="previous-value"
-                          style={{
-                            fontSize: '0.75rem',
-                            color: '#6c757d',
-                            marginTop: '2px'
-                          }}
-                        >
-                          Previous: ${changeTracker.shippingCost.previous.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </Col>
+                        )}
+                      </div>
+                    </Col>
+                  )}
                 </Row>
               </CardBody>
             </Card>
@@ -623,7 +627,7 @@ const EditProduct = () => {
                       </Col>
                     )}
 
-                    {changeTracker.price.direction !== 'unchanged' && (
+                    {changeTracker.price.direction !== 'unchanged' && user?.showProductPrice !== false && (
                       <Col lg={6} md={6} className="mb-2">
                         <div className="d-flex justify-content-between">
                           <strong className="text-muted">Price:</strong>
@@ -643,7 +647,7 @@ const EditProduct = () => {
                       </Col>
                     )}
 
-                    {changeTracker.shippingCost.direction !== 'unchanged' && (
+                    {changeTracker.shippingCost.direction !== 'unchanged' && user?.showProductPrice !== false && (
                       <Col lg={6} md={6} className="mb-2">
                         <div className="d-flex justify-content-between">
                           <strong className="text-muted">Shipping:</strong>

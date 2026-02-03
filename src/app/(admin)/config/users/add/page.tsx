@@ -79,7 +79,7 @@ const defaultAccess: AccessData = {
   activitylogs: { read: true, edit: true, delete: true, create: true },
   wholesale: { read: true, edit: true, delete: true, create: true },
   inventory: { read: true, edit: true, delete: true, create: true },
-  config: { 
+  config: {
     categories: { read: true, edit: true, delete: true, create: true },
     users: { read: true, edit: true, delete: true, create: true }
   },
@@ -105,6 +105,7 @@ const schema = yup.object({
     .string()
     .required('PIN is required')
     .length(4, 'PIN must be exactly 4 digits'),
+  showProductPrice: yup.boolean().default(true),
 }).required()
 
 type FormData = yup.InferType<typeof schema>
@@ -114,7 +115,7 @@ export default function AddUserPage() {
   const { showNotification } = useNotificationContext()
   const [loading, setLoading] = useState(false)
   const user = useAuthStore((state) => state.user)
-  console.log("user",user)
+  console.log("user", user)
   const {
     register,
     handleSubmit,
@@ -128,6 +129,7 @@ export default function AddUserPage() {
       email: '',
       phone: '',
       password: '',
+      showProductPrice: true,
     },
   })
 
@@ -156,7 +158,7 @@ export default function AddUserPage() {
   }
 
   const onError = (errors: any) => {
-    const firstError = Object.values(errors)[0] as {message : string}
+    const firstError = Object.values(errors)[0] as { message: string }
     const message = firstError?.message || 'Please correct the form errors'
     showNotification({ message, variant: 'danger' })
   }
@@ -235,6 +237,17 @@ export default function AddUserPage() {
                 <Form.Label>PIN<span className="text-danger">*</span></Form.Label>
                 <Form.Control type="password" {...register('password')} isInvalid={!!errors.password} />
                 <Form.Control.Feedback type="invalid">{errors.password?.message}</Form.Control.Feedback>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={12}>
+                <Form.Check
+                  type="switch"
+                  id="show-product-price-switch"
+                  label="Show Product Price (Controls whether this user can see product prices)"
+                  {...register('showProductPrice')}
+                />
               </Col>
             </Row>
 

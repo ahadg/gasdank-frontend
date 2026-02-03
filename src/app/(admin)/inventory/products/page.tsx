@@ -178,7 +178,9 @@ const ProductsPage = () => {
             <small className="text-muted">ID: {item.product_id}</small>
           </div>
           <div className="text-end">
-            <span className="badge bg-light text-dark">${getTotalPrice(item).toLocaleString()}</span>
+            {user?.showProductPrice !== false && (
+              <span className="badge bg-light text-dark">${getTotalPrice(item).toLocaleString()}</span>
+            )}
           </div>
         </div>
 
@@ -355,7 +357,9 @@ const ProductsPage = () => {
                             </div>
                             <div className="flex justify-between mt-1 text-gray-500">
                               <span>{item.product_id}</span>
-                              <span>${getTotalPrice(item).toLocaleString()}</span>
+                              {user?.showProductPrice !== false && (
+                                <span>${getTotalPrice(item).toLocaleString()}</span>
+                              )}
                             </div>
                             <div className="flex justify-end space-x-1 mt-1">
                               <button
@@ -531,22 +535,24 @@ const ProductsPage = () => {
                     <th>Quantity</th>
                     <th>Unit</th>
                     <th>Category</th>
-                    <th className="cursor-pointer" onClick={() => {
-                      if (priceSort === '') setPriceSort('asc')
-                      else if (priceSort === 'asc') setPriceSort('desc')
-                      else setPriceSort('')
-                    }}
-                      style={{ cursor: 'pointer' }}
-                      title="Click to sort by price"
-                    >
-                      Price
-                      {priceSort && (
-                        <IconifyIcon
-                          icon={priceSort === 'asc' ? 'tabler:chevron-up' : 'tabler:chevron-down'}
-                          className="ms-1"
-                        />
-                      )}
-                    </th>
+                    {user?.showProductPrice !== false && (
+                      <th className="cursor-pointer" onClick={() => {
+                        if (priceSort === '') setPriceSort('asc')
+                        else if (priceSort === 'asc') setPriceSort('desc')
+                        else setPriceSort('')
+                      }}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to sort by price"
+                      >
+                        Price
+                        {priceSort && (
+                          <IconifyIcon
+                            icon={priceSort === 'asc' ? 'tabler:chevron-up' : 'tabler:chevron-down'}
+                            className="ms-1"
+                          />
+                        )}
+                      </th>
+                    )}
                     <th>Product Type</th>
                     <th>Notes</th>
                     <th className="text-center" style={{ width: 125 }}>Action</th>
@@ -566,7 +572,9 @@ const ProductsPage = () => {
                         <td>{item.qty}</td>
                         <td>{item.unit}</td>
                         <td>{item.category?.name}</td>
-                        <td>${getTotalPrice(item).toLocaleString()}</td>
+                        {user?.showProductPrice !== false && (
+                          <td>${getTotalPrice(item).toLocaleString()}</td>
+                        )}
                         <td>{item.product_type?.name}</td>
                         <td>
                           <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>

@@ -23,18 +23,18 @@ interface SampleViewingAccess {
   pricesVisible?: boolean
 }
 interface Config {
-  categories ?: {
-  read?: boolean;
-  edit?: boolean;
-  delete?: boolean;
-  create?: boolean;
-  },
-  users ?: {
+  categories?: {
     read?: boolean;
     edit?: boolean;
     delete?: boolean;
     create?: boolean;
-    }
+  },
+  users?: {
+    read?: boolean;
+    edit?: boolean;
+    delete?: boolean;
+    create?: boolean;
+  }
 }
 interface DashboardStatAccess {
   today_sales?: boolean;
@@ -57,7 +57,7 @@ interface AccessData {
   sampleholdings?: Access
   sampleviewing?: Access
   sampleviewingmanagement?: SampleViewingAccess
-  expenses ?: Access
+  expenses?: Access
 }
 const defaultAccess: AccessData = {
   dashboard: { read: false, edit: false, delete: false, create: false },
@@ -74,18 +74,18 @@ const defaultAccess: AccessData = {
   sale: { read: false, edit: false, delete: false, create: false },
   wholesale: { read: false, edit: false, delete: false, create: false },
   inventory: { read: false, edit: false, delete: false, create: false },
-  config: { 
-    categories : {read: false, edit: false, delete: false, create: false},
-    users : {read: false, edit: false, delete: false, create: false}
+  config: {
+    categories: { read: false, edit: false, delete: false, create: false },
+    users: { read: false, edit: false, delete: false, create: false }
   },
   reports: { read: false, edit: false, delete: false, create: false },
   sampleholdings: { read: true, edit: true, delete: true, create: true },
   expenses: { read: true, edit: true, delete: true, create: true },
   sampleviewing: { read: true, edit: true, delete: true, create: true },
-  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible : true  },
+  sampleviewingmanagement: { read: true, edit: true, delete: true, create: true, pricesVisible: true },
 }
 
-const pages = ["dashboard", "sale", "wholesale", "inventory","analytics", "reports","expenses","sampleholdings","sampleviewing","sampleviewingmanagement"]
+const pages = ["dashboard", "sale", "wholesale", "inventory", "analytics", "reports", "expenses", "sampleholdings", "sampleviewing", "sampleviewingmanagement"]
 const permissions = ["read", "edit", "delete", "create"]
 const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance", "online_balance"]
 const configSections = ["categories", "users"]
@@ -97,12 +97,12 @@ const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
   phone: yup.string().optional(),
   password: yup
-  .string()
-  .optional()
-  .matches(/^\d{4}$/, 'PIN must be exactly 4 digits')
-  .nullable()
-  .transform((value) => (value === '' ? null : value)),
-
+    .string()
+    .optional()
+    .matches(/^\d{4}$/, 'PIN must be exactly 4 digits')
+    .nullable()
+    .transform((value) => (value === '' ? null : value)),
+  showProductPrice: yup.boolean().default(true),
 })
 
 type FormData = yup.InferType<typeof schema>
@@ -116,7 +116,7 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(false)
   const [accessData, setAccessData] = useState<AccessData>(defaultAccess)
   const user = useAuthStore((state) => state.user)
-  console.log("user",user)
+  console.log("user", user)
   const {
     register,
     handleSubmit,
@@ -136,6 +136,7 @@ export default function EditUserPage() {
         setValue('userName', userData.userName || '')
         setValue('email', userData.email || '')
         setValue('phone', userData.phone || '')
+        setValue('showProductPrice', userData.showProductPrice !== undefined ? userData.showProductPrice : true)
         setAccessData(userData.access || defaultAccess)
       } catch (error) {
         console.error('Error fetching user:', error)
@@ -241,6 +242,17 @@ export default function EditUserPage() {
                 <Form.Label>PIN</Form.Label>
                 <Form.Control type="password" {...register('password')} isInvalid={!!errors.password} />
                 <Form.Control.Feedback type="invalid">{errors.password?.message}</Form.Control.Feedback>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={12}>
+                <Form.Check
+                  type="switch"
+                  id="show-product-price-switch"
+                  label="Show Product Price (Controls whether this user can see product prices)"
+                  {...register('showProductPrice')}
+                />
               </Col>
             </Row>
 
