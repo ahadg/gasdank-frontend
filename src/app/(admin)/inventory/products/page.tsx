@@ -28,11 +28,11 @@ const ProductsPage = () => {
   const limit = 100
   const [totalPages, setTotalPages] = useState(1)
   const { showNotification } = useNotificationContext()
-  
+
   // Restock modal state
   const [showRestockModal, setShowRestockModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
-  
+
   // Low stock section state
   const [showLowStock, setShowLowStock] = useState(false)
 
@@ -112,7 +112,7 @@ const ProductsPage = () => {
     setShowRestockModal(false)
     setSelectedProduct(null)
   }
-  
+
   const onRestockComplete = () => {
     fetchProducts()
     // Also refresh low stock products if the section is open
@@ -133,11 +133,11 @@ const ProductsPage = () => {
   // Sort products by price
   const sortProductsByPrice = (productsToSort: any[]) => {
     if (!priceSort) return productsToSort
-    
+
     return [...productsToSort].sort((a, b) => {
       const priceA = getTotalPrice(a)
       const priceB = getTotalPrice(b)
-      
+
       if (priceSort === 'asc') {
         return priceA - priceB // Lowest to highest
       } else {
@@ -181,7 +181,7 @@ const ProductsPage = () => {
             <span className="badge bg-light text-dark">${getTotalPrice(item).toLocaleString()}</span>
           </div>
         </div>
-        
+
         <div className="row g-2 mb-3">
           <div className="col-6">
             <small className="text-muted d-block">Quantity</small>
@@ -192,25 +192,25 @@ const ProductsPage = () => {
             <span className="fw-medium">{item.category?.name || 'N/A'}</span>
           </div>
         </div>
-        
+
         {item.reference_number && (
           <div className="mb-2">
             <small className="text-muted d-block">Reference</small>
             <span className="fw-medium">{item.reference_number}</span>
           </div>
         )}
-        
+
         {item.notes && (
           <div className="mb-3">
             <small className="text-muted d-block">Notes</small>
             <small className="text-truncate d-block" style={{ maxWidth: '100%' }}>{item.notes}</small>
           </div>
         )}
-        
+
         <div className="d-flex gap-2">
-          <Button 
+          <Button
             variant={isLowStock ? "warning" : "outline-primary"}
-            size="sm" 
+            size="sm"
             className="flex-fill"
             onClick={() => handleRestockClick(item)}
           >
@@ -233,82 +233,81 @@ const ProductsPage = () => {
       <PageTitle title="Products" subTitle="Inventory" />
       {/* Low Stock Alert Section */}
       <div className="mb-4">
-  <div className="w-full">
-    <div className="border border-yellow-200 rounded-lg overflow-hidden shadow-xs">
-      <div 
-        className="border-b border-yellow-200 bg-yellow-50 cursor-pointer p-3 hover:bg-yellow-100 transition-colors"
-        onClick={toggleLowStockSection}
-      >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <IconifyIcon 
-              icon="tabler:alert-triangle" 
-              className="text-yellow-600 text-base" 
-            />
-            <h5 className="text-sm font-semibold text-yellow-800 flex items-center">
-              Low Stock
-              {lowStockProducts.length > 0 && (
-                <span className="ml-2 bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full text-xs font-medium">
-                  {lowStockProducts.length}
-                </span>
-              )}
-            </h5>
-          </div>
-          <IconifyIcon 
-            icon={showLowStock ? "tabler:chevron-up" : "tabler:chevron-down"} 
-            className="text-yellow-600 text-base" 
-          />
-        </div>
-      </div>
-      
-      <div className={`transition-all duration-200 ease-in-out overflow-hidden ${
-        showLowStock ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-      }`}>
-        {showLowStock && (
-          <>
-            {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto text-xs">
-              <table className="w-full divide-y divide-yellow-100">
-                <thead className="bg-yellow-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-yellow-700">Product</th>
-                    <th className="px-3 py-2 text-left font-medium text-yellow-700">ID/Ref</th>
-                    <th className="px-3 py-2 text-left font-medium text-yellow-700">Stock</th>
-                    <th className="px-3 py-2 text-left font-medium text-yellow-700">Category</th>
-                    {/* <th className="px-3 py-2 text-left font-medium text-yellow-700">Value</th>
+        <div className="w-full">
+          <div className="border border-yellow-200 rounded-lg overflow-hidden shadow-xs">
+            <div
+              className="border-b border-yellow-200 bg-yellow-50 cursor-pointer p-3 hover:bg-yellow-100 transition-colors"
+              onClick={toggleLowStockSection}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <IconifyIcon
+                    icon="tabler:alert-triangle"
+                    className="text-yellow-600 text-base"
+                  />
+                  <h5 className="text-sm font-semibold text-yellow-800 flex items-center">
+                    Low Stock
+                    {lowStockProducts.length > 0 && (
+                      <span className="ml-2 bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full text-xs font-medium">
+                        {lowStockProducts.length}
+                      </span>
+                    )}
+                  </h5>
+                </div>
+                <IconifyIcon
+                  icon={showLowStock ? "tabler:chevron-up" : "tabler:chevron-down"}
+                  className="text-yellow-600 text-base"
+                />
+              </div>
+            </div>
+
+            <div className={`transition-all duration-200 ease-in-out overflow-hidden ${showLowStock ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+              }`}>
+              {showLowStock && (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block overflow-x-auto text-xs">
+                    <table className="w-full divide-y divide-yellow-100">
+                      <thead className="bg-yellow-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-yellow-700">Product</th>
+                          <th className="px-3 py-2 text-left font-medium text-yellow-700">ID/Ref</th>
+                          <th className="px-3 py-2 text-left font-medium text-yellow-700">Stock</th>
+                          <th className="px-3 py-2 text-left font-medium text-yellow-700">Category</th>
+                          {/* <th className="px-3 py-2 text-left font-medium text-yellow-700">Value</th>
                     <th className="px-3 py-2 text-center font-medium text-yellow-700 w-28">Actions</th> */}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-yellow-50">
-                  {lowStockLoading ? (
-                    <tr>
-                      <td colSpan={6} className="px-3 py-4 text-center">
-                        <div className="flex justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : sortedLowStockProducts.length > 0 ? (
-                    sortedLowStockProducts.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-yellow-50">
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="font-medium text-gray-800">{item.name}</div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-gray-600">
-                          <div>{item.product_id}</div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${item.qty <= 5 ? 'bg-red-500' : 'bg-yellow-500'} mr-1`}></span>
-                            <span className="font-medium text-yellow-700">{item.qty} {item.unit}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="text-gray-600">{item.category?.name || '-'}</span>
-                        </td>
-                        {/* <td className="px-3 py-2 whitespace-nowrap text-gray-800">
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-yellow-50">
+                        {lowStockLoading ? (
+                          <tr>
+                            <td colSpan={6} className="px-3 py-4 text-center">
+                              <div className="flex justify-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : sortedLowStockProducts.length > 0 ? (
+                          sortedLowStockProducts.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-yellow-50">
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="font-medium text-gray-800">{item.name}</div>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap text-gray-600">
+                                <div>{item.product_id}</div>
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${item.qty <= 5 ? 'bg-red-500' : 'bg-yellow-500'} mr-1`}></span>
+                                  <span className="font-medium text-yellow-700">{item.qty} {item.unit}</span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <span className="text-gray-600">{item.category?.name || '-'}</span>
+                              </td>
+                              {/* <td className="px-3 py-2 whitespace-nowrap text-gray-800">
                           ${getTotalPrice(item).toLocaleString()}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
@@ -327,66 +326,66 @@ const ProductsPage = () => {
                             </Link>
                           </div>
                         </td> */}
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
-                        All products well stocked
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
+                              All products well stocked
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-            {/* Mobile Card View */}
-            <div className="block lg:hidden p-2">
-              {lowStockLoading ? (
-                <div className="flex justify-center p-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
-                </div>
-              ) : sortedLowStockProducts.length > 0 ? (
-                <div className="space-y-2">
-                  {sortedLowStockProducts.map((item, idx) => (
-                    <div key={idx} className="bg-white p-2 rounded border border-yellow-100 text-xs">
-                      <div className="flex justify-between">
-                        <div className="font-medium truncate max-w-[120px]">{item.name}</div>
-                        <span className="font-medium text-yellow-700">{item.qty} {item.unit}</span>
+                  {/* Mobile Card View */}
+                  <div className="block lg:hidden p-2">
+                    {lowStockLoading ? (
+                      <div className="flex justify-center p-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-400 border-t-transparent"></div>
                       </div>
-                      <div className="flex justify-between mt-1 text-gray-500">
-                        <span>{item.product_id}</span>
-                        <span>${getTotalPrice(item).toLocaleString()}</span>
+                    ) : sortedLowStockProducts.length > 0 ? (
+                      <div className="space-y-2">
+                        {sortedLowStockProducts.map((item, idx) => (
+                          <div key={idx} className="bg-white p-2 rounded border border-yellow-100 text-xs">
+                            <div className="flex justify-between">
+                              <div className="font-medium truncate max-w-[120px]">{item.name}</div>
+                              <span className="font-medium text-yellow-700">{item.qty} {item.unit}</span>
+                            </div>
+                            <div className="flex justify-between mt-1 text-gray-500">
+                              <span>{item.product_id}</span>
+                              <span>${getTotalPrice(item).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-end space-x-1 mt-1">
+                              <button
+                                onClick={() => handleRestockClick(item)}
+                                className="p-1 text-yellow-700 hover:bg-yellow-100 rounded"
+                                title="Restock"
+                              >
+                                <IconifyIcon icon="tabler:package" className="text-xs" />
+                              </button>
+                              <Link href={`/inventory/products/edit/${item._id}`}>
+                                <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                                  <IconifyIcon icon="tabler:edit" className="text-xs" />
+                                </button>
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex justify-end space-x-1 mt-1">
-                        <button
-                          onClick={() => handleRestockClick(item)}
-                          className="p-1 text-yellow-700 hover:bg-yellow-100 rounded"
-                          title="Restock"
-                        >
-                          <IconifyIcon icon="tabler:package" className="text-xs" />
-                        </button>
-                        <Link href={`/inventory/products/edit/${item._id}`}>
-                          <button className="p-1 text-gray-600 hover:bg-gray-100 rounded">
-                            <IconifyIcon icon="tabler:edit" className="text-xs" />
-                          </button>
-                        </Link>
+                    ) : (
+                      <div className="text-center p-2 text-gray-500 text-xs">
+                        All products well stocked
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center p-2 text-gray-500 text-xs">
-                  All products well stocked
-                </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
       {/* Main Products Section */}
       <Row>
@@ -394,7 +393,7 @@ const ProductsPage = () => {
           <Card>
             <CardHeader className="border-bottom border-light">
               <div className="px-3 py-3">
-                
+
                 {/* Title - Always at top on mobile */}
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <CardTitle as="h4" className="mb-0">
@@ -410,7 +409,7 @@ const ProductsPage = () => {
 
                 {/* Main Content Row */}
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
-                  
+
                   {/* Left Section: Search + Filters */}
                   <div className="d-flex flex-column flex-lg-row gap-2 flex-grow-1">
                     {/* Search Input */}
@@ -423,7 +422,7 @@ const ProductsPage = () => {
                         onChange={handleSearchChange}
                       />
                     </div>
-                    
+
                     {/* Filters Row */}
                     <div className="d-flex flex-column flex-sm-row gap-2" style={{ minWidth: '300px' }}>
                       {/* Category Filter */}
@@ -457,8 +456,8 @@ const ProductsPage = () => {
                       </Form.Select>
 
                       {/* Clear All Button */}
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         variant="outline-secondary"
                         size="sm"
                         onClick={clearAllFilters}
@@ -486,9 +485,9 @@ const ProductsPage = () => {
                     {search && (
                       <Badge bg="primary" className="d-flex align-items-center gap-1">
                         Search: "{search}"
-                        <IconifyIcon 
-                          icon="tabler:x" 
-                          className="cursor-pointer" 
+                        <IconifyIcon
+                          icon="tabler:x"
+                          className="cursor-pointer"
                           onClick={() => setSearch('')}
                           style={{ cursor: 'pointer' }}
                         />
@@ -497,9 +496,9 @@ const ProductsPage = () => {
                     {filterCategory && (
                       <Badge bg="info" className="d-flex align-items-center gap-1">
                         Category: {categories.find(cat => cat._id === filterCategory)?.name}
-                        <IconifyIcon 
-                          icon="tabler:x" 
-                          className="cursor-pointer" 
+                        <IconifyIcon
+                          icon="tabler:x"
+                          className="cursor-pointer"
                           onClick={() => setFilterCategory('')}
                           style={{ cursor: 'pointer' }}
                         />
@@ -508,9 +507,9 @@ const ProductsPage = () => {
                     {priceSort && (
                       <Badge bg="success" className="d-flex align-items-center gap-1">
                         Price: {priceSort === 'asc' ? 'Low to High' : 'High to Low'}
-                        <IconifyIcon 
-                          icon="tabler:x" 
-                          className="cursor-pointer" 
+                        <IconifyIcon
+                          icon="tabler:x"
+                          className="cursor-pointer"
                           onClick={() => setPriceSort('')}
                           style={{ cursor: 'pointer' }}
                         />
@@ -533,22 +532,22 @@ const ProductsPage = () => {
                     <th>Unit</th>
                     <th>Category</th>
                     <th className="cursor-pointer" onClick={() => {
-                        if (priceSort === '') setPriceSort('asc')
-                        else if (priceSort === 'asc') setPriceSort('desc')
-                        else setPriceSort('')
-                      }}
+                      if (priceSort === '') setPriceSort('asc')
+                      else if (priceSort === 'asc') setPriceSort('desc')
+                      else setPriceSort('')
+                    }}
                       style={{ cursor: 'pointer' }}
                       title="Click to sort by price"
                     >
                       Price
                       {priceSort && (
-                        <IconifyIcon 
-                          icon={priceSort === 'asc' ? 'tabler:chevron-up' : 'tabler:chevron-down'} 
-                          className="ms-1" 
+                        <IconifyIcon
+                          icon={priceSort === 'asc' ? 'tabler:chevron-up' : 'tabler:chevron-down'}
+                          className="ms-1"
                         />
                       )}
                     </th>
-                    <th>Strain Type</th>
+                    <th>Product Type</th>
                     <th>Notes</th>
                     <th className="text-center" style={{ width: 125 }}>Action</th>
                   </tr>
@@ -568,7 +567,7 @@ const ProductsPage = () => {
                         <td>{item.unit}</td>
                         <td>{item.category?.name}</td>
                         <td>${getTotalPrice(item).toLocaleString()}</td>
-                        <td>{item.strain_type}</td>
+                        <td>{item.product_type?.name}</td>
                         <td>
                           <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
                             {item.notes}
@@ -576,9 +575,9 @@ const ProductsPage = () => {
                         </td>
                         <td className="text-center">
                           <div className="hstack justify-content-center">
-                            <Button 
-                              variant="soft-primary" 
-                              size="sm" 
+                            <Button
+                              variant="soft-primary"
+                              size="sm"
                               className="btn-icon rounded-circle me-1"
                               onClick={() => handleRestockClick(item)}
                               title="Restock Product"

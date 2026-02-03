@@ -35,7 +35,7 @@ const multipleProductSchema = yup.object({
         .required('Price is required')
         .min(0, 'Price must be non-negative')
         .typeError('Price must be a number'),
-      strain_type: yup.string().optional(),
+      product_type: yup.string().optional(),
     })
   ).min(1, 'At least one product is required'),
   shippingCost: yup
@@ -233,7 +233,8 @@ const MobileProductCard = ({
   remove,
   fieldsCount,
   unitOptions,
-  userCategories
+  userCategories,
+  productTypes
 }: {
   index: number;
   control: any;
@@ -244,6 +245,7 @@ const MobileProductCard = ({
   fieldsCount: number;
   unitOptions: string[];
   userCategories: any[];
+  productTypes: any[];
 }) => {
   const productErrors = errors.products?.[index];
   const shouldShowErrors = showValidationErrors || !!touchedFields.products?.[index];
@@ -425,26 +427,28 @@ const MobileProductCard = ({
             )}
           </Col>
           <Col xs={12}>
-            <Form.Label className="small fw-semibold">Strain Type</Form.Label>
+            <Form.Label className="small fw-semibold">Product Type</Form.Label>
             <Controller
               control={control}
-              name={`products.${index}.strain_type` as const}
+              name={`products.${index}.product_type` as const}
               render={({ field }) => (
                 <Form.Select
                   size="sm"
-                  isInvalid={!!productErrors?.strain_type && shouldShowErrors}
+                  isInvalid={!!productErrors?.product_type && shouldShowErrors}
                   {...field}
                 >
-                  <option value="">Select strain type</option>
-                  <option value="indica">Indica</option>
-                  <option value="sativa">Sativa</option>
-                  <option value="hybrid">Hybrid</option>
+                  <option value="">Select product type</option>
+                  {productTypes.map((type: any) => (
+                    <option key={type._id} value={type._id}>
+                      {type.name}
+                    </option>
+                  ))}
                 </Form.Select>
               )}
             />
             {shouldShowErrors && (
               <Form.Control.Feedback type="invalid" className="small">
-                {productErrors?.strain_type?.message}
+                {productErrors?.product_type?.message}
               </Form.Control.Feedback>
             )}
           </Col>
@@ -463,7 +467,7 @@ function AddProductsPage() {
   const { control, handleSubmit, getValues, reset, formState: { errors, touchedFields } } = useForm<MultipleProductFormData>({
     resolver: yupResolver(multipleProductSchema),
     defaultValues: {
-      products: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, strain_type: "" }],
+      products: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, product_type: "" }],
       shippingCost: 0,
     },
     mode: 'onChange', // Validate on change to show errors as user types
@@ -478,7 +482,7 @@ function AddProductsPage() {
   const productsData = useWatch({
     control,
     name: 'products',
-    defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, strain_type: "" }]
+    defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, product_type: "" }]
   })
 
   const shippingCost = useWatch({
@@ -566,6 +570,23 @@ function AddProductsPage() {
     fetchUserCategories()
   }, [user?._id])
 
+  // Fetch product types
+  const [productTypes, setProductTypes] = useState<any[]>([])
+  useEffect(() => {
+    async function fetchProductTypes() {
+      if (user?._id) {
+        try {
+          const response = await api.get(`/api/product-types/${user._id}`)
+          setProductTypes(response.data)
+        } catch (error: any) {
+          console.error('Error fetching product types:', error)
+          showNotification({ message: 'Error fetching product types', variant: 'danger' })
+        }
+      }
+    }
+    fetchProductTypes()
+  }, [user?._id])
+
 
 
 
@@ -578,7 +599,7 @@ function AddProductsPage() {
       category: '',
       price: 0,
       measurement: 1,
-      strain_type: ""
+      product_type: ""
     })
   }
 
@@ -611,7 +632,7 @@ function AddProductsPage() {
         unit: item.unit,
         price: item.price,
         shipping: avg_shipping.toFixed(2),
-        strain_type: item?.strain_type
+        product_type: item?.product_type
       }))
 
       const productsTotal = productsData.reduce((sum, item) => {
@@ -672,7 +693,7 @@ function AddProductsPage() {
           category: the_category?._id,
           price: prod.price,
           shippingCost: avg_shipping.toFixed(2),
-          strain_type: prod.strain_type,
+          product_type: prod.product_type,
           status: "",
           notes: "",
         })
@@ -757,7 +778,7 @@ function AddProductsPage() {
                       <th className="small">Measurement *</th>
                       <th className="small">Category *</th>
                       <th className="small">Price *</th>
-                      <th className="small">Strain Type</th>
+                      <th className="small">Product Type</th>
                       <th className="small">Action</th>
                     </tr>
                   </thead>
@@ -924,23 +945,25 @@ function AddProductsPage() {
                           <td>
                             <Controller
                               control={control}
-                              name={`products.${index}.strain_type` as const}
+                              name={`products.${index}.product_type` as const}
                               render={({ field }) => (
                                 <Form.Select
                                   size="sm"
-                                  isInvalid={!!productErrors?.strain_type && shouldShowErrors}
+                                  isInvalid={!!productErrors?.product_type && shouldShowErrors}
                                   {...field}
                                 >
-                                  <option value="">Select strain type</option>
-                                  <option value="indica">Indica</option>
-                                  <option value="sativa">Sativa</option>
-                                  <option value="hybrid">Hybrid</option>
+                                  <option value="">Select product type</option>
+                                  {productTypes.map((type: any) => (
+                                    <option key={type._id} value={type._id}>
+                                      {type.name}
+                                    </option>
+                                  ))}
                                 </Form.Select>
                               )}
                             />
                             {shouldShowErrors && (
                               <Form.Control.Feedback type="invalid" className="small d-block">
-                                {productErrors?.strain_type?.message}
+                                {productErrors?.product_type?.message}
                               </Form.Control.Feedback>
                             )}
                           </td>
@@ -976,6 +999,7 @@ function AddProductsPage() {
                   fieldsCount={fields.length}
                   unitOptions={unitOptions}
                   userCategories={userCategories}
+                  productTypes={productTypes}
                 />
               ))}
             </div>

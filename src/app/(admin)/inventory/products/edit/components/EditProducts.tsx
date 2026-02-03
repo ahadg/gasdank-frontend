@@ -1,18 +1,18 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { 
-  Button, 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  CardTitle, 
-  Col, 
-  Form, 
-  Row, 
-  Badge, 
-  OverlayTrigger, 
-  Tooltip 
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Col,
+  Form,
+  Row,
+  Badge,
+  OverlayTrigger,
+  Tooltip
 } from 'react-bootstrap'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -42,6 +42,7 @@ const productSchema = yup.object({
     .default(0),
   status: yup.string(),
   notes: yup.string(),
+  product_type: yup.string().optional(),
 })
 
 type ProductFormData = yup.InferType<typeof productSchema>
@@ -59,10 +60,10 @@ const EditProduct = () => {
   const params = useParams()
   const productId = params.id
   const { showNotification } = useNotificationContext()
-  
+
   // Original product data
   const [originalProduct, setOriginalProduct] = useState<any>(null)
-  
+
   // Change tracking state
   const [changeTracker, setChangeTracker] = useState<ProductChangeTracker>({
     qty: { previous: 0, current: 0, change: 0, direction: 'unchanged' },
@@ -83,13 +84,15 @@ const EditProduct = () => {
       shippingCost: 0,
       status: '',
       notes: '',
+      product_type: '',
     },
   })
-  
+
   const [loading, setLoading] = useState(false)
   const [userCategories, setUserCategories] = useState<any[]>([])
+  const [productTypes, setProductTypes] = useState<any[]>([])
   const user = useAuthStore((state) => state.user)
-  
+
   // Set up watchers for form fields we need to track
   const watchQty = watch('qty')
   const watchPrice = watch('price')
@@ -103,7 +106,7 @@ const EditProduct = () => {
         const response = await api.get(`/api/inventory/product/${productId}`)
         const productData = response.data
         setOriginalProduct(productData)
-        
+
         // Pre-populate the form
         reset({
           qty: productData.qty,
@@ -114,42 +117,43 @@ const EditProduct = () => {
           shippingCost: productData.shippingCost,
           status: productData.status,
           notes: productData.notes,
+          product_type: productData.product_type?._id || productData.product_type,
         })
-        
+
         // Initialize change tracker with original values
         setChangeTracker({
-          qty: { 
-            previous: productData.qty, 
-            current: productData.qty, 
-            change: 0, 
-            direction: 'unchanged' 
+          qty: {
+            previous: productData.qty,
+            current: productData.qty,
+            change: 0,
+            direction: 'unchanged'
           },
-          price: { 
-            previous: productData.price, 
-            current: productData.price, 
-            change: 0, 
-            direction: 'unchanged' 
+          price: {
+            previous: productData.price,
+            current: productData.price,
+            change: 0,
+            direction: 'unchanged'
           },
-          shippingCost: { 
-            previous: productData.shippingCost, 
-            current: productData.shippingCost, 
-            change: 0, 
-            direction: 'unchanged' 
+          shippingCost: {
+            previous: productData.shippingCost,
+            current: productData.shippingCost,
+            change: 0,
+            direction: 'unchanged'
           },
-          unit: { 
-            previous: productData.unit, 
-            current: productData.unit, 
-            changed: false 
+          unit: {
+            previous: productData.unit,
+            current: productData.unit,
+            changed: false
           }
         })
       } catch (error) {
         console.error('Error fetching product:', error)
       }
     }
-    
+
     fetchProduct()
   }, [productId, reset])
-  
+
   // Load user-specific categories
   useEffect(() => {
     async function fetchUserCategories() {
@@ -164,33 +168,48 @@ const EditProduct = () => {
     }
     fetchUserCategories()
   }, [user?._id])
-  
+
+  // Load product types
+  useEffect(() => {
+    async function fetchProductTypes() {
+      try {
+        if (user?._id) {
+          const response = await api.get(`/api/product-types/${user._id}`)
+          setProductTypes(response.data)
+        }
+      } catch (error) {
+        console.error('Error fetching product types:', error)
+      }
+    }
+    fetchProductTypes()
+  }, [user?._id])
+
   // Update change tracker when form values change - only when original product is loaded
   // and when the watched fields actually change
   useEffect(() => {
     if (!originalProduct) return;
-    
+
     // Calculate quantity changes
     const qtyChange = Number(watchQty) - originalProduct.qty
-    const qtyDirection = qtyChange > 0 
-      ? 'increased' 
+    const qtyDirection = qtyChange > 0
+      ? 'increased'
       : qtyChange < 0 ? 'decreased' : 'unchanged'
-    
+
     // Calculate price changes
     const priceChange = Number(watchPrice) - originalProduct.price
-    const priceDirection = priceChange > 0 
-      ? 'increased' 
+    const priceDirection = priceChange > 0
+      ? 'increased'
       : priceChange < 0 ? 'decreased' : 'unchanged'
-    
+
     // Calculate shipping cost changes
     const shippingChange = Number(watchShippingCost) - originalProduct.shippingCost
-    const shippingDirection = shippingChange > 0 
-      ? 'increased' 
+    const shippingDirection = shippingChange > 0
+      ? 'increased'
       : shippingChange < 0 ? 'decreased' : 'unchanged'
-    
+
     // Check for unit change
     const unitChanged = watchUnit !== originalProduct.unit
-    
+
     // Update change tracker
     setChangeTracker({
       qty: {
@@ -218,7 +237,7 @@ const EditProduct = () => {
       }
     })
   }, [originalProduct, watchQty, watchPrice, watchShippingCost, watchUnit])
-  
+
   const onSubmit = async (data: ProductFormData) => {
     setLoading(true)
     try {
@@ -248,18 +267,18 @@ const EditProduct = () => {
           } : null
         }
       }
-      
+
       const response = await api.put(`/api/inventory/${productId}`, changeData)
-      
+
       if (response.status === 200 || response.status === 204) {
         showNotification({ message: 'Product updated successfully', variant: 'success' })
         router.back()
       }
     } catch (error: any) {
       console.error('Error updating product:', error)
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error updating product', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error updating product',
+        variant: 'danger'
       })
     } finally {
       setLoading(false)
@@ -275,30 +294,30 @@ const EditProduct = () => {
       }
     }
   }
-  
+
   // Helper function to render change indicators for numeric fields
   const renderChangeIndicator = (fieldName: 'qty' | 'price' | 'shippingCost') => {
     const field = changeTracker[fieldName]
-    
+
     if (field.direction === 'unchanged') return null
-    
+
     const isPriceField = fieldName === 'price' || fieldName === 'shippingCost'
     const formattedChange = isPriceField ? `$${field.change.toFixed(2)}` : field.change.toFixed(0)
     const formattedPrevious = isPriceField ? `$${field.previous.toFixed(2)}` : field.previous
-    
+
     const tooltipContent = `Previous: ${formattedPrevious}`
-    
+
     return (
       <OverlayTrigger
         placement="top"
         overlay={<Tooltip id={`tooltip-${fieldName}`}>{tooltipContent}</Tooltip>}
       >
         <div className="change-indicator mt-1">
-          <Badge 
+          <Badge
             bg={field.direction === 'increased' ? 'success' : 'danger'}
             className="change-badge"
-            style={{ 
-              fontSize: '0.8rem', 
+            style={{
+              fontSize: '0.8rem',
               padding: '0.25rem 0.45rem',
               display: 'inline-flex',
               alignItems: 'center',
@@ -316,24 +335,24 @@ const EditProduct = () => {
       </OverlayTrigger>
     )
   }
-  
+
   // Helper function to render unit change indicator
   const renderUnitChange = () => {
     if (!changeTracker.unit.changed) return null
-    
+
     const tooltipContent = `Previous: ${changeTracker.unit.previous}`
-    
+
     return (
       <OverlayTrigger
         placement="top"
         overlay={<Tooltip id="tooltip-unit">{tooltipContent}</Tooltip>}
       >
         <div className="change-indicator mt-1">
-          <Badge 
-            bg="info" 
-            style={{ 
-              fontSize: '0.8rem', 
-              padding: '0.25rem 0.45rem' 
+          <Badge
+            bg="info"
+            style={{
+              fontSize: '0.8rem',
+              padding: '0.25rem 0.45rem'
             }}
           >
             Changed
@@ -342,7 +361,7 @@ const EditProduct = () => {
       </OverlayTrigger>
     )
   }
-  
+
   // Count how many fields have changes
   const changedFieldsCount = [
     changeTracker.qty.direction !== 'unchanged',
@@ -356,18 +375,18 @@ const EditProduct = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Edit Product</h4>
         {changedFieldsCount > 0 && (
-          <Badge 
-            bg="primary" 
-            style={{ 
-              fontSize: '0.9rem', 
-              padding: '0.35rem 0.65rem' 
+          <Badge
+            bg="primary"
+            style={{
+              fontSize: '0.9rem',
+              padding: '0.35rem 0.65rem'
             }}
           >
             {changedFieldsCount} {changedFieldsCount === 1 ? 'Change' : 'Changes'} Detected
           </Badge>
         )}
       </div>
-      
+
       <Card className="mb-4">
         <CardHeader className="border-bottom border-light">
           <CardTitle as="h5" className="mb-0">Product Details</CardTitle>
@@ -377,11 +396,11 @@ const EditProduct = () => {
             {/* Product Name and Category */}
             <Row className="mb-3">
               <Col lg={6}>
-                <TextFormInput 
-                  control={control} 
-                  name="name" 
-                  placeholder="Enter Product name" 
-                  label="Product Name" 
+                <TextFormInput
+                  control={control}
+                  name="name"
+                  placeholder="Enter Product name"
+                  label="Product Name"
                 />
               </Col>
               <Col lg={6}>
@@ -402,7 +421,26 @@ const EditProduct = () => {
                 />
               </Col>
             </Row>
-            
+            <Row className="mb-3">
+              <Col lg={6}>
+                <label className="form-label">Product Type</label>
+                <Controller
+                  control={control}
+                  name="product_type"
+                  render={({ field }) => (
+                    <Form.Select {...field}>
+                      <option value="">Select product type</option>
+                      {productTypes.map((type: any) => (
+                        <option key={type._id} value={type._id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  )}
+                />
+              </Col>
+            </Row>
+
             {/* Tracked Fields Section */}
             <Card className="inner-card mb-3" style={{ borderLeft: '4px solid #6c757d' }}>
               <CardBody>
@@ -414,11 +452,11 @@ const EditProduct = () => {
                   {/* Quantity Field */}
                   <Col lg={6} md={6} className="mb-3">
                     <div className="position-relative">
-                      <TextFormInput 
-                        control={control} 
-                        name="qty" 
-                        type="number" 
-                        placeholder="Enter quantity" 
+                      <TextFormInput
+                        control={control}
+                        name="qty"
+                        type="number"
+                        placeholder="Enter quantity"
                         label={
                           <div className="d-flex align-items-center">
                             <span>Quantity</span>
@@ -427,12 +465,12 @@ const EditProduct = () => {
                         }
                       />
                       {changeTracker.qty.direction !== 'unchanged' && (
-                        <div 
-                          className="previous-value" 
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#6c757d', 
-                            marginTop: '2px' 
+                        <div
+                          className="previous-value"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#6c757d',
+                            marginTop: '2px'
                           }}
                         >
                           Previous: {changeTracker.qty.previous}
@@ -440,7 +478,7 @@ const EditProduct = () => {
                       )}
                     </div>
                   </Col>
-                  
+
                   {/* Unit Field */}
                   <Col lg={6} md={6} className="mb-3">
                     <div className="position-relative">
@@ -459,12 +497,12 @@ const EditProduct = () => {
                         )}
                       />
                       {changeTracker.unit.changed && (
-                        <div 
-                          className="previous-value" 
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#6c757d', 
-                            marginTop: '2px' 
+                        <div
+                          className="previous-value"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#6c757d',
+                            marginTop: '2px'
                           }}
                         >
                           Previous: {changeTracker.unit.previous}
@@ -472,15 +510,15 @@ const EditProduct = () => {
                       )}
                     </div>
                   </Col>
-                  
+
                   {/* Price Field */}
                   <Col lg={6} md={6} className="mb-3">
                     <div className="position-relative">
-                      <TextFormInput 
-                        control={control} 
-                        name="price" 
-                        type="number" 
-                        placeholder="Enter price" 
+                      <TextFormInput
+                        control={control}
+                        name="price"
+                        type="number"
+                        placeholder="Enter price"
                         label={
                           <div className="d-flex align-items-center">
                             <span>Price ($)</span>
@@ -489,12 +527,12 @@ const EditProduct = () => {
                         }
                       />
                       {changeTracker.price.direction !== 'unchanged' && (
-                        <div 
-                          className="previous-value" 
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#6c757d', 
-                            marginTop: '2px' 
+                        <div
+                          className="previous-value"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#6c757d',
+                            marginTop: '2px'
                           }}
                         >
                           Previous: ${changeTracker.price.previous.toFixed(2)}
@@ -502,15 +540,15 @@ const EditProduct = () => {
                       )}
                     </div>
                   </Col>
-                  
+
                   {/* Shipping Cost Field */}
                   <Col lg={6} md={6} className="mb-3">
                     <div className="position-relative">
-                      <TextFormInput 
-                        control={control} 
-                        name="shippingCost" 
-                        type="number" 
-                        placeholder="Enter shipping cost" 
+                      <TextFormInput
+                        control={control}
+                        name="shippingCost"
+                        type="number"
+                        placeholder="Enter shipping cost"
                         label={
                           <div className="d-flex align-items-center">
                             <span>Shipping Cost ($)</span>
@@ -519,12 +557,12 @@ const EditProduct = () => {
                         }
                       />
                       {changeTracker.shippingCost.direction !== 'unchanged' && (
-                        <div 
-                          className="previous-value" 
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#6c757d', 
-                            marginTop: '2px' 
+                        <div
+                          className="previous-value"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#6c757d',
+                            marginTop: '2px'
                           }}
                         >
                           Previous: ${changeTracker.shippingCost.previous.toFixed(2)}
@@ -535,26 +573,26 @@ const EditProduct = () => {
                 </Row>
               </CardBody>
             </Card>
-            
+
             {/* Notes Section */}
             <Row>
               <Col lg={12}>
                 <div className="mb-3">
-                  <TextAreaFormInput 
-                    control={control} 
-                    name="notes" 
-                    placeholder="Enter notes" 
-                    label="Notes" 
-                    rows={3} 
+                  <TextAreaFormInput
+                    control={control}
+                    name="notes"
+                    placeholder="Enter notes"
+                    label="Notes"
+                    rows={3}
                   />
                 </div>
               </Col>
             </Row>
-            
+
             {/* Changes Summary - Only show if there are changes */}
             {changedFieldsCount > 0 && (
-              <Card className="mb-4" style={{ 
-                background: 'rgba(25, 135, 84, 0.05)', 
+              <Card className="mb-4" style={{
+                background: 'rgba(25, 135, 84, 0.05)',
                 borderLeft: '4px solid #198754',
                 boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)',
               }}>
@@ -563,7 +601,7 @@ const EditProduct = () => {
                     <i className="fas fa-clipboard-check me-2 text-success"></i>
                     <h6 className="mb-0 text-success">Changes Summary</h6>
                   </div>
-                  
+
                   <Row className="g-3">
                     {changeTracker.qty.direction !== 'unchanged' && (
                       <Col lg={6} md={6} className="mb-2">
@@ -573,7 +611,7 @@ const EditProduct = () => {
                             <span className="text-muted">{changeTracker.qty.previous}</span>
                             <i className="fas fa-long-arrow-alt-right mx-2 text-muted"></i>
                             <span className="fw-bold">{changeTracker.qty.current}</span>
-                            <Badge 
+                            <Badge
                               bg={changeTracker.qty.direction === 'increased' ? 'success' : 'danger'}
                               className="ms-2"
                               style={{ fontSize: '0.75rem' }}
@@ -584,7 +622,7 @@ const EditProduct = () => {
                         </div>
                       </Col>
                     )}
-                    
+
                     {changeTracker.price.direction !== 'unchanged' && (
                       <Col lg={6} md={6} className="mb-2">
                         <div className="d-flex justify-content-between">
@@ -593,7 +631,7 @@ const EditProduct = () => {
                             <span className="text-muted">${changeTracker.price.previous.toFixed(2)}</span>
                             <i className="fas fa-long-arrow-alt-right mx-2 text-muted"></i>
                             <span className="fw-bold">${changeTracker.price.current.toFixed(2)}</span>
-                            <Badge 
+                            <Badge
                               bg={changeTracker.price.direction === 'increased' ? 'success' : 'danger'}
                               className="ms-2"
                               style={{ fontSize: '0.75rem' }}
@@ -604,7 +642,7 @@ const EditProduct = () => {
                         </div>
                       </Col>
                     )}
-                    
+
                     {changeTracker.shippingCost.direction !== 'unchanged' && (
                       <Col lg={6} md={6} className="mb-2">
                         <div className="d-flex justify-content-between">
@@ -613,7 +651,7 @@ const EditProduct = () => {
                             <span className="text-muted">${changeTracker.shippingCost.previous.toFixed(2)}</span>
                             <i className="fas fa-long-arrow-alt-right mx-2 text-muted"></i>
                             <span className="fw-bold">${changeTracker.shippingCost.current.toFixed(2)}</span>
-                            <Badge 
+                            <Badge
                               bg={changeTracker.shippingCost.direction === 'increased' ? 'success' : 'danger'}
                               className="ms-2"
                               style={{ fontSize: '0.75rem' }}
@@ -624,7 +662,7 @@ const EditProduct = () => {
                         </div>
                       </Col>
                     )}
-                    
+
                     {changeTracker.unit.changed && (
                       <Col lg={6} md={6} className="mb-2">
                         <div className="d-flex justify-content-between">
@@ -633,7 +671,7 @@ const EditProduct = () => {
                             <span className="text-muted">{changeTracker.unit.previous}</span>
                             <i className="fas fa-long-arrow-alt-right mx-2 text-muted"></i>
                             <span className="fw-bold">{changeTracker.unit.current}</span>
-                            <Badge 
+                            <Badge
                               bg="info"
                               className="ms-2"
                               style={{ fontSize: '0.75rem' }}
@@ -648,19 +686,19 @@ const EditProduct = () => {
                 </CardBody>
               </Card>
             )}
-            
+
             <div className="d-flex justify-content-between mt-4">
-              <Button 
-                variant="secondary" 
-                onClick={() => router.back()} 
+              <Button
+                variant="secondary"
+                onClick={() => router.back()}
                 disabled={loading}
               >
                 <i className="fas fa-arrow-left me-1"></i> Cancel
               </Button>
-              
-              <Button 
-                variant="primary" 
-                type="submit" 
+
+              <Button
+                variant="primary"
+                type="submit"
                 disabled={loading}
                 className="d-flex align-items-center"
               >
@@ -673,9 +711,9 @@ const EditProduct = () => {
                   <>
                     <i className="fas fa-save me-1"></i> Save Changes
                     {changedFieldsCount > 0 && (
-                      <Badge 
-                        bg="light" 
-                        text="dark" 
+                      <Badge
+                        bg="light"
+                        text="dark"
                         className="ms-2"
                         style={{ fontSize: '0.75rem' }}
                       >
@@ -689,7 +727,7 @@ const EditProduct = () => {
           </Form>
         </CardBody>
       </Card>
-    </div>
+    </div >
   )
 }
 

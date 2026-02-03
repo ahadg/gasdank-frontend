@@ -16,6 +16,12 @@ interface PersonalSettings {
   updated_at?: Date
 }
 
+interface ProductType {
+  _id: string
+  name: string
+  active: boolean
+}
+
 export default function PersonalSettingsPage() {
   // State management
   const [settings, setSettings] = useState<PersonalSettings | null>(null)
@@ -26,11 +32,18 @@ export default function PersonalSettingsPage() {
   const [editingUnits, setEditingUnits] = useState<string[]>([])
   const [editingDefaultUnit, setEditingDefaultUnit] = useState<string>('')
   const [isEditing, setIsEditing] = useState(false)
+
+  // Product Types state
+  const [productTypes, setProductTypes] = useState<ProductType[]>([])
+  const [showProductTypeModal, setShowProductTypeModal] = useState(false)
+  const [newProductType, setNewProductType] = useState('')
+  const [productTypeLoading, setProductTypeLoading] = useState(false)
+
   const setSettingsZustand = useAuthStore((state) => state.setSettings)
-  
+
   const user = useAuthStore((state) => state.user)
   const { showNotification } = useNotificationContext()
-  
+
   async function fetchSettings() {
     setLoading(true)
     try {
@@ -40,22 +53,76 @@ export default function PersonalSettingsPage() {
       setEditingUnits(response.data.units || [])
       setEditingDefaultUnit(response.data.default_unit || '')
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error fetching personal settings', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error fetching personal settings',
+        variant: 'danger'
       })
       console.error("Error fetching settings:", error)
     } finally {
       setLoading(false)
     }
   }
-  
+
   // Load personal settings from API on component mount
   useEffect(() => {
     if (user?._id) {
       fetchSettings()
+      fetchProductTypes()
     }
   }, [user?._id])
+
+  async function fetchProductTypes() {
+    setProductTypeLoading(true)
+    try {
+      const response = await api.get(`/api/product-types/${user?._id}`)
+      setProductTypes(response.data)
+    } catch (error: any) {
+      console.error("Error fetching product types:", error)
+    } finally {
+      setProductTypeLoading(false)
+    }
+  }
+
+  const handleAddProductType = async () => {
+    if (!newProductType.trim()) return
+
+    setSaving(true)
+    try {
+      await api.post('/api/product-types', {
+        name: newProductType.trim(),
+        user_id: user?._id
+      })
+      setNewProductType('')
+      setShowProductTypeModal(false)
+      fetchProductTypes()
+      showNotification({ message: 'Product type added successfully', variant: 'success' })
+    } catch (error: any) {
+      showNotification({
+        message: error?.response?.data?.error || 'Error adding product type',
+        variant: 'danger'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRemoveProductType = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this product type?')) return
+
+    setSaving(true)
+    try {
+      await api.delete('/api/product-types', { data: { id } })
+      fetchProductTypes()
+      showNotification({ message: 'Product type removed successfully', variant: 'success' })
+    } catch (error: any) {
+      showNotification({
+        message: error?.response?.data?.error || 'Error removing product type',
+        variant: 'danger'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // Save settings to API
   const handleSaveSettings = async () => {
@@ -65,17 +132,17 @@ export default function PersonalSettingsPage() {
         units: editingUnits,
         default_unit: editingDefaultUnit
       })
-      
+
       setSettings(response.data.settings)
       setIsEditing(false)
-      showNotification({ 
-        message: response.data.message || 'Settings saved successfully', 
-        variant: 'success' 
+      showNotification({
+        message: response.data.message || 'Settings saved successfully',
+        variant: 'success'
       })
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error saving settings', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error saving settings',
+        variant: 'danger'
       })
       console.error("Error saving settings:", error)
     } finally {
@@ -88,25 +155,25 @@ export default function PersonalSettingsPage() {
     setSaving(true)
     try {
       const response = await api.patch('/api/personal-settings/units', { units })
-      
+
       setSettings(response.data.settings)
       setEditingUnits(units)
-      
+
       // If the current default unit is not in the new units array, update it
       if (!units.includes(editingDefaultUnit) && units.length > 0) {
         setEditingDefaultUnit(units[0])
         await handleUpdateDefaultUnit(units[0])
       }
-      
-      showNotification({ 
-        message: response.data.message || 'Units updated successfully', 
-        variant: 'success' 
+
+      showNotification({
+        message: response.data.message || 'Units updated successfully',
+        variant: 'success'
       })
       fetchSettings()
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error updating units', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error updating units',
+        variant: 'danger'
       })
       console.error("Error updating units:", error)
     } finally {
@@ -118,21 +185,21 @@ export default function PersonalSettingsPage() {
   const handleUpdateDefaultUnit = async (defaultUnit: string) => {
     setSaving(true)
     try {
-      const response = await api.patch('/api/personal-settings/default-unit', { 
-        default_unit: defaultUnit 
+      const response = await api.patch('/api/personal-settings/default-unit', {
+        default_unit: defaultUnit
       })
-      
+
       setSettings(response.data.settings)
       setEditingDefaultUnit(defaultUnit)
-      showNotification({ 
-        message: response.data.message || 'Default unit updated successfully', 
-        variant: 'success' 
+      showNotification({
+        message: response.data.message || 'Default unit updated successfully',
+        variant: 'success'
       })
       fetchSettings()
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error updating default unit', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error updating default unit',
+        variant: 'danger'
       })
       console.error("Error updating default unit:", error)
     } finally {
@@ -143,22 +210,22 @@ export default function PersonalSettingsPage() {
   // Delete settings
   const handleDeleteSettings = async () => {
     if (!confirm('Are you sure you want to delete all personal settings?')) return
-    
+
     setSaving(true)
     try {
       await api.delete('/api/personal-settings')
-      
+
       setSettings(null)
       setEditingUnits([])
       setEditingDefaultUnit('')
-      showNotification({ 
-        message: 'Settings deleted successfully', 
-        variant: 'success' 
+      showNotification({
+        message: 'Settings deleted successfully',
+        variant: 'success'
       })
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error deleting settings', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error deleting settings',
+        variant: 'danger'
       })
       console.error("Error deleting settings:", error)
     } finally {
@@ -171,15 +238,15 @@ export default function PersonalSettingsPage() {
     if (newUnit.trim() && !editingUnits.includes(newUnit.trim())) {
       const updatedUnits = [...editingUnits, newUnit.trim()]
       setEditingUnits(updatedUnits)
-      
+
       // If no default unit is set, set the new unit as default
       if (!editingDefaultUnit) {
         setEditingDefaultUnit(newUnit.trim())
       }
-      
+
       setNewUnit('')
       setShowAddModal(false)
-      
+
       if (!isEditing) {
         handleUpdateUnits(updatedUnits)
       }
@@ -190,14 +257,14 @@ export default function PersonalSettingsPage() {
   const handleRemoveUnit = (unitToRemove: string) => {
     const updatedUnits = editingUnits.filter(unit => unit !== unitToRemove)
     setEditingUnits(updatedUnits)
-    
+
     // If removing the default unit, set the first remaining unit as default
     if (editingDefaultUnit === unitToRemove && updatedUnits.length > 0) {
       setEditingDefaultUnit(updatedUnits[0])
     } else if (updatedUnits.length === 0) {
       setEditingDefaultUnit('')
     }
-    
+
     if (!isEditing) {
       handleUpdateUnits(updatedUnits)
     }
@@ -240,8 +307,8 @@ export default function PersonalSettingsPage() {
                   <div className="mb-4">
                     <div className="d-flex align-items-center justify-content-between mb-3">
                       <h5 className="mb-0">Units</h5>
-                      <Button 
-                        variant="outline-primary" 
+                      <Button
+                        variant="outline-primary"
                         size="sm"
                         onClick={() => setShowAddModal(true)}
                         disabled={saving}
@@ -250,7 +317,7 @@ export default function PersonalSettingsPage() {
                         Add Unit
                       </Button>
                     </div>
-                    
+
                     {editingUnits.length > 0 ? (
                       <div className="d-flex flex-wrap gap-2 mb-3">
                         {editingUnits.map((unit, index) => (
@@ -288,10 +355,10 @@ export default function PersonalSettingsPage() {
                       <div className="d-flex align-items-center justify-content-between mb-3">
                         <h6 className="mb-0">Default Unit</h6>
                       </div>
-                      
+
                       <Dropdown>
-                        <Dropdown.Toggle 
-                          variant="outline-secondary" 
+                        <Dropdown.Toggle
+                          variant="outline-secondary"
                           id="default-unit-dropdown"
                           disabled={saving}
                         >
@@ -318,12 +385,57 @@ export default function PersonalSettingsPage() {
                           ))}
                         </Dropdown.Menu>
                       </Dropdown>
-                      
+
                       <small className="text-muted d-block mt-2">
                         This unit will be selected by default when adding new items.
                       </small>
                     </div>
                   )}
+
+                  {/* Product Types Section */}
+                  <div className="mb-4 pt-4 border-top">
+                    <div className="d-flex align-items-center justify-content-between mb-3">
+                      <h5 className="mb-0">Product Types</h5>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setShowProductTypeModal(true)}
+                        disabled={saving}
+                      >
+                        <IconifyIcon icon="tabler:plus" className="me-1" />
+                        Add Product Type
+                      </Button>
+                    </div>
+
+                    {productTypeLoading ? (
+                      <div className="text-center py-3">
+                        <div className="spinner-border spinner-border-sm text-primary" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                      </div>
+                    ) : productTypes.length > 0 ? (
+                      <div className="d-flex flex-wrap gap-2 mb-3">
+                        {productTypes.map((type) => (
+                          <div key={type._id} className="badge bg-light text-dark border p-2 d-flex align-items-center">
+                            <span className="me-2">{type.name}</span>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 text-danger"
+                              onClick={() => handleRemoveProductType(type._id)}
+                              disabled={saving}
+                            >
+                              <IconifyIcon icon="tabler:x" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert variant="info">
+                        No product types configured. Click "Add Product Type" to add them.
+                      </Alert>
+                    )}
+                  </div>
 
                   {/* Settings Info */}
                   <div className="border-top pt-3">
@@ -369,12 +481,45 @@ export default function PersonalSettingsPage() {
           <Button variant="secondary" onClick={() => setShowAddModal(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleAddUnit}
             disabled={!newUnit.trim() || editingUnits.includes(newUnit.trim())}
           >
             Add Unit
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Product Type Modal */}
+      <Modal show={showProductTypeModal} onHide={() => setShowProductTypeModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Product Type</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Product Type Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter product type (e.g., Indica, Sativa, Hybrid, Gear)"
+                value={newProductType}
+                onChange={(e) => setNewProductType(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddProductType()}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowProductTypeModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleAddProductType}
+            disabled={!newProductType.trim() || saving}
+          >
+            {saving ? 'Adding...' : 'Add Product Type'}
           </Button>
         </Modal.Footer>
       </Modal>
