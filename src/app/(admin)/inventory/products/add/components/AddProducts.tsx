@@ -379,7 +379,8 @@ const MobileProductCard = ({
               </Form.Control.Feedback>
             )}
           </Col>
-          {user?.showProductPrice !== false && (
+          {
+            //user?.showProductPrice !== false && (
             <Col xs={6}>
               <Form.Label className="small fw-semibold">Price *</Form.Label>
               <Controller
@@ -402,7 +403,8 @@ const MobileProductCard = ({
                 </Form.Control.Feedback>
               )}
             </Col>
-          )}
+            // )
+          }
           <Col xs={12}>
             <Form.Label className="small fw-semibold">Category *</Form.Label>
             <Controller
@@ -780,7 +782,7 @@ function AddProductsPage() {
                       <th className="small">Unit *</th>
                       <th className="small">Measurement *</th>
                       <th className="small">Category *</th>
-                      {user?.showProductPrice !== false && <th className="small">Price *</th>}
+                      <th className="small">Price *</th>
                       <th className="small">Product Type</th>
                       <th className="small">Action</th>
                     </tr>
@@ -924,29 +926,29 @@ function AddProductsPage() {
                               </Form.Control.Feedback>
                             )}
                           </td>
-                          {user?.showProductPrice !== false && (
-                            <td>
-                              <Controller
-                                control={control}
-                                name={`products.${index}.price` as const}
-                                render={({ field }) => (
-                                  <Form.Control
-                                    type="number"
-                                    placeholder="Enter price"
-                                    step="any"
-                                    size="sm"
-                                    isInvalid={!!productErrors?.price && shouldShowErrors}
-                                    {...field}
-                                  />
-                                )}
-                              />
-                              {shouldShowErrors && (
-                                <Form.Control.Feedback type="invalid" className="small d-block">
-                                  {productErrors?.price?.message}
-                                </Form.Control.Feedback>
+
+                          <td>
+                            <Controller
+                              control={control}
+                              name={`products.${index}.price` as const}
+                              render={({ field }) => (
+                                <Form.Control
+                                  type="number"
+                                  placeholder="Enter price"
+                                  step="any"
+                                  size="sm"
+                                  isInvalid={!!productErrors?.price && shouldShowErrors}
+                                  {...field}
+                                />
                               )}
-                            </td>
-                          )}
+                            />
+                            {shouldShowErrors && (
+                              <Form.Control.Feedback type="invalid" className="small d-block">
+                                {productErrors?.price?.message}
+                              </Form.Control.Feedback>
+                            )}
+                          </td>
+
                           <td>
                             <Controller
                               control={control}

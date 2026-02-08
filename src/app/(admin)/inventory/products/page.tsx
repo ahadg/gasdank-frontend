@@ -23,6 +23,8 @@ const ProductsPage = () => {
   const [lowStockLoading, setLowStockLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('')
+  const [filterProductType, setFilterProductType] = useState<string>('')
+  const [productTypes, setProductTypes] = useState<any[]>([])
   const [priceSort, setPriceSort] = useState<string>('') // '' | 'asc' | 'desc'
   const [page, setPage] = useState(1)
   const limit = 100
@@ -52,6 +54,21 @@ const ProductsPage = () => {
     }
   }, [user?._id])
 
+  // Fetch product types
+  useEffect(() => {
+    async function fetchProductTypes() {
+      try {
+        const response = await api.get(`/api/product-types/${user?._id}`)
+        setProductTypes(response.data)
+      } catch (error) {
+        console.error('Error fetching product types:', error)
+      }
+    }
+    if (user?._id) {
+      fetchProductTypes()
+    }
+  }, [user?._id])
+
   // Fetch products for the current user using Axios with pagination and category filter
   async function fetchProducts() {
     setLoading(true)
@@ -59,6 +76,9 @@ const ProductsPage = () => {
       let query = `/api/inventory/${user?._id}?page=${page}&qty=gt0&limit=${limit}`
       if (filterCategory) {
         query += `&category=${filterCategory}`
+      }
+      if (filterProductType) {
+        query += `&product_type=${filterProductType}`
       }
       const response = await api.get(query)
       // Expect API to return { products: [...], total: number }
@@ -90,7 +110,7 @@ const ProductsPage = () => {
     if (user?._id) {
       fetchProducts()
     }
-  }, [user?._id, page, filterCategory])
+  }, [user?._id, page, filterCategory, filterProductType])
 
   // Fetch low stock products when the section is opened for the first time
   useEffect(() => {
@@ -160,6 +180,7 @@ const ProductsPage = () => {
   // Clear all filters function
   const clearAllFilters = () => {
     setFilterCategory('')
+    setFilterProductType('')
     setPriceSort('')
     setSearch('')
     setPage(1)
@@ -192,6 +213,10 @@ const ProductsPage = () => {
           <div className="col-6">
             <small className="text-muted d-block">Category</small>
             <span className="fw-medium">{item.category?.name || 'N/A'}</span>
+          </div>
+          <div className="col-12 mt-1">
+            <small className="text-muted d-block">Product Type</small>
+            <span className="fw-medium">{item.product_type?.name || 'N/A'}</span>
           </div>
         </div>
 
@@ -276,6 +301,7 @@ const ProductsPage = () => {
                           <th className="px-3 py-2 text-left font-medium text-yellow-700">ID/Ref</th>
                           <th className="px-3 py-2 text-left font-medium text-yellow-700">Stock</th>
                           <th className="px-3 py-2 text-left font-medium text-yellow-700">Category</th>
+                          <th className="px-3 py-2 text-left font-medium text-yellow-700">Type</th>
                           {/* <th className="px-3 py-2 text-left font-medium text-yellow-700">Value</th>
                     <th className="px-3 py-2 text-center font-medium text-yellow-700 w-28">Actions</th> */}
                         </tr>
@@ -308,6 +334,9 @@ const ProductsPage = () => {
                               </td>
                               <td className="px-3 py-2 whitespace-nowrap">
                                 <span className="text-gray-600">{item.category?.name || '-'}</span>
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <span className="text-gray-600">{item.product_type?.name || '-'}</span>
                               </td>
                               {/* <td className="px-3 py-2 whitespace-nowrap text-gray-800">
                           ${getTotalPrice(item).toLocaleString()}
@@ -447,6 +476,24 @@ const ProductsPage = () => {
                         ))}
                       </Form.Select>
 
+                      {/* Product Type Filter */}
+                      <Form.Select
+                        value={filterProductType}
+                        onChange={(e) => {
+                          setFilterProductType(e.target.value)
+                          setPage(1)
+                        }}
+                        className="flex-grow-1"
+                        style={{ minWidth: '120px' }}
+                      >
+                        <option value="">All Product Types</option>
+                        {productTypes.map((type) => (
+                          <option key={type._id} value={type._id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+
                       {/* Price Sort Filter */}
                       <Form.Select
                         value={priceSort}
@@ -483,7 +530,7 @@ const ProductsPage = () => {
                 </div>
 
                 {/* Active filters indicator - show when filters are applied */}
-                {(filterCategory || priceSort || search) && (
+                {/* {(filterCategory || filterProductType || priceSort || search) && (
                   <div className="mt-2 d-flex align-items-center gap-2 flex-wrap">
                     <small className="text-muted">Active filters:</small>
                     {search && (
@@ -508,6 +555,17 @@ const ProductsPage = () => {
                         />
                       </Badge>
                     )}
+                    {filterProductType && (
+                      <Badge bg="warning" text="dark" className="d-flex align-items-center gap-1">
+                        Type: {productTypes.find(type => type._id === filterProductType)?.name}
+                        <IconifyIcon
+                          icon="tabler:x"
+                          className="cursor-pointer"
+                          onClick={() => setFilterProductType('')}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </Badge>
+                    )}
                     {priceSort && (
                       <Badge bg="success" className="d-flex align-items-center gap-1">
                         Price: {priceSort === 'asc' ? 'Low to High' : 'High to Low'}
@@ -520,7 +578,7 @@ const ProductsPage = () => {
                       </Badge>
                     )}
                   </div>
-                )}
+                )} */}
               </div>
             </CardHeader>
 
