@@ -43,10 +43,9 @@ interface DashboardStatAccess {
   today_sales?: boolean
   today_profit?: boolean
   inventory_value?: boolean
-  outstanding_balance?: boolean
-  user_balance?: boolean
+  clients_outstanding_balance?: boolean
+  company_outstanding_balance?: boolean
   company_balance?: boolean
-  online_balance?: boolean
 }
 
 interface AccessData {
@@ -70,10 +69,9 @@ const defaultAccess: AccessData = {
     today_sales: true,
     today_profit: true,
     inventory_value: true,
-    outstanding_balance: true,
-    user_balance: true,
+    clients_outstanding_balance: true,
+    company_outstanding_balance: true,
     company_balance: true,
-    online_balance: true,
   },
   sale: { read: true, edit: true, delete: true, create: true },
   activitylogs: { read: true, edit: true, delete: true, create: true },
@@ -92,7 +90,7 @@ const defaultAccess: AccessData = {
 
 const pages = ['dashboard', 'sale', 'wholesale', 'inventory', 'reports', 'expenses', 'sampleholdings', 'sampleviewing', 'sampleviewingmanagement']
 const permissions = ['read', 'edit', 'delete', 'create']
-const statPermissions = ['today_sales', 'today_profit', 'inventory_value', 'outstanding_balance', 'user_balance', 'company_balance', 'online_balance']
+const statPermissions = ['today_sales', 'today_profit', 'inventory_value', 'clients_outstanding_balance', 'company_outstanding_balance', 'company_balance']
 const configSections = ['categories', 'users']
 
 const schema = yup.object({
@@ -316,7 +314,11 @@ export default function AddUserPage() {
                       checked={accessData.dashboard_stats[stat]}
                       onChange={(e) => handleStatAccessChange(stat, e.target.checked)}
                     />{' '}
-                    {stat.replace(/_/g, ' ').toUpperCase()}
+                    {stat === 'clients_outstanding_balance'
+                      ? 'CLIENT PAYABLE BALANCE'
+                      : stat === 'company_outstanding_balance'
+                        ? 'PAYABLE BALANCE'
+                        : stat.replace(/_/g, ' ').toUpperCase()}
                   </label>
                 </div>
               ))}

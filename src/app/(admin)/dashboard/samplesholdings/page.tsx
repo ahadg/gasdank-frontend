@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { 
-  Table, Button, Card, CardHeader, CardBody, CardTitle, Modal, 
+import {
+  Table, Button, Card, CardHeader, CardBody, CardTitle, Modal,
   Form, Row, Col, Spinner, Badge, InputGroup
 } from 'react-bootstrap'
 import api from '@/utils/axiosInstance'
@@ -23,12 +23,14 @@ export default function SampleHoldingPage() {
     shippingCost: '', // Single shipping cost for all products
     products: [
       {
+        referenceNumber: '',
         name: '',
         qty: '',
         unit: 'pound',
         measurement: 1,
         price: '',
-        category_id: ''
+        category_id: '',
+        product_type: ''
       }
     ]
   })
@@ -42,6 +44,7 @@ export default function SampleHoldingPage() {
 
   const [userCategories, setUserCategories] = useState([])
   const [accounts, setAccounts] = useState([])
+  const [productTypes, setProductTypes] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedBuyer, setSelectedBuyer] = useState(null)
 
@@ -88,6 +91,21 @@ export default function SampleHoldingPage() {
     fetchAccounts()
   }, [user._id])
 
+  useEffect(() => {
+    async function fetchProductTypes() {
+      if (user?._id) {
+        try {
+          const response = await api.get(`/api/product-types/${user._id}`)
+          setProductTypes(response.data)
+        } catch (error) {
+          console.error('Error fetching product types:', error)
+          showNotification({ message: 'Error fetching product types', variant: 'danger' })
+        }
+      }
+    }
+    fetchProductTypes()
+  }, [user?._id])
+
   const handleAccept = async (id) => {
     try {
       await api.post(`/api/sample/${id}/accept`)
@@ -118,12 +136,14 @@ export default function SampleHoldingPage() {
     setNewSample({
       ...newSample,
       products: [...newSample.products, {
+        referenceNumber: '',
         name: '',
         qty: '',
         unit: 'pound',
         measurement: 1,
         price: '',
-        category_id: ''
+        category_id: '',
+        product_type: ''
       }]
     })
   }
@@ -139,15 +159,15 @@ export default function SampleHoldingPage() {
     const totalQuantity = newSample.products.reduce((sum, product) => {
       return sum + (Number(product.qty) || 0)
     }, 0)
-    
+
     if (totalQuantity === 0 || !newSample.shippingCost) return 0
-    
+
     return Number(newSample.shippingCost) / totalQuantity
   }
 
   const handleAddSample = async () => {
     const errors = []
-  
+
     if (!newSample.buyer_id) {
       errors.push('Please select a buyer.')
     }
@@ -155,30 +175,33 @@ export default function SampleHoldingPage() {
     // if (!newSample.shippingCost || Number(newSample.shippingCost) < 0) {
     //   errors.push('Shipping cost must be a valid number.')
     // }
-  
+
     newSample.products.forEach((p, index) => {
       if (!p.name) errors.push(`Product ${index + 1}: Name is required.`)
       if (!p.qty || Number(p.qty) <= 0) errors.push(`Product ${index + 1}: Quantity must be a positive number.`)
       if (!p.unit) errors.push(`Product ${index + 1}: Unit is required.`)
       if (!p.price || Number(p.price) < 0) errors.push(`Product ${index + 1}: Price must be a valid number.`)
     })
-  
+
     if (errors.length > 0) {
       showNotification({ message: 'Please input or select required fields before submitting.', variant: 'danger' })
       return
     }
-  
+
     try {
       const shippingPerUnit = calculateShippingPerUnit().toFixed(2)
-      
+
       const products = newSample.products.map(p => ({
         ...p,
+        reference_number: p.referenceNumber,
         qty: Number(p.qty),
         price: Number(p.price).toFixed(2),
         shippingCost: Number(shippingPerUnit), // Calculated shipping per unit
-        measurement: Number(p.measurement)
+        measurement: Number(p.measurement),
+        product_type: p.product_type,
+        category_id: p.category_id
       }))
-      
+
       const payload = {
         user_id: user._id,
         buyer_id: newSample.buyer_id,
@@ -186,7 +209,7 @@ export default function SampleHoldingPage() {
         totalShippingCost: Number(newSample.shippingCost).toFixed(2), // Store total shipping cost
         status: 'holding'
       }
-      
+
       await api.post('/api/sample', payload)
       showNotification({ message: 'Sample added to holding area', variant: 'success' })
       resetAndCloseModal()
@@ -196,7 +219,7 @@ export default function SampleHoldingPage() {
       showNotification({ message: 'Failed to add sample', variant: 'danger' })
     }
   }
-  
+
   const [historyModal, setHistoryModal] = useState(false)
   const [historySamples, setHistorySamples] = useState([])
 
@@ -215,7 +238,7 @@ export default function SampleHoldingPage() {
     setNewSample({
       buyer_id: '',
       shippingCost: '',
-      products: [{ name: '', qty: '', unit: 'pound', price: '', measurement: 1, category_id: '' }]
+      products: [{ referenceNumber: '', name: '', qty: '', unit: 'pound', price: '', measurement: 1, category_id: '', product_type: '' }]
     })
     setSelectedBuyer(null)
   }
@@ -229,18 +252,18 @@ export default function SampleHoldingPage() {
 
   return (
     <div className="container-fluid py-4">
-     <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Sample Holding Area</h4>
         <div className="d-flex gap-2">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => setShowAddModal(true)}
             className="d-flex align-items-center"
           >
             <i className="bi bi-plus-circle me-2"></i> Add Sample
           </Button>
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             onClick={fetchHistory}
             className="d-flex align-items-center"
           >
@@ -283,10 +306,10 @@ export default function SampleHoldingPage() {
                               <span className="fw-medium">{product.name}</span>
                               <div className="d-flex align-items-center mt-1">
                                 <Badge bg="light" text="dark" className="me-2">
-                                  {product.qty} {product.unit} 
+                                  {product.qty} {product.unit}
                                   {product.measurement !== 1 && ` (${product.measurement * 100}%)`}
                                 </Badge>
-                                {product.category_name && 
+                                {product.category_name &&
                                   <Badge bg="secondary" className="bg-opacity-25 text-dark">
                                     {product.category_name}
                                   </Badge>
@@ -348,11 +371,11 @@ export default function SampleHoldingPage() {
           <Button variant="outline-secondary" onClick={() => setConfirmModal({ show: false, id: null })}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
-            onClick={() => { 
-              if (confirmModal.id) handleReturn(confirmModal.id); 
-              setConfirmModal({ show: false, id: null }) 
+          <Button
+            variant="danger"
+            onClick={() => {
+              if (confirmModal.id) handleReturn(confirmModal.id);
+              setConfirmModal({ show: false, id: null })
             }}
           >
             Return Sample
@@ -360,8 +383,8 @@ export default function SampleHoldingPage() {
         </Modal.Footer>
       </Modal>
 
-      <Modal 
-        show={historyModal} 
+      <Modal
+        show={historyModal}
         onHide={() => setHistoryModal(false)}
         size="lg"
       >
@@ -394,7 +417,7 @@ export default function SampleHoldingPage() {
                     <td>
                       {sample.products.map((p, i) => (
                         <div key={i} className="mb-1">
-                          <span>{p.name}</span> – {p.qty} {p.unit} 
+                          <span>{p.name}</span> – {p.qty} {p.unit}
                           {p.measurement !== 1 && ` (${p.measurement * 100}%)`}<br />
                           <small className="text-muted">${p.price} + ${(p.shippingCost || 0).toFixed(2)}/unit shipping</small>
                         </div>
@@ -423,8 +446,8 @@ export default function SampleHoldingPage() {
       </Modal>
 
       {/* Add Sample Modal */}
-      <Modal 
-        show={showAddModal} 
+      <Modal
+        show={showAddModal}
         onHide={resetAndCloseModal}
         size="lg"
         backdrop="static"
@@ -435,8 +458,8 @@ export default function SampleHoldingPage() {
         <Modal.Body className="p-4">
           <div className="mb-4">
             <Form.Group className="mb-3">
-              <Form.Select 
-                value={newSample.buyer_id} 
+              <Form.Select
+                value={newSample.buyer_id}
                 onChange={handleBuyerSelect}
               >
                 <option value="">-- Select Seller --</option>
@@ -460,11 +483,11 @@ export default function SampleHoldingPage() {
                   <Form.Label>Total Shipping Cost</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>$</InputGroup.Text>
-                    <Form.Control 
-                      type="number" 
+                    <Form.Control
+                      type="number"
                       placeholder="0.00"
-                      value={newSample.shippingCost} 
-                      onChange={(e) => setNewSample({ ...newSample, shippingCost: e.target.value })} 
+                      value={newSample.shippingCost}
+                      onChange={(e) => setNewSample({ ...newSample, shippingCost: e.target.value })}
                     />
                   </InputGroup>
                   {newSample.shippingCost && newSample.products.some(p => p.qty) && (
@@ -476,46 +499,54 @@ export default function SampleHoldingPage() {
               </CardBody>
             </Card>
           </div>
-          
+
           <div className="mb-3">
             <div className="d-flex align-items-center mb-3">
               <h5 className="mb-0 ms-2">Products</h5>
             </div>
-            
+
             {newSample.products.map((product, index) => (
               <Card key={index} className="mb-3 shadow-sm">
                 <CardHeader className="bg-light py-2">
                   <div className="d-flex justify-content-between align-items-center">
                     <h6 className="mb-0">Product {index + 1}</h6>
                     {newSample.products.length > 1 && (
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm" 
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
                         onClick={() => removeProductRow(index)}
                         className="btn-icon"
                       >
-                         <IconifyIcon icon='tabler:x' />
+                        <IconifyIcon icon='tabler:x' />
                       </Button>
                     )}
                   </div>
                 </CardHeader>
                 <CardBody>
                   <Row className="mb-3">
-                    <Col xs={12}>
+                    <Col md={6}>
+                      <Form.Label>Reference #</Form.Label>
+                      <Form.Control
+                        placeholder="Reference #"
+                        value={product.referenceNumber}
+                        onChange={(e) => handleProductChange(index, 'referenceNumber', e.target.value)}
+                      />
+                    </Col>
+                    <Col md={6}>
                       <Form.Label>Product Name</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         placeholder="Enter product name"
-                        value={product.name} 
-                        onChange={(e) => handleProductChange(index, 'name', e.target.value)} 
+                        value={product.name}
+                        onChange={(e) => handleProductChange(index, 'name', e.target.value)}
                       />
                     </Col>
                   </Row>
-                  
+
                   <Row className="mb-3">
                     <Col md={6}>
                       <Form.Label>Category</Form.Label>
-                      <Form.Select 
-                        value={product.category_id} 
+                      <Form.Select
+                        value={product.category_id}
                         onChange={(e) => handleProductChange(index, 'category_id', e.target.value)}
                       >
                         <option value="">Select Category</option>
@@ -525,9 +556,24 @@ export default function SampleHoldingPage() {
                       </Form.Select>
                     </Col>
                     <Col md={6}>
+                      <Form.Label>Product Type</Form.Label>
+                      <Form.Select
+                        value={product.product_type}
+                        onChange={(e) => handleProductChange(index, 'product_type', e.target.value)}
+                      >
+                        <option value="">Select Product Type</option>
+                        {productTypes.map((type) => (
+                          <option key={type._id} value={type._id}>{type.name}</option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                  </Row>
+
+                  <Row className="mb-3">
+                    <Col md={4}>
                       <Form.Label>Measurement</Form.Label>
-                      <Form.Select 
-                        value={product.measurement} 
+                      <Form.Select
+                        value={product.measurement}
                         onChange={(e) => handleProductChange(index, 'measurement', (e.target.value))}
                       >
                         {measurementOptions.map((opt) => (
@@ -535,20 +581,17 @@ export default function SampleHoldingPage() {
                         ))}
                       </Form.Select>
                     </Col>
-                  </Row>
-                  
-                  <Row className="mb-3">
-                    <Col md={6}>
+                    <Col md={4}>
                       <Form.Label>Quantity</Form.Label>
                       <InputGroup>
-                        <Form.Control 
-                          type="number" 
+                        <Form.Control
+                          type="number"
                           placeholder="0"
-                          value={product.qty} 
-                          onChange={(e) => handleProductChange(index, 'qty', e.target.value)} 
+                          value={product.qty}
+                          onChange={(e) => handleProductChange(index, 'qty', e.target.value)}
                         />
-                        <Form.Select 
-                          value={product.unit} 
+                        <Form.Select
+                          value={product.unit}
                           onChange={(e) => handleProductChange(index, 'unit', e.target.value)}
                         >
                           {/* <option value="">Unit</option> */}
@@ -558,15 +601,15 @@ export default function SampleHoldingPage() {
                         </Form.Select>
                       </InputGroup>
                     </Col>
-                    <Col md={6}>
+                    <Col md={4}>
                       <Form.Label>Price</Form.Label>
                       <InputGroup>
                         <InputGroup.Text>$</InputGroup.Text>
-                        <Form.Control 
-                          type="number" 
+                        <Form.Control
+                          type="number"
                           placeholder="0"
-                          value={product.price} 
-                          onChange={(e) => handleProductChange(index, 'price', e.target.value)} 
+                          value={product.price}
+                          onChange={(e) => handleProductChange(index, 'price', e.target.value)}
                         />
                       </InputGroup>
                     </Col>
@@ -574,10 +617,10 @@ export default function SampleHoldingPage() {
                 </CardBody>
               </Card>
             ))}
-            
+
             <div className="mb-3">
-              <Button 
-                onClick={addProductRow} 
+              <Button
+                onClick={addProductRow}
                 variant="outline-primary"
                 className="d-flex align-items-center"
               >
@@ -590,8 +633,8 @@ export default function SampleHoldingPage() {
           <Button variant="secondary" onClick={resetAndCloseModal}>
             Cancel
           </Button>
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             onClick={handleAddSample}
             disabled={!newSample.buyer_id}
           >

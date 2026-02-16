@@ -453,7 +453,7 @@ export default function Stat() {
         },
         {
           id: 'clients-payable',
-          title: "Company Client's Payable Balance (Clients owe to us)",
+          title: "Client's Payable Balance (Clients owe to us)",
           permissionKey: 'clients_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
           count: data.clientPayableBalances || '0',
@@ -463,7 +463,7 @@ export default function Stat() {
         },
         {
           id: 'company-payable',
-          title: "Company Payable Balance (Total Amount Owed to Clients)",
+          title: "Payable Balance (Total Amount Owed to Clients)",
           permissionKey: 'company_outstanding_balance',
           icon: 'solar:eye-bold-duotone',
           count: String(Math.abs(Number(data.companyPayableBalance) || 0)),

@@ -40,10 +40,9 @@ interface DashboardStatAccess {
   today_sales?: boolean;
   today_profit?: boolean;
   inventory_value?: boolean;
-  outstanding_balance?: boolean;
-  user_balance?: boolean;
+  clients_outstanding_balance?: boolean;
+  company_outstanding_balance?: boolean;
   company_balance?: boolean;
-  online_balance?: boolean;
 }
 interface AccessData {
   dashboard?: Access;
@@ -65,10 +64,9 @@ const defaultAccess: AccessData = {
     today_sales: false,
     today_profit: false,
     inventory_value: false,
-    outstanding_balance: false,
-    user_balance: false,
+    clients_outstanding_balance: false,
+    company_outstanding_balance: false,
     company_balance: false,
-    online_balance: false,
   },
   analytics: { read: false, edit: false, delete: false, create: false },
   sale: { read: false, edit: false, delete: false, create: false },
@@ -87,7 +85,7 @@ const defaultAccess: AccessData = {
 
 const pages = ["dashboard", "sale", "wholesale", "inventory", "analytics", "reports", "expenses", "sampleholdings", "sampleviewing", "sampleviewingmanagement"]
 const permissions = ["read", "edit", "delete", "create"]
-const statPermissions = ["today_sales", "today_profit", "inventory_value", "outstanding_balance", "user_balance", "company_balance", "online_balance"]
+const statPermissions = ["today_sales", "today_profit", "inventory_value", "clients_outstanding_balance", "company_outstanding_balance", "company_balance"]
 const configSections = ["categories", "users"]
 
 const schema = yup.object({
@@ -321,7 +319,11 @@ export default function EditUserPage() {
                       checked={accessData.dashboard_stats[stat]}
                       onChange={(e) => handleStatAccessChange(stat, e.target.checked)}
                     />{' '}
-                    {stat.replace(/_/g, ' ').toUpperCase()}
+                    {stat === 'clients_outstanding_balance'
+                      ? 'CLIENT PAYABLE BALANCE'
+                      : stat === 'company_outstanding_balance'
+                        ? 'PAYABLE BALANCE'
+                        : stat.replace(/_/g, ' ').toUpperCase()}
                   </label>
                 </div>
               ))}

@@ -23,7 +23,11 @@ const sellMultipleSchema = yup.object({
       sale_price: yup
         .number()
         .required('Sale price required')
-        .min(0, 'Minimum sale price is 0'),
+        .min(0, 'Minimum sale price is 0')
+        .test('is-greater-than-cost', 'Sale price cannot be less than cost price', function (value) {
+          const { price, shipping } = this.parent
+          return value >= Number(price) + Number(shipping)
+        }),
       shipping: yup.number()
         .required('Sale price required')
         .min(0, 'Minimum sale price is 0'),
@@ -358,7 +362,7 @@ export default function SellMultipleProductsModal({
         </div>
 
         <div className="mb-2">
-          <small className="text-muted">Available: {field.qty} | Cost: ${Number(field.price || 0).toFixed(2)}</small>
+          <small className="text-muted">Available: {field.qty} {user?.showProductPrice !== false && `| Cost: $${Number(field.price || 0).toFixed(2)}`}</small>
         </div>
 
         <Row className="g-2">
@@ -440,9 +444,14 @@ export default function SellMultipleProductsModal({
                 placeholder="Sale Price"
                 {...(control.register ? control.register(`items.${index}.sale_price` as const) : {})}
               />
-              {items[index]?.markup !== undefined && (
-                <small className="text-info">
-                  +${Number(items[index].markup).toFixed(2)} markup
+              {user?.showProductPrice !== false && items[index]?.markup !== undefined && (
+                <small className="text-info d-block">
+                  {Number(items[index].markup) >= 0 ? '+' : ''}${Number(items[index].markup).toFixed(2)} markup
+                </small>
+              )}
+              {errors?.items && errors.items[index]?.sale_price && (
+                <small className="text-danger d-block">
+                  {errors.items[index].sale_price?.message}
                 </small>
               )}
             </Form.Group>
@@ -468,7 +477,7 @@ export default function SellMultipleProductsModal({
         <tr>
           <th>Product</th>
           <th>Available</th>
-          <th>Cost Price</th>
+          {user?.showProductPrice !== false && <th>Cost Price</th>}
           <th>Quantity</th>
           <th>Unit</th>
           <th>Measurement</th>
@@ -483,7 +492,7 @@ export default function SellMultipleProductsModal({
           <tr key={field.id}>
             <td>{field.name}</td>
             <td>{field.qty}</td>
-            <td>${Number(field.price + field.shipping).toFixed(2)}</td>
+            {user?.showProductPrice !== false && <td>${Number(field.price + field.shipping).toFixed(2)}</td>}
             <td>
               <Form.Control
                 type="number"
@@ -549,6 +558,11 @@ export default function SellMultipleProductsModal({
                 <div className="text-info small">
                   +${Number(items[index].markup).toFixed(2)} markup
                 </div>
+              )}
+              {errors?.items && errors.items[index]?.sale_price && (
+                <small className="text-danger d-block">
+                  {errors.items[index].sale_price?.message}
+                </small>
               )}
             </td>
 

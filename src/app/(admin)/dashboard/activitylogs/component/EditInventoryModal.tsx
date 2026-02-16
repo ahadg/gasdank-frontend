@@ -38,7 +38,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   onTransactionUpdated
 }) => {
   const { showNotification } = useNotificationContext()
-  
+
   const [editingTransaction, setEditingTransaction] = useState<any>(null)
   const [editLoading, setEditLoading] = useState(false)
   const [originalTransaction, setOriginalTransaction] = useState<any>(null)
@@ -52,14 +52,14 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
   const fetchTransactionById = async (id: string) => {
     setEditLoading(true)
-    console.log("fetchTransactionById",id)
+    console.log("fetchTransactionById", id)
     try {
       const res = await api.get(`/api/transaction/${id}`)
       const transaction = res.data
-      console.log("transaction",transaction)
+      console.log("transaction", transaction)
       setEditingTransaction(transaction)
       setOriginalTransaction(JSON.parse(JSON.stringify(transaction))) // Deep copy for comparison
-      
+
       const formattedItems = transaction.items?.map((item: any) => ({
         id: item.transactionitem_id?._id,
         name: item.transactionitem_id?.name || item.transactionitem_id?.inventory_id?.name || '',
@@ -80,9 +80,9 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         type: transaction.type || 'sale'
       })
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error fetching transaction details', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error fetching transaction details',
+        variant: 'danger'
       })
       console.error('Error fetching transaction:', error)
     }
@@ -125,21 +125,21 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         buyer_id: editingTransaction.buyer_id,
         user_id: editingTransaction.user_id
       }
-      console.log("originalTransaction",originalTransaction)
-      console.log("updateData",updateData)
+      console.log("originalTransaction", originalTransaction)
+      console.log("updateData", updateData)
       await api.put(`/api/transaction/${editingTransaction._id}`, updateData)
 
-      showNotification({ 
-        message: 'Transaction updated successfully', 
-        variant: 'success' 
+      showNotification({
+        message: 'Transaction updated successfully',
+        variant: 'success'
       })
-      
+
       handleClose()
       onTransactionUpdated()
     } catch (error: any) {
-      showNotification({ 
-        message: error?.response?.data?.error || 'Error updating transaction', 
-        variant: 'danger' 
+      showNotification({
+        message: error?.response?.data?.error || 'Error updating transaction',
+        variant: 'danger'
       })
       console.error('Error updating transaction:', error)
     }
@@ -174,14 +174,14 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     const unitPrice = editFormData.type === 'sale' ? (item.sale_price || 0) : (item.price || 0)
     const basePrice = (item.qty || 0) * (item.measurement || 1) * unitPrice
     const shippingCost = (item.qty || 0) * (item.shipping || 0)
-    return basePrice 
+    return basePrice
     //+ shippingCost
   }
 
   const totalPrice = editFormData.items.reduce(
     (acc, item) => acc + calculateItemTotal(item),
     0
-  ) 
+  )
   //+ editFormData.total_shipping
 
   useEffect(() => {
@@ -197,9 +197,9 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     <Modal show={show} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
-          Edit {editFormData.type === 'payment' ? 'Payment' : 
-                editFormData.type === 'inventory_addition' ? 'Inventory Addition' : 
-                editFormData.type === 'return' ? 'Return' : 'Sale'} Transaction
+          Edit {editFormData.type === 'payment' ? 'Payment' :
+            editFormData.type === 'inventory_addition' ? 'Inventory Addition' :
+              editFormData.type === 'return' ? 'Return' : 'Sale'} Transaction
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -263,8 +263,8 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                 type="number"
                                 value={item.qty}
                                 onChange={(e) => handleFormChange('qty', (e.target.value) || '', index)}
-                                // min="0"
-                                // step="0.01"
+                              // min="0"
+                              // step="0.01"
                               />
                             </Form.Group>
                           </Col>
@@ -275,8 +275,8 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                 type="number"
                                 value={item.measurement}
                                 onChange={(e) => handleFormChange('measurement', (e.target.value) || '', index)}
-                                // min="0"
-                                // step="0.01"
+                              // min="0"
+                              // step="0.01"
                               />
                             </Form.Group>
                           </Col>
@@ -291,7 +291,7 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                               />
                             </Form.Group>
                           </Col>
-                          
+
                           {/* Cost Price - always show for non-sale transactions */}
                           {!isSaleTransaction && (
                             <Col md={3}>
@@ -301,8 +301,8 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                   // type="number"
                                   value={item.price}
                                   onChange={(e) => handleFormChange('price', (e.target.value) || '', index)}
-                                  // min="0"
-                                  // step="0.01"
+                                // min="0"
+                                // step="0.01"
                                 />
                               </Form.Group>
                             </Col>
@@ -329,16 +329,16 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                                   <Form.Control
                                     type="number"
                                     value={item.sale_price}
-                                    onChange={(e) => handleFormChange('sale_price', (e.target.value) || 0, index)}
-                                    // min="0"
-                                    // step="0.01"
+                                    onChange={(e) => handleFormChange('sale_price', (e.target.value), index)}
+                                  // min="0"
+                                  // step="0.01"
                                   />
                                 </Form.Group>
                               </Col>
                             </>
                           )}
                         </Row>
-                        
+
                         <Row>
                           {/* <Col md={3}>
                             <Form.Group className="mb-2">
@@ -418,8 +418,8 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               <div className="alert alert-info">
                 <strong>Payment Transaction</strong>
                 <p className="mb-0">
-                  Amount: ${editingTransaction.price || 0}<br/>
-                  Method: {editingTransaction.payment_method || 'N/A'}<br/>
+                  Amount: ${editingTransaction.price || 0}<br />
+                  Method: {editingTransaction.payment_method || 'N/A'}<br />
                   Direction: {editingTransaction.payment_direction || 'N/A'}
                 </p>
               </div>
@@ -431,8 +431,8 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         <Button variant="secondary" onClick={handleClose}>
           Cancel
         </Button>
-        <Button 
-          variant="primary" 
+        <Button
+          variant="primary"
           onClick={handleSaveTransaction}
           disabled={editLoading || !editingTransaction}
         >
