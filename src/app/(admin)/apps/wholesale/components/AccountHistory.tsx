@@ -234,7 +234,7 @@ const AccountHistory = () => {
           return sum
         }
         else if (tx.type === 'sample_recieved') {
-          return calculateTotalPriceWithShippingFromItems(tx)
+          return sum + calculateTotalPriceWithShippingFromItems(tx)
         }
         else {
           return sum + (tx?.sale_price || 0)
@@ -251,7 +251,7 @@ const AccountHistory = () => {
 
   const totalPaymentReceived = useMemo(() => {
     return transactions
-      .filter((tx) => tx.type === 'payment' || tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved' || tx.type === "restock")
+      .filter((tx) => tx.type === 'payment' || tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock")
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'received') {
@@ -260,7 +260,7 @@ const AccountHistory = () => {
           return sum
         } else if (tx.type === 'inventory_addition') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if (tx.type === 'sample_recieved') {
+        } else if (tx.type === 'sample_returned') {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
         } else if (tx.type === "restock") {
           return sum + (calculateTotalPriceWithShippingFromItems(tx))
@@ -525,7 +525,7 @@ const AccountHistory = () => {
                     <td>
                       {tx.type === 'sale'
                         ? ('+ ' + (formatCurrency(tx.sale_price)))
-                        : tx.type === "sample_returned" ?
+                        : tx.type === "sample_recieved" ?
                           ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
                           : tx.type === 'payment' &&
                           tx.payment_direction === 'given' &&
@@ -535,7 +535,7 @@ const AccountHistory = () => {
                       {tx.type === 'payment'
                         ? tx.payment_direction === 'received' &&
                         ('- ' + formatCurrency(tx.price))
-                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_recieved' || tx.type === "restock") &&
+                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock") &&
                         ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
                     </td>
                   </tr>

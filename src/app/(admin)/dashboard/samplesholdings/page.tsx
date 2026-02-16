@@ -109,7 +109,7 @@ export default function SampleHoldingPage() {
   const handleAccept = async (id) => {
     try {
       await api.post(`/api/sample/${id}/accept`)
-      showNotification({ message: 'Sample moved to inventory', variant: 'success' })
+      showNotification({ message: 'Entire sample moved to inventory', variant: 'success' })
       setSamples(samples.filter((s) => s._id !== id))
     } catch (err) {
       showNotification({ message: 'Failed to accept sample', variant: 'danger' })
@@ -119,10 +119,30 @@ export default function SampleHoldingPage() {
   const handleReturn = async (id) => {
     try {
       await api.post(`/api/sample/${id}/return`)
-      showNotification({ message: 'Sample returned to sender', variant: 'info' })
+      showNotification({ message: 'Entire sample returned to sender', variant: 'info' })
       setSamples(samples.filter((s) => s._id !== id))
     } catch (err) {
       showNotification({ message: 'Failed to return sample', variant: 'danger' })
+    }
+  }
+
+  const handleProductAccept = async (sampleId, productId) => {
+    try {
+      await api.post(`/api/sample/${sampleId}/product/${productId}/accept`)
+      showNotification({ message: 'Product moved to inventory', variant: 'success' })
+      fetchSamples()
+    } catch (err) {
+      showNotification({ message: 'Failed to accept product', variant: 'danger' })
+    }
+  }
+
+  const handleProductReturn = async (sampleId, productId) => {
+    try {
+      await api.post(`/api/sample/${sampleId}/product/${productId}/return`)
+      showNotification({ message: 'Product returned to sender', variant: 'info' })
+      fetchSamples()
+    } catch (err) {
+      showNotification({ message: 'Failed to return product', variant: 'danger' })
     }
   }
 
@@ -298,46 +318,85 @@ export default function SampleHoldingPage() {
                     </div>
                   </td>
                   <td>
-                    <div>
-                      {sample.products.map((product, i) => (
-                        <div key={i} className="border-bottom pb-2 mb-2">
-                          <div className="d-flex justify-content-between">
-                            <div className="me-3">
-                              <span className="fw-medium">{product.name}</span>
-                              <div className="d-flex align-items-center mt-1">
-                                <Badge bg="light" text="dark" className="me-2">
+                    <div className="pe-3">
+                      {sample.products.filter(p => p.status === 'holding').map((product, i) => (
+                        <div key={i} className={`pb-3 mb-3 ${i !== sample.products.filter(p => p.status === 'holding').length - 1 ? 'border-bottom' : ''}`}>
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div className="flex-grow-1">
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                <span className="fw-bold text-dark">{product.name}</span>
+                                {product.reference_number && (
+                                  <Badge bg="light" text="muted" className="fw-normal border">
+                                    #{product.reference_number}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="d-flex flex-wrap align-items-center gap-2">
+                                <Badge bg="primary" className="bg-opacity-10 text-primary fw-medium">
                                   {product.qty} {product.unit}
                                   {product.measurement !== 1 && ` (${product.measurement * 100}%)`}
                                 </Badge>
-                                {product.category_name &&
-                                  <Badge bg="secondary" className="bg-opacity-25 text-dark">
+                                {product.category_name && (
+                                  <Badge bg="info" className="bg-opacity-10 text-info fw-medium">
                                     {product.category_name}
                                   </Badge>
-                                }
+                                )}
+                                <span className="fw-bold text-success small ms-auto">
+                                  ${Number((product.price) + product.shippingCost).toFixed(2)}
+                                </span>
                               </div>
                             </div>
-                            <div className="text-end">
-                              <div className="fw-medium">${Number((product.price) + product.shippingCost).toFixed(2)}</div>
-                              {/* <small className="text-muted">+${Number(product.shippingCost || 0).toFixed(2)}/unit shipping</small> */}
+                            <div className="d-flex gap-2 ms-3 pt-1">
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                className="d-flex align-items-center justify-content-center p-0 shadow-sm transition-all"
+                                style={{ width: '30px', height: '30px', borderRadius: '6px' }}
+                                title="Accept Product"
+                                onClick={() => handleProductAccept(sample._id, product._id)}
+                              >
+                                <IconifyIcon icon="tabler:check" width={18} />
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                className="d-flex align-items-center justify-content-center p-0 shadow-sm transition-all"
+                                style={{ width: '30px', height: '30px', borderRadius: '6px' }}
+                                title="Return Product"
+                                onClick={() => handleProductReturn(sample._id, product._id)}
+                              >
+                                <IconifyIcon icon="tabler:arrow-back-up" width={18} />
+                              </Button>
                             </div>
                           </div>
                         </div>
                       ))}
-                      <div className="mt-1 d-flex justify-content-between">
-                        <small className="text-muted">{sample.products.length} product{sample.products.length !== 1 ? 's' : ''} total</small>
-                        {/* {sample.totalShippingCost && (
-                          <small className="text-muted">Total shipping: ${Number(sample.totalShippingCost).toFixed(2)}</small>
-                        )} */}
+                      <div className="mt-2 text-end">
+                        <small className="text-secondary fw-medium">
+                          {sample.products.filter(p => p.status === 'holding').length} product{sample.products.filter(p => p.status === 'holding').length !== 1 ? 's' : ''} remaining
+                        </small>
                       </div>
                     </div>
                   </td>
                   <td className="text-end align-middle">
-                    <Button variant="success" size="sm" className="me-2" onClick={() => handleAccept(sample._id)}>
-                      <i className="bi bi-check2 me-1"></i> Accept
-                    </Button>
-                    <Button variant="outline-danger" size="sm" onClick={() => setConfirmModal({ show: true, id: sample._id })}>
-                      <i className="bi bi-arrow-return-left me-1"></i> Return
-                    </Button>
+                    <div className="d-flex flex-column gap-2 align-items-end">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleAccept(sample._id)}
+                        className="px-3 d-flex align-items-center justify-content-center"
+                      >
+                        <IconifyIcon icon="tabler:check-all" className="me-2" width={16} /> Accept All
+                      </Button>
+                      <Button
+                        variant="soft-danger" // Using a softer variant if supported, else falls back
+                        size="sm"
+                        onClick={() => setConfirmModal({ show: true, id: sample._id })}
+                        className="px-3 d-flex align-items-center justify-content-center btn-soft-danger"
+                      >
+                        <IconifyIcon icon="tabler:arrow-left-right" className="me-2" width={16} /> Return All
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               )) : (
