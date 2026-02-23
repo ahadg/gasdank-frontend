@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Metadata } from 'next'
 import PageTitle from '@/components/PageTitle'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
-import { Button, Card, Form } from 'react-bootstrap'
+import { Button, Card, Form, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import CustomPagination from '@/app/(admin)/e-commerce/products-grid/components/CustomPagination'
 import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
@@ -247,37 +247,45 @@ const saleTransactionsPage = () => {
                     <td>{prod.unit}</td>
                     <td className="text-center">
                       <div className="d-flex gap-2 justify-content-center">
-                        <Button
-                          variant="primary"
-                          onClick={() => {
-                            setSelectedProduct(prod)
-                            setActiveModal('history')
-                          }}
-                          className="rounded-pill shadow"
-                        >
-                          <IconifyIcon icon="tabler:clock" className="fs-5" />
-                        </Button>
-                        <Button
-                          variant="success"
-                          onClick={() => {
-                            setSelectedProduct(prod)
-                            setActiveModal('sellMultiple')
-                            setSelectedProducts([prod])
-                          }}
-                          className="rounded-pill shadow"
-                        >
-                          <IconifyIcon icon="tabler:currency-dollar" className="fs-5" />
-                        </Button>
-                        <Button
-                          variant="info"
-                          onClick={() => {
-                            setSelectedProduct(prod)
-                            setActiveModal('add')
-                          }}
-                          className="rounded-pill shadow"
-                        >
-                          <IconifyIcon icon="tabler:plus" className="fs-5" />
-                        </Button>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id={`history-tooltip-${prod._id}`}>History</Tooltip>}>
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              setSelectedProduct(prod)
+                              setActiveModal('history')
+                            }}
+                            className="rounded-pill shadow"
+                          >
+                            <IconifyIcon icon="tabler:clock" className="fs-5" />
+                          </Button>
+                        </OverlayTrigger>
+
+                        <OverlayTrigger placement="top" overlay={<Tooltip id={`sell-tooltip-${prod._id}`}>Sell</Tooltip>}>
+                          <Button
+                            variant="success"
+                            onClick={() => {
+                              setSelectedProduct(prod)
+                              setActiveModal('sellMultiple')
+                              setSelectedProducts([prod])
+                            }}
+                            className="rounded-pill shadow"
+                          >
+                            <IconifyIcon icon="tabler:currency-dollar" className="fs-5" />
+                          </Button>
+                        </OverlayTrigger>
+
+                        <OverlayTrigger placement="top" overlay={<Tooltip id={`return-tooltip-${prod._id}`}>Return Stock</Tooltip>}>
+                          <Button
+                            variant="info"
+                            onClick={() => {
+                              setSelectedProduct(prod)
+                              setActiveModal('add')
+                            }}
+                            className="rounded-pill shadow"
+                          >
+                            <IconifyIcon icon="tabler:plus" className="fs-5" />
+                          </Button>
+                        </OverlayTrigger>
                       </div>
                     </td>
                   </tr>
@@ -349,43 +357,51 @@ const saleTransactionsPage = () => {
                   </div>
 
                   <div className="d-flex gap-2 justify-content-center">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProduct(prod)
-                        setActiveModal('history')
-                      }}
-                      className="flex-fill"
-                    >
-                      <IconifyIcon icon="tabler:clock" className="me-1" />
-                      <span className="d-none d-sm-inline">History</span>
-                    </Button>
-                    <Button
-                      variant="success"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProduct(prod)
-                        setActiveModal('sellMultiple')
-                        setSelectedProducts([prod])
-                      }}
-                      className="flex-fill"
-                    >
-                      <IconifyIcon icon="tabler:currency-dollar" className="me-1" />
-                      <span className="d-none d-sm-inline">Sell</span>
-                    </Button>
-                    <Button
-                      variant="info"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProduct(prod)
-                        setActiveModal('add')
-                      }}
-                      className="flex-fill"
-                    >
-                      <IconifyIcon icon="tabler:plus" className="me-1" />
-                      <span className="d-none d-sm-inline">Add</span>
-                    </Button>
+                    <OverlayTrigger placement="top" overlay={<Tooltip id={`mob-history-tooltip-${prod._id}`}>History</Tooltip>}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProduct(prod)
+                          setActiveModal('history')
+                        }}
+                        className="flex-fill"
+                      >
+                        <IconifyIcon icon="tabler:clock" className="me-1" />
+                        <span className="d-none d-sm-inline">History</span>
+                      </Button>
+                    </OverlayTrigger>
+
+                    <OverlayTrigger placement="top" overlay={<Tooltip id={`mob-sell-tooltip-${prod._id}`}>Sell</Tooltip>}>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProduct(prod)
+                          setActiveModal('sellMultiple')
+                          setSelectedProducts([prod])
+                        }}
+                        className="flex-fill"
+                      >
+                        <IconifyIcon icon="tabler:currency-dollar" className="me-1" />
+                        <span className="d-none d-sm-inline">Sell</span>
+                      </Button>
+                    </OverlayTrigger>
+
+                    <OverlayTrigger placement="top" overlay={<Tooltip id={`mob-return-tooltip-${prod._id}`}>Return Stock</Tooltip>}>
+                      <Button
+                        variant="info"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProduct(prod)
+                          setActiveModal('add')
+                        }}
+                        className="flex-fill"
+                      >
+                        <IconifyIcon icon="tabler:plus" className="me-1" />
+                        <span className="d-none d-sm-inline">Return Stock</span>
+                      </Button>
+                    </OverlayTrigger>
                   </div>
                 </Card.Body>
               </Card>

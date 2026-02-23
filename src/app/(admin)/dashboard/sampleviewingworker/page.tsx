@@ -264,7 +264,7 @@ export default function WorkerSampleManagementPage() {
 
       const transactionPayload = {
         worker_id: user._id,
-        user_id: user?.created_by,
+        user_id: user?.created_by || user._id,
         buyer_id: selectedSession.buyer_id._id,
         items: transformedItems,
         price: orgPrice,

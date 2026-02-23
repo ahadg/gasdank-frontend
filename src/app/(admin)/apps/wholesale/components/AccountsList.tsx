@@ -15,22 +15,22 @@ export const metadata: Metadata = { title: 'Wholesale Accounts' }
 
 // Balance Status Component
 const BalanceStatusIndicator = ({ balance }: { balance: number }) => {
-  console.log("balance",balance)
+  console.log("balance", balance)
   const getBalanceStatus = () => {
     if (balance < 0) {
       return {
-        color: '#28a745', // Green - they owe us
+        color: '#dc3545', // Green - they owe us
         text: '',
         amount: (balance),
-        bgColor: '#d4edda',
+        bgColor: '#f8d7da',
         icon: 'tabler:arrow-up'
       }
     } else if (balance > 0) {
       return {
-        color: '#dc3545', // Red - we owe them
+        color: '#28a745', // Red - we owe them
         text: '',
         amount: balance,
-        bgColor: '#f8d7da',
+        bgColor: '#d4edda',
         icon: 'tabler:arrow-down'
       }
     } else {
@@ -47,17 +47,17 @@ const BalanceStatusIndicator = ({ balance }: { balance: number }) => {
   const status = getBalanceStatus()
 
   return (
-    <div 
+    <div
       className="d-flex align-items-center justify-content-between px-2 py-1 rounded-pill"
-      style={{ 
+      style={{
         backgroundColor: status.bgColor,
         border: `1px solid ${status.color}`,
         fontSize: '0.75rem',
         minWidth: '100px'
       }}
     >
-      <IconifyIcon 
-        icon={status.icon} 
+      <IconifyIcon
+        icon={status.icon}
         style={{ color: status.color, fontSize: '14px' }}
       />
       {/* <span style={{ color: status.color, fontWeight: '600' }}>
@@ -77,9 +77,9 @@ export default function WholesaleAccountsPage() {
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
-  const [activeModal,setActiveModal] = useState<string>()
+  const [activeModal, setActiveModal] = useState<string>()
   const { showNotification } = useNotificationContext()
-  
+
   async function fetchAccounts() {
     if (user?._id) {
       setLoading(true)
@@ -94,20 +94,20 @@ export default function WholesaleAccountsPage() {
       }
     }
   }
-  
+
   // Fetch buyers for the current user
   useEffect(() => {
     fetchAccounts()
   }, [user?._id])
-  
-  console.log("selectedAccount",selectedAccount)
-  
+
+  console.log("selectedAccount", selectedAccount)
+
   useEffect(() => {
-    if(selectedAccount) {
+    if (selectedAccount) {
       let newSelectedAccount = accounts.find((item) => item?._id == selectedAccount?._id)
       setSelectedAccount(newSelectedAccount)
     }
-  },[accounts])
+  }, [accounts])
 
   // Filter accounts based on search query (searching on firstName and lastName)
   const filteredAccounts = accounts.filter((acc) =>
@@ -119,7 +119,7 @@ export default function WholesaleAccountsPage() {
       <PageTitle title="Wholesale Accounts" subTitle="Accounts" />
 
       <Card className="mt-3 shadow-sm">
-      <CardHeader className="border-bottom border-light">
+        <CardHeader className="border-bottom border-light">
           <div>
             <Link href="/apps/wholesale/add" className="btn btn-primary"><IconifyIcon icon='tabler:plus' className="me-1" />Add Client</Link>
           </div>
@@ -182,43 +182,43 @@ export default function WholesaleAccountsPage() {
             )}
           </div>
           {loading && <p className="mt-2 text-muted">Loading accounts...</p>}
-          
-          {selectedAccount && (
-          <div className="mt-4 p-3 bg-light rounded shadow-sm">
-          <h6 className="fs-15 mb-3">Account Actions</h6>
-          <div className="d-flex flex-column flex-md-row gap-2">
-            <div className="flex-md-1">
-              <Link href={`/apps/wholesale/history/${selectedAccount._id}`} className="text-decoration-none">
-                <Button variant="primary" className="w-100">View Transaction</Button>
-              </Link>
-            </div>
-        
-            <div className="flex-md-1">
-              <Button
-                onClick={() => setActiveModal('balance')}
-                variant="success"
-                className="w-100">
-                Add Balance
-              </Button>
-            </div>
 
-            <div className="flex-md-1">
-              <Button 
-                variant="danger"
-                onClick={() => setActiveModal('returnsale')}
-              >
-                <IconifyIcon icon="tabler:arrow-back-up" className="me-1" />
-                Return Sale
-              </Button>
+          {selectedAccount && (
+            <div className="mt-4 p-3 bg-light rounded shadow-sm">
+              <h6 className="fs-15 mb-3">Account Actions</h6>
+              <div className="d-flex flex-column flex-md-row gap-2">
+                <div className="flex-md-1">
+                  <Link href={`/apps/wholesale/history/${selectedAccount._id}`} className="text-decoration-none">
+                    <Button variant="primary" className="w-100">View Transaction</Button>
+                  </Link>
+                </div>
+
+                <div className="flex-md-1">
+                  <Button
+                    onClick={() => setActiveModal('balance')}
+                    variant="success"
+                    className="w-100">
+                    Add Balance
+                  </Button>
+                </div>
+
+                <div className="flex-md-1">
+                  <Button
+                    variant="danger"
+                    onClick={() => setActiveModal('returnsale')}
+                  >
+                    <IconifyIcon icon="tabler:arrow-back-up" className="me-1" />
+                    Return Sale
+                  </Button>
+                </div>
+
+                <div className="flex-md-1">
+                  <Link href={`/apps/wholesale/edit/${selectedAccount._id}`} className="text-decoration-none">
+                    <Button variant="info" className="w-100">Edit Account</Button>
+                  </Link>
+                </div>
+              </div>
             </div>
-        
-            <div className="flex-md-1">
-              <Link href={`/apps/wholesale/edit/${selectedAccount._id}`} className="text-decoration-none">
-                <Button variant="info" className="w-100">Edit Account</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
           )}
         </Card.Body>
         {selectedAccount && (
@@ -243,7 +243,7 @@ export default function WholesaleAccountsPage() {
         )}
 
         {activeModal === 'returnsale' && selectedAccount && (
-          <ReturnSaleModal 
+          <ReturnSaleModal
             show={true}
             buyerId={selectedAccount?._id as string}
             onClose={() => setActiveModal(null)}

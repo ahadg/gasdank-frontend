@@ -503,52 +503,54 @@ const AccountHistory = () => {
           <div className="mb-2">
             <strong>Showing transactions from:</strong> {moment(dateRange.startDateTime).format('MMM DD, YYYY HH:mm')} to {moment(dateRange.endDateTime).format('MMM DD, YYYY HH:mm')}
           </div>
-          <Table className="table table-nowrap mb-0">
-            <thead className="bg-light-subtle">
-              <tr>
-                <th>Date</th>
-                <th>Details</th>
-                <th>Type</th>
-                <th>Notes</th>
-                <th>Funds In</th>
-                <th>Funds Out</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.length > 0 ? (
-                transactions.map((tx, idx) => (
-                  <tr key={idx}>
-                    <td>{moment(tx.created_at).format('MM/DD/YYYY HH:mm')}</td>
-                    <td>{getDetailsContent(tx)}</td>
-                    <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type === "sale" ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}` : tx.type}</td>
-                    <td>{tx.notes}</td>
-                    <td>
-                      {tx.type === 'sale'
-                        ? ('+ ' + (formatCurrency(tx.sale_price)))
-                        : tx.type === "sample_recieved" ?
-                          ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
-                          : tx.type === 'payment' &&
-                          tx.payment_direction === 'given' &&
-                          ('+ ' + formatCurrency(tx.price))}
-                    </td>
-                    <td>
-                      {tx.type === 'payment'
-                        ? tx.payment_direction === 'received' &&
-                        ('- ' + formatCurrency(tx.price))
-                        : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock") &&
-                        ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <Table className="table table-nowrap mb-0">
+              <thead className="bg-light-subtle sticky-top" style={{ zIndex: 1 }}>
+                <tr>
+                  <th>Date</th>
+                  <th>Details</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                  <th>Funds In</th>
+                  <th>Funds Out</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.length > 0 ? (
+                  transactions.map((tx, idx) => (
+                    <tr key={idx}>
+                      <td>{moment(tx.created_at).format('MM/DD/YYYY HH:mm')}</td>
+                      <td>{getDetailsContent(tx)}</td>
+                      <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type === "sale" ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}` : tx.type}</td>
+                      <td>{tx.notes}</td>
+                      <td>
+                        {tx.type === 'sale'
+                          ? ('+ ' + (formatCurrency(tx.sale_price)))
+                          : tx.type === "sample_recieved" ?
+                            ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
+                            : tx.type === 'payment' &&
+                            tx.payment_direction === 'given' &&
+                            ('+ ' + formatCurrency(tx.price))}
+                      </td>
+                      <td>
+                        {tx.type === 'payment'
+                          ? tx.payment_direction === 'received' &&
+                          ('- ' + formatCurrency(tx.price))
+                          : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock") &&
+                          ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="text-center">
+                      No transactions found.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="text-center">
-                    No transactions found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+                )}
+              </tbody>
+            </Table>
+          </div>
           <div className="mt-4 border-top pt-3">
             <Row>
               <Col md={4}>

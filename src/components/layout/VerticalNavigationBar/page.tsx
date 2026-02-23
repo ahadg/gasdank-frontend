@@ -16,7 +16,7 @@ const AppMenu = lazy(() => import('./components/AppMenu'))
 
 const VerticalNavigationBar = () => {
   const { toggleBackdrop } = useLayoutContext()
-  const {user,setUser} = useAuthStore((state) => state)
+  const { user, setUser } = useAuthStore((state) => state)
   const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([])
   const setSettings = useAuthStore((state) => state.setSettings)
   // Complete menu items array
@@ -67,26 +67,26 @@ const VerticalNavigationBar = () => {
     },
     {
       key: 'sample_management',
-      label: 'Sample Management',
+      label: 'Pending approvals',
       icon: 'tabler:eye-search',
       children: [
         {
           key: 'sampleholdings',
-          label: 'Sample Holdings',
+          label: 'Sample Intake / holding',
           // icon: 'tabler:zoom-question',
           url: '/dashboard/samplesholdings',
           parentKey: 'sample_management',
         },
         {
           key: 'sampleviewing',
-          label: 'Sample Viewing Tool',
+          label: 'Create Order',
           // icon: 'tabler:eye-search',
           url: '/dashboard/sampleviewing',
           parentKey: 'sample_management',
         },
         {
           key: 'sampleviewingmanagement',
-          label: 'Sample Viewing Management',
+          label: 'work order',
           // icon: 'tabler:eye-search',
           url: '/dashboard/sampleviewingworker',
           parentKey: 'sample_management',
@@ -170,7 +170,7 @@ const VerticalNavigationBar = () => {
           }
           return true
         }) || []
-        
+
         // Only include sample_management if it has at least one accessible child
         if (filteredChildren.length > 0) {
           filtered.push({
@@ -180,7 +180,7 @@ const VerticalNavigationBar = () => {
         }
         return filtered
       }
-      
+
       // Handle config section with nested structure
       if (item.key === 'config' && access.config) {
         // Filter config children based on nested access
@@ -194,7 +194,7 @@ const VerticalNavigationBar = () => {
           }
           return true
         }) || []
-        
+
         // Only include config if it has at least one accessible child
         if (filteredChildren.length > 0) {
           filtered.push({
@@ -205,7 +205,7 @@ const VerticalNavigationBar = () => {
         // If no children, don't add the config item at all
         return filtered
       }
-      
+
       // Handle reports section (similar nested structure)
       if (item.key === 'reports' && access.reports) {
         if (item.children && access.reports.read) {
@@ -219,7 +219,7 @@ const VerticalNavigationBar = () => {
         }
         return filtered
       }
-      
+
       // Handle other sections with regular access structure
       if (access[item.key] !== undefined) {
         if (access[item.key].read) {
@@ -239,28 +239,28 @@ const VerticalNavigationBar = () => {
         }
         return filtered
       }
-      
+
       // Show items that don't have access restrictions (like profile, notifications)
       filtered.push(item)
       return filtered
     }, [])
   }
-let unitOptions = useAuthStore(state => state.settings?.units)
+  let unitOptions = useAuthStore(state => state.settings?.units)
   // Fetch user access data from the backend and filter menu items accordingly.
   useEffect(() => {
     async function fetchUserAccess() {
       //if(!unitOptions) {
-        const response = await api.get('/api/personal-settings')
-        setSettings(response.data)
+      const response = await api.get('/api/personal-settings')
+      setSettings(response.data)
       //}
       if (user && user._id) {
         try {
           const response = await api.get(`/api/users/me`)
           const userData = response.data?.user
           const access = userData.access || {}
-          console.log("setting_userData",userData)
+          console.log("setting_userData", userData)
           setUser(userData)
-          
+
           // Filter menu items based on access permissions
           const filtered = filterMenuItems(menuItems, access)
           setFilteredMenuItems(filtered)
