@@ -201,10 +201,15 @@ export default function SampleHoldingPage() {
       if (!p.qty || Number(p.qty) <= 0) errors.push(`Product ${index + 1}: Quantity must be a positive number.`)
       if (!p.unit) errors.push(`Product ${index + 1}: Unit is required.`)
       if (!p.price || Number(p.price) < 0) errors.push(`Product ${index + 1}: Price must be a valid number.`)
+      if (!p.category_id) errors.push(`Product ${index + 1}: Category is required.`)
+      if (!p.product_type) errors.push(`Product ${index + 1}: Product Type is required.`)
     })
 
     if (errors.length > 0) {
-      showNotification({ message: 'Please input or select required fields before submitting.', variant: 'danger' })
+      showNotification({
+        message: errors.join('\n'),
+        variant: 'danger'
+      })
       return
     }
 
@@ -603,7 +608,7 @@ export default function SampleHoldingPage() {
 
                   <Row className="mb-3">
                     <Col md={6}>
-                      <Form.Label>Category</Form.Label>
+                      <Form.Label>Category <span className="text-danger">*</span></Form.Label>
                       <Form.Select
                         value={product.category_id}
                         onChange={(e) => handleProductChange(index, 'category_id', e.target.value)}
@@ -615,7 +620,7 @@ export default function SampleHoldingPage() {
                       </Form.Select>
                     </Col>
                     <Col md={6}>
-                      <Form.Label>Product Type</Form.Label>
+                      <Form.Label>Product Type <span className="text-danger">*</span></Form.Label>
                       <Form.Select
                         value={product.product_type}
                         onChange={(e) => handleProductChange(index, 'product_type', e.target.value)}

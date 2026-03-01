@@ -193,9 +193,9 @@ const FinancialOverview = ({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:col-span-2">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xs font-medium text-gray-600 uppercase tracking-wide">Financial Overview</h3>
-        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
+        {/* <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
           <Wallet className="w-3 h-3 text-white" />
-        </div>
+        </div> */}
       </div>
 
       <div className="mb-3">
@@ -342,9 +342,9 @@ const StatWidget = ({
           {item.title}
         </h3>
         <div className="flex items-center gap-1">
-          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
+          {/* <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
             <IconComponent className="w-3 h-3 text-white" />
-          </div>
+          </div> */}
           {isCustomizationMode && (
             <GripVertical className="w-4 h-4 text-gray-400" />
           )}

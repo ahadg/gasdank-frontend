@@ -10,6 +10,7 @@ import api from '@/utils/axiosInstance'
 import CustomPagination from '@/app/(admin)/e-commerce/products-grid/components/CustomPagination'
 import { useAuthStore } from '@/store/authStore'
 import RestockModal from './edit/components/Restockmodal'
+import ReturnInventoryModal from './edit/components/ReturnInventoryModal'
 import { useNotificationContext } from '@/context/useNotificationContext'
 
 //export const metadata: Metadata = { title: 'Products' }
@@ -33,6 +34,7 @@ const ProductsPage = () => {
 
   // Restock modal state
   const [showRestockModal, setShowRestockModal] = useState(false)
+  const [showReturnModal, setShowReturnModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
 
   // Low stock section state
@@ -130,6 +132,16 @@ const ProductsPage = () => {
 
   const handleRestockModalClose = () => {
     setShowRestockModal(false)
+    setSelectedProduct(null)
+  }
+
+  const handleReturnClick = (product: any) => {
+    setSelectedProduct(product)
+    setShowReturnModal(true)
+  }
+
+  const handleReturnModalClose = () => {
+    setShowReturnModal(false)
     setSelectedProduct(null)
   }
 
@@ -244,6 +256,16 @@ const ProductsPage = () => {
             <IconifyIcon icon="tabler:package" className="me-1" />
             {isLowStock ? 'Urgent Restock' : 'Restock'}
           </Button>
+          {/* <Button
+            variant="outline-info"
+            size="sm"
+            className="flex-fill"
+            onClick={() => handleReturnClick(item)}
+            title="Return Inventory"
+          >
+            <IconifyIcon icon="tabler:arrow-back-up" className="me-1" />
+            Return
+          </Button> */}
           <Link href={`/inventory/products/edit/${item._id}`} className="flex-fill">
             <Button variant="outline-success" size="sm" className="w-100">
               <IconifyIcon icon="tabler:edit" className="me-1" />
@@ -650,6 +672,15 @@ const ProductsPage = () => {
                             >
                               <IconifyIcon icon="tabler:package" />
                             </Button>
+                            {/* <Button
+                              variant="soft-warning"
+                              size="sm"
+                              className="btn-icon rounded-circle me-1"
+                              onClick={() => handleReturnClick(item)}
+                              title="Return Inventory"
+                            >
+                              <IconifyIcon icon="tabler:arrow-back-up" />
+                            </Button> */}
                             <Link href={`/inventory/products/edit/${item._id}`}>
                               <Button variant="soft-success" size="sm" className="btn-icon rounded-circle">
                                 <IconifyIcon icon="tabler:edit" className="fs-16" />
@@ -710,6 +741,14 @@ const ProductsPage = () => {
         onHide={handleRestockModalClose}
         product={selectedProduct}
         onRestockComplete={onRestockComplete}
+      />
+
+      {/* Return Inventory Modal */}
+      <ReturnInventoryModal
+        show={showReturnModal}
+        onHide={handleReturnModalClose}
+        product={selectedProduct}
+        onReturnComplete={onRestockComplete}
       />
     </>
   )
