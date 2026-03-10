@@ -21,7 +21,7 @@ export default function CategoriesPage() {
     async function fetchCategories() {
       setLoading(true)
       try {
-        const response = await api.get(`/api/categories/${user?._id}?type=both`)
+        const response = await api.get(`/api/categories/${user?._id}?status=all`)
         // Assuming the API returns an array of categories
         setCategories(response.data)
       } catch (error) {

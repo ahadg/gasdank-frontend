@@ -44,7 +44,7 @@ const ProductsPage = () => {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await api.get(`/api/categories/${user?._id}`)
+        const response = await api.get(`/api/categories/${user?._id}?status=active`)
         setCategories(response.data)
       } catch (error) {
         showNotification({ message: error?.response?.data?.error || 'Error fetching categories', variant: 'danger' })
