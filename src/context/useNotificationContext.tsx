@@ -10,6 +10,7 @@ type ShowNotificationType = {
   message: string
   variant?: BootstrapVariantType
   delay?: number
+  autohide?: boolean
 }
 
 type ToastrProps = {
@@ -18,21 +19,18 @@ type ToastrProps = {
 } & ShowNotificationType
 
 type NotificationContextType = {
-  showNotification: ({ title, message, variant }: ShowNotificationType) => void
+  showNotification: (config: ShowNotificationType) => void
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
-function Toastr({ show, title, message, onClose, variant = 'light', delay }: Readonly<ToastrProps>) {
+function Toastr({ show, title, message, onClose, variant = 'light', delay, autohide = true }: Readonly<ToastrProps>) {
   return (
-    <ToastContainer className="m-3 position-fixed" position="top-end">
-      <Toast bg={variant} delay={delay} show={show} onClose={onClose} autohide>
-        {title && (
-          <ToastHeader className={`text-${variant}`}>
-            <strong className="me-auto">{title}</strong>
-          </ToastHeader>
-        )}
-        <ToastBody className={['dark', 'danger', 'success', 'primary'].includes(variant) ? 'text-white' : ''}>{message}</ToastBody>
+    <ToastContainer className="p-3 position-fixed" position="top-end" style={{ zIndex: 9999 }}>
+      <Toast bg={variant} delay={delay} show={show} onClose={onClose} autohide={autohide}>
+        <ToastBody className={['dark', 'danger', 'success', 'primary'].includes(variant) ? 'text-white' : ''}>
+          {message}
+        </ToastBody>
       </Toast>
     </ToastContainer>
   )
@@ -55,23 +53,42 @@ export function NotificationProvider({ children }: ChildrenType) {
   }
 
   const [config, setConfig] = useState<ToastrProps>(defaultConfig)
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
+
   const hideNotification = () => {
-    setConfig({ show: false, message: '', title: '' })
+    setConfig(prev => ({ ...prev, show: false }))
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      setTimeoutId(null)
+    }
   }
 
-  const showNotification = ({ title, message, variant, delay = 2000 }: ShowNotificationType) => {
+  const showNotification = ({ title, message, variant, delay, autohide }: ShowNotificationType) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+
+    const isDanger = variant === 'danger'
+    const finalAutoHide = autohide ?? !isDanger // Danger notifications don't autohide by default
+    const finalDelay = delay ?? (isDanger ? 10000 : 3000)
+
     setConfig({
       show: true,
       title,
       message,
       variant: variant ?? 'light',
       onClose: hideNotification,
-      delay,
+      delay: finalDelay,
+      autohide: finalAutoHide
     })
 
-    setTimeout(() => {
-      setConfig(defaultConfig)
-    }, delay)
+    if (finalAutoHide) {
+      const id = setTimeout(() => {
+        setConfig(prev => ({ ...prev, show: false }))
+        setTimeoutId(null)
+      }, finalDelay)
+      setTimeoutId(id)
+    }
   }
 
   return (

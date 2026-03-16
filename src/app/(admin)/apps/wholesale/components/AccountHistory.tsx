@@ -88,10 +88,7 @@ const AccountHistory = () => {
     startDateTime: moment().subtract(2, 'day').startOf('day').format('YYYY-MM-DDTHH:mm'),
     //startDateTime: moment().startOf('day').format('YYYY-MM-DDTHH:mm'),
     endDateTime: moment().add(2, 'day').endOf('day').format('YYYY-MM-DDTHH:mm')
-  });
-
-  // New state: if true, exclude shipping cost from totals.
-  const [excludeShipping, setExcludeShipping] = useState<boolean>(false)
+  })
 
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -169,55 +166,61 @@ const AccountHistory = () => {
     }
   }, [id, user?._id])
 
-  // Helper function to calculate shipping from items - MODIFIED
-  const calculateShippingFromItems = (tx: ITransaction): number => {
-    if (!tx.items || tx.items.length === 0) return 0;
-
-    return tx.items.reduce((total, item) => {
-      const txItem = item.transactionitem_id;
-      const shipping = txItem?.shipping || 0;
-      const qty = txItem?.qty || 0;
-      // Changed: Add shipping to price first, then multiply by quantity
-      return total + ((shipping) * qty);
-    }, 0);
+  const toNumber = (value: unknown): number => {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : 0
   }
 
-  const calculateTotalPriceWithShippingFromItems = (tx: ITransaction): number => {
-    //if (!tx.items || tx.items.length === 0) return 0;
-    console.log("tx_tx", tx)
-    if (tx?.type == "sample_recieved") {
-      return tx.sample_id?.products?.reduce((total, item) => {
-        const txItem = item;
-        const shipping = txItem?.shippingCost || 0;
-        const qty = txItem?.qty || 0;
-        // Changed: Add shipping to price first, then multiply by quantity
-        return total + ((txItem?.price + shipping) * qty);
-      }, 0);
-    } else if (tx?.type == "sample_returned") {
-      return tx.sample_id?.products?.reduce((total, item) => {
-        const txItem = item;
-        const shipping = txItem?.shippingCost || 0;
-        const qty = txItem?.qty || 0;
-        // Changed: Add shipping to price first, then multiply by quantity
-        return total + ((txItem?.price + shipping) * qty);
-      }, 0);
-    } else if (tx?.type == "return") {
-      return tx.items?.reduce((total, item) => {
-        const txItem = item.transactionitem_id;
-        const shipping = txItem?.shippingCost || 0;
-        const qty = txItem?.qty || 0;
-        // Changed: Add shipping to price first, then multiply by quantity
-        return total + ((txItem?.sale_price) * qty);
-      }, 0);
-    }
-    else {
-      return tx.items.reduce((total, item) => {
-        const txItem = item.transactionitem_id;
-        const shipping = txItem?.shipping || 0;
-        const qty = txItem?.qty || 0;
-        // Changed: Add shipping to price first, then multiply by quantity
-        return total + ((txItem?.price + shipping) * qty);
-      }, 0);
+  const getUnits = (qty?: number, measurement?: string): number => {
+    const parsedMeasurement = toNumber(measurement)
+    const unitMultiplier = parsedMeasurement > 0 ? parsedMeasurement : 1
+
+    return toNumber(qty) * unitMultiplier
+  }
+
+  const getPaymentAmount = (tx: ITransaction): number => {
+    return toNumber(tx.transactionpayment_id?.amount_paid) || toNumber(tx.price) || toNumber(tx.payment)
+  }
+
+  const calculateSampleProductsTotal = (tx: ITransaction): number => {
+    if (!Array.isArray(tx.sample_id?.products)) return 0
+
+    return tx.sample_id.products.reduce((total, item) => {
+      const units = getUnits(item?.qty, item?.measurement)
+      const itemPrice = toNumber(item?.price) + toNumber(item?.shippingCost)
+      return total + itemPrice * units
+    }, 0)
+  }
+
+  const calculateItemsTotal = (tx: ITransaction): number => {
+    if (!Array.isArray(tx.items) || tx.items.length === 0) return 0
+
+    return tx.items.reduce((total, item) => {
+      const txItem = item.transactionitem_id
+      const units = getUnits(txItem?.qty, txItem?.measurement)
+      const isSaleLike = tx.type === 'sale' || tx.type === 'return'
+      const basePrice = isSaleLike ? toNumber(txItem?.sale_price) : toNumber(txItem?.price)
+      const shipping = isSaleLike ? 0 : toNumber(txItem?.shipping ?? txItem?.shippingCost)
+
+      return total + (basePrice + shipping) * units
+    }, 0)
+  }
+
+  const getTransactionAmount = (tx: ITransaction): number => {
+    switch (tx.type) {
+      case 'payment':
+        return getPaymentAmount(tx)
+      case 'sample_recieved':
+      case 'sample_returned':
+        return calculateSampleProductsTotal(tx)
+      case 'sale':
+        return calculateItemsTotal(tx) || toNumber(tx.sale_price)
+      case 'return':
+      case 'inventory_addition':
+      case 'restock':
+        return calculateItemsTotal(tx)
+      default:
+        return toNumber(tx.price) || toNumber(tx.amount) || toNumber(tx.total)
     }
   }
 
@@ -229,24 +232,12 @@ const AccountHistory = () => {
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'given') {
-            return sum + (tx?.price || 0)
+            return sum + getTransactionAmount(tx)
           }
           return sum
         }
-        else if (tx.type === 'sample_recieved') {
-          return sum + calculateTotalPriceWithShippingFromItems(tx)
-        }
-        else {
-          return sum + (tx?.sale_price || 0)
-        }
+        return sum + getTransactionAmount(tx)
       }, 0)
-  }, [transactions])
-
-  // Calculate total shipping from items instead of using total_shipping field
-  const totalShipping_client = useMemo(() => {
-    return transactions
-      .filter((tx) => tx.type === 'inventory_addition' || tx.type === "restock")
-      .reduce((sum, tx) => sum + calculateShippingFromItems(tx), 0)
   }, [transactions])
 
   const totalPaymentReceived = useMemo(() => {
@@ -255,31 +246,17 @@ const AccountHistory = () => {
       .reduce((sum, tx) => {
         if (tx.type === 'payment') {
           if (tx.payment_direction === 'received') {
-            return sum + ((tx?.price || 0))
+            return sum + getTransactionAmount(tx)
           }
           return sum
-        } else if (tx.type === 'inventory_addition') {
-          return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if (tx.type === 'sample_returned') {
-          return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if (tx.type === "restock") {
-          return sum + (calculateTotalPriceWithShippingFromItems(tx))
-        } else if (tx.type === "return") {
-          return sum + (calculateTotalPriceWithShippingFromItems(tx))
         }
-        else {
-          return sum + ((tx?.price || 0))
-        }
+        return sum + getTransactionAmount(tx)
       }, 0)
   }, [transactions])
 
-  // Final amount due is calculated differently based on the checkbox.
   const finalAmountDue = useMemo(() => {
-    // Exclude shipping cost entirely.
     return totalsaleAmount - totalPaymentReceived
-    // Otherwise, include total shipping and any additional shipping payment.
-    //return (totalsaleAmount ) - (totalPaymentReceived + totalShipping_client)
-  }, [totalPaymentReceived, totalsaleAmount, totalShipping_client])
+  }, [totalPaymentReceived, totalsaleAmount])
 
   const formatCurrency = (value: number) =>
     `$${value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -344,10 +321,9 @@ const AccountHistory = () => {
 
   // Build detailed content for the Details column - MODIFIED
   const getDetailsContent = (tx: ITransaction) => {
-    console.log("tx", tx)
     if (tx.type === 'payment') {
       const method = tx.transactionpayment_id?.payment_method || 'N/A'
-      let content = `Payment of ${formatCurrency(tx.transactionpayment_id?.amount_paid)} ${tx.payment_direction} via ${method}`
+      let content = `Balance of ${formatCurrency(getPaymentAmount(tx))} ${tx.payment_direction} via ${method}`
       if (tx.notes) {
         content += ` (${tx.notes})`
       }
@@ -359,7 +335,7 @@ const AccountHistory = () => {
             const name = item?.name || "Unnamed Product"; // fallback in case `name` is undefined
             return (
               <div key={index}>
-                {item.qty} {item.unit} of {name} (@ {formatCurrency((item?.price || 0) + (item?.shippingCost || 0))} each)
+                {item.qty} {item.unit} of {name} (@ {formatCurrency(toNumber(item?.price) + toNumber(item?.shippingCost))} each)
               </div>
             );
           })}
@@ -373,7 +349,7 @@ const AccountHistory = () => {
             const name = txItem?.name || "Unnamed Product"; // fallback in case `name` is undefined
             return (
               <div key={index}>
-                {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency((txItem?.sale_price || 0))} each)
+                {txItem.qty} {txItem.unit} of {name} (@ {formatCurrency(toNumber(txItem?.sale_price))} each)
               </div>
             );
           })}
@@ -387,12 +363,12 @@ const AccountHistory = () => {
             {tx.items.map((item, index) => {
               const txItem = item.transactionitem_id
               const name = txItem?.name || txItem?.inventory_id?.name || 'Item'
-
-              // MODIFIED: Calculate price including shipping per unit, then multiply by quantity
-              const basePrice = txItem.sale_price || txItem?.price || 0;
-              const shippingPerUnit = tx.type !== "sale" ? txItem.shipping || 0 : 0;
-              const priceWithShipping = basePrice + shippingPerUnit;
-              const totalPrice = priceWithShipping * txItem.qty;
+              const units = getUnits(txItem?.qty, txItem?.measurement)
+              const isSaleLike = tx.type === 'sale' || tx.type === 'return'
+              const basePrice = isSaleLike ? toNumber(txItem?.sale_price) : toNumber(txItem?.price)
+              const shippingPerUnit = isSaleLike ? 0 : toNumber(txItem?.shipping ?? txItem?.shippingCost)
+              const priceWithShipping = basePrice + shippingPerUnit
+              const totalPrice = priceWithShipping * units
 
               return (
                 <div key={index}>
@@ -521,23 +497,33 @@ const AccountHistory = () => {
                     <tr key={idx}>
                       <td>{moment(tx.created_at).format('MM/DD/YYYY HH:mm')}</td>
                       <td>{getDetailsContent(tx)}</td>
-                      <td>{tx.type === 'inventory_addition' ? 'Inventory Addition' : tx.type === "sale" ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}` : tx.type}</td>
+                      <td>
+                        {tx.type === 'inventory_addition'
+                          ? 'Inventory Addition'
+                          : tx.type === 'sale'
+                          ? `sale ${tx?.sale_reference_id ? `#${tx?.sale_reference_id}` : ''}`
+                          : tx.type === 'payment'
+                          ? tx.payment_direction === 'given' || tx.payment_direction === 'received'
+                            ? `Balance (${tx.payment_direction.charAt(0).toUpperCase() + tx.payment_direction.slice(1)})`
+                            : 'Balance'
+                          : tx.type}
+                      </td>
                       <td>{tx.notes}</td>
                       <td>
-                        {tx.type === 'sale'
-                          ? ('+ ' + (formatCurrency(tx.sale_price)))
-                          : tx.type === "sample_recieved" ?
-                            ('+ ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))
-                            : tx.type === 'payment' &&
-                            tx.payment_direction === 'given' &&
-                            ('+ ' + formatCurrency(tx.price))}
+                        {tx.type === 'payment'
+                          ? tx.payment_direction === 'given' &&
+                          ('+ ' + formatCurrency(getTransactionAmount(tx)))
+                          : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock") &&
+                          ('+ ' + formatCurrency(getTransactionAmount(tx)))}
                       </td>
                       <td>
-                        {tx.type === 'payment'
-                          ? tx.payment_direction === 'received' &&
-                          ('- ' + formatCurrency(tx.price))
-                          : (tx.type === 'return' || tx.type === 'inventory_addition' || tx.type === 'sample_returned' || tx.type === "restock") &&
-                          ('- ' + (formatCurrency(calculateTotalPriceWithShippingFromItems(tx))))}
+                        {tx.type === 'sale'
+                          ? ('- ' + formatCurrency(getTransactionAmount(tx)))
+                          : tx.type === "sample_recieved" ?
+                            ('- ' + formatCurrency(getTransactionAmount(tx)))
+                            : tx.type === 'payment' &&
+                            tx.payment_direction === 'received' &&
+                            ('- ' + formatCurrency(getTransactionAmount(tx)))}
                       </td>
                     </tr>
                   ))

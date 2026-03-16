@@ -35,7 +35,7 @@ const multipleProductSchema = yup.object({
         .required('Price is required')
         .min(0, 'Price must be non-negative')
         .typeError('Price must be a number'),
-      product_type: yup.string().optional(),
+      product_type: yup.string().required('Product type is required'),
     })
   ).min(1, 'At least one product is required'),
   shippingCost: yup
@@ -489,7 +489,7 @@ function AddProductsPage() {
     name: 'products',
     defaultValue: [{ referenceNumber: '', name: '', qty: 0, unit: default_unit, category: '', measurement: 1, price: 0, product_type: "" }]
   })
-
+  console.log("productsData", productsData)
   const shippingCost = useWatch({
     control,
     name: 'shippingCost',
@@ -531,6 +531,7 @@ function AddProductsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [processingStatus, setProcessingStatus] = useState({ current: 0, total: 0 })
   const [showValidationErrors, setShowValidationErrors] = useState(false)
 
   // Confirmation modal state
@@ -608,6 +609,118 @@ function AddProductsPage() {
     })
   }
 
+  const loadTestData = () => {
+    const testData = [
+      { "qty": 11, "unit": "pounds", "name": "Hyberberry haze", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#DI" },
+      { "qty": 7, "unit": "pounds", "name": "Purple runtz", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 3, "unit": "pounds", "name": "Purple star", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Cake platium", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 10, "unit": "pounds", "name": "Apex60", "price": 350, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 16.5, "unit": "pounds", "name": "Pink crack", "price": 500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#39" },
+      { "qty": 12.5, "unit": "pounds", "name": "pink trap", "price": 575, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#40" },
+      { "qty": 11, "unit": "pounds", "name": "pink samuria", "price": 575, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#43" },
+      { "qty": 10.5, "unit": "pounds", "name": "pink galactic", "price": 600, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#38" },
+      { "qty": 12, "unit": "pounds", "name": "Pink sapphire", "price": 575, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#36" },
+      { "qty": 26.5, "unit": "pounds", "name": "Pink Obsidian", "price": 500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#41" },
+      { "qty": 20.5, "unit": "pounds", "name": "Pink elixir", "price": 650, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#42" },
+      { "qty": 14, "unit": "pounds", "name": "pink drip", "price": 725, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#57" },
+      { "qty": 6, "unit": "pounds", "name": "pink lava", "price": 750, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#59" },
+      { "qty": 7.5, "unit": "pounds", "name": "Pink ice", "price": 775, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#54" },
+      { "qty": 6, "unit": "pounds", "name": "Pink venom", "price": 825, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#53" },
+      { "qty": 22.5, "unit": "pounds", "name": "Pink frost", "price": 925, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#56 " },
+      { "qty": 21, "unit": "pounds", "name": "Pink prestige", "price": 875, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#58" },
+      { "qty": 3, "unit": "pounds", "name": "Lso Pink truck", "price": 2200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#3" },
+      { "qty": 4, "unit": "pounds", "name": "LSO Pink dystany", "price": 2200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#4" },
+      { "qty": 4.5, "unit": "pounds", "name": "LSO pink warfare", "price": 2200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#5" },
+      { "qty": 24.5, "unit": "pounds", "name": "Pink nova", "price": 600, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#45" },
+      { "qty": 8, "unit": "pounds", "name": "Pink black gas", "price": 600, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#44" },
+      { "qty": 20, "unit": "pounds", "name": "Pink inferno ", "price": 925, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#47" },
+      { "qty": 14, "unit": "pounds", "name": "Pink vortex", "price": 600, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#48" },
+      { "qty": 0.25, "unit": "kg", "name": "Bulldog", "price": 4500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 5.5, "unit": "kg", "name": "Chocolate hash", "price": 600, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 200, "unit": "per piece", "name": "Krt", "price": 5, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "kg", "name": "Kief", "price": 4500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1.5, "unit": "kg", "name": "Mercedes", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "kg", "name": "Romeo", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1.5, "unit": "kg", "name": "Afghan ", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1.5, "unit": "kg", "name": "Rolex", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "PinkLoad", "price": 75260, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2000, "unit": "per piece", "name": "Gas gang", "price": 14, "shippingCost": 0, "active": true, "notes": "", "reference_number": "1Gram" },
+      { "qty": 200, "unit": "per piece", "name": "Gas gang", "price": 18, "shippingCost": 0, "active": true, "notes": "", "reference_number": "2Grams" },
+      { "qty": 27, "unit": "pounds", "name": "UK Chesse", "price": 120, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 14, "unit": "pounds", "name": "Apple Fritter", "price": 160, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#AP" },
+      { "qty": 1, "unit": "pounds", "name": "white rhion", "price": 155, "shippingCost": 0, "active": true, "notes": "", "reference_number": "Outdoor" },
+      { "qty": 1, "unit": "pounds", "name": "OB", "price": 240, "shippingCost": 0, "active": true, "notes": "", "reference_number": "GH" },
+      { "qty": 7, "unit": "pounds", "name": "purple mendocino", "price": 500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 11, "unit": "pounds", "name": "Pineapple pink", "price": 200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 6, "unit": "pounds", "name": "Smalls pink cookies", "price": 350, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2, "unit": "pounds", "name": "Small purple", "price": 350, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2.5, "unit": "pounds", "name": "Hit man ", "price": 550, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2, "unit": "pounds", "name": "GMO cookies", "price": 350, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2, "unit": "pounds", "name": "Grandpa stash", "price": 450, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 2, "unit": "pounds", "name": "Sugar Kush", "price": 450, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 5, "unit": "pounds", "name": "Blue dream ", "price": 225, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 14, "unit": "pounds", "name": "Dys", "price": 225, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 43, "unit": "pounds", "name": "Mimosa", "price": 225, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 28, "unit": "pounds", "name": "White truffle", "price": 200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 6, "unit": "pounds", "name": "Mandarine cookies", "price": 200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 7, "unit": "pounds", "name": "Permanent marker", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Clementine", "price": 225, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Pink gealto", "price": 1500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 10, "unit": "pounds", "name": "DYS new", "price": 275, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Exotics gas", "price": 1500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "pink crack ", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink fuel", "price": 1100, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink panties", "price": 1500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink trap", "price": 925, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "pink obsidian", "price": 850, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink elixir", "price": 975, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Island pink", "price": 2100, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 23, "unit": "pounds", "name": "Gas smalls ", "price": 200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "##69", "price": 800, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#69" },
+      { "qty": 1, "unit": "pounds", "name": "##70", "price": 850, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#70" },
+      { "qty": 1, "unit": "pounds", "name": "##75", "price": 925, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#75" },
+      { "qty": 1, "unit": "pounds", "name": "##82", "price": 975, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#82" },
+      { "qty": 1, "unit": "pounds", "name": "##45", "price": 900, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#45" },
+      { "qty": 1, "unit": "pounds", "name": "Death bubba", "price": 950, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Midnight og ", "price": 925, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Pink black gas ", "price": 900, "shippingCost": 0, "active": true, "notes": "", "reference_number": "#44" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink grape", "price": 1500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "pounds", "name": "Island pink2 ", "price": 950, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink death bubba", "price": 1500, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink diablo", "price": 2150, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 0.5, "unit": "pounds", "name": "Pink champange", "price": 2100, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1000, "unit": "pounds", "name": "Pink emipre", "price": 1, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 1, "unit": "kg", "name": "Mystical gealto", "price": 375, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 3, "unit": "kg", "name": "Sherb crasher", "price": 375, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 100, "unit": "per piece", "name": "Heisenbergs", "price": 39.5, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 12, "unit": "kg", "name": "AFganh gold", "price": 1200, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 5, "unit": "kg", "name": "CAli plate", "price": 300, "shippingCost": 0, "active": true, "notes": "", "reference_number": "" },
+      { "qty": 40, "unit": "per piece", "name": "gasgang", "price": 22, "shippingCost": 0, "active": true, "notes": "", "reference_number": "2g" },
+      { "qty": 8, "unit": "pounds", "name": "pr2", "price": 90, "shippingCost": 0.33, "active": true, "notes": "", "reference_number": "4234" },
+      { "qty": 10, "unit": "pounds", "name": "rr", "price": 80, "shippingCost": 0.33, "active": true, "notes": "", "reference_number": "3432" },
+      { "qty": 10, "unit": "pounds", "name": "rr", "price": 90, "shippingCost": 0.33, "active": true, "notes": "", "reference_number": "2312" }
+    ];
+
+    const mappedProducts = testData.map(item => ({
+      referenceNumber: item.reference_number,
+      name: item.name,
+      qty: item.qty,
+      unit: item.unit,
+      category: userCategories.length > 0 ? userCategories[0].name : '',
+      price: item.price,
+      measurement: 1,
+      product_type: "6981e1367477d1f54528db8c"
+    }));
+
+    reset({
+      products: mappedProducts,
+      shippingCost: 0
+    });
+
+    showNotification({ message: 'Test data loaded', variant: 'info' });
+  }
+
   // Error callback for form submission
   const onError = (errors: any) => {
     console.log("Form errors", errors)
@@ -672,48 +785,75 @@ function AddProductsPage() {
   // Main form submission handler
   const processFormSubmission = async (data: MultipleProductFormData) => {
     setLoading(true)
+    const totalProducts = data.products.length
+    setProcessingStatus({ current: 0, total: totalProducts })
 
     const total_quantity = data.products.reduce((sum, currval) => sum + Number(currval.qty), 0)
     const avg_shipping = total_quantity > 0 ? Number(shippingCost) / total_quantity : 0
 
-    console.log("Calculation details:", {
-      avg_shipping,
-      total_quantity,
-      shippingCost,
-      totalAmount
-    })
+    let createdProducts: any[] = []
+    let successIndices: number[] = []
 
     try {
-      let products: any[] = []
-      const calls = data.products.map(async (prod) => {
-        const the_category = userCategories.find((cat) => cat.name === prod.category)
-        console.log('prod', prod)
-        const res = await api.post('/api/inventory', {
-          user_id: user._id,
-          buyer_id: selectedAccount?._id || null,
-          reference_number: prod.referenceNumber,
-          name: prod.name,
-          qty: prod.qty * prod.measurement,
-          unit: prod.unit,
-          category: the_category?._id,
-          price: prod.price,
-          shippingCost: avg_shipping.toFixed(2),
-          product_type: prod.product_type,
-          status: "",
-          notes: "",
-        })
-        products.push({ ...res.data, measurement: prod.measurement, qty: prod.qty })
+      // Process products one by one
+      for (let i = 0; i < data.products.length; i++) {
+        const prod = data.products[i]
+        setProcessingStatus({ current: i + 1, total: totalProducts })
+        
+        try {
+          const the_category = userCategories.find((cat) => cat.name === prod.category)
+          const res = await api.post('/api/inventory', {
+            user_id: user._id,
+            buyer_id: selectedAccount?._id || null,
+            reference_number: prod.referenceNumber,
+            name: prod.name,
+            qty: prod.qty * prod.measurement,
+            unit: prod.unit,
+            category: the_category?._id,
+            price: prod.price,
+            shippingCost: avg_shipping.toFixed(2),
+            product_type: prod.product_type,
+            status: "",
+            notes: "",
+          })
+          
+          createdProducts.push({ ...res.data, measurement: prod.measurement, qty: prod.qty })
+          successIndices.push(i)
+        } catch (error: any) {
+          console.error(`Error adding product ${prod.name || i}:`, error)
+          // Stop processing further if a product fails, so user can fix and continue
+          throw error
+        }
+      }
+
+      // If all succeeded, produce transaction
+      await produce_transaction(createdProducts, avg_shipping, shippingCost)
+      
+      // Remove all products from form since they are all uploaded
+      reset({
+        products: [],
+        shippingCost: 0
       })
-      await Promise.all(calls)
-      console.log('Created products =>', products)
-      await produce_transaction(products, avg_shipping, shippingCost)
-      showNotification({ message: 'Products added successfully', variant: 'success' })
+      
+      showNotification({ message: 'All products added successfully', variant: 'success' })
       router.back()
     } catch (error: any) {
-      console.error('Error adding products:', error)
-      showNotification({ message: error?.response?.data?.error || 'Error adding products', variant: 'danger' })
+      console.error('Error in batch processing:', error)
+      
+      // Remove successfully processed products from the form
+      // We sort descending to avoid index shifting issues while removing
+      const sortedIndices = [...successIndices].sort((a, b) => b - a)
+      sortedIndices.forEach(idx => remove(idx))
+      
+      const errorMessage = error?.response?.data?.error || 'Error adding products. Successfully processed items have been removed from the list.'
+      showNotification({ 
+        message: errorMessage, 
+        variant: 'danger',
+        autohide: false 
+      })
     } finally {
       setLoading(false)
+      setProcessingStatus({ current: 0, total: 0 })
     }
   }
 
@@ -1018,15 +1158,27 @@ function AddProductsPage() {
               </div>
             )}
 
-            <Button
-              variant="outline-primary"
-              onClick={handleAddRow}
-              className="mb-3 w-md-auto"
-              size="sm"
-            >
-              <IconifyIcon icon="tabler:plus" className="me-1" />
-              Add Another Product
-            </Button>
+            <div className="d-flex gap-2 mb-3">
+              <Button
+                variant="outline-primary"
+                onClick={handleAddRow}
+                className="w-md-auto"
+                size="sm"
+              >
+                <IconifyIcon icon="tabler:plus" className="me-1" />
+                Add Another Product
+              </Button>
+
+              <Button
+                variant="outline-warning"
+                onClick={loadTestData}
+                className="w-md-auto"
+                size="sm"
+              >
+                <IconifyIcon icon="tabler:test-pipe" className="me-1" />
+                Load Test Data
+              </Button>
+            </div>
 
             {/* Shipping Cost */}
             <Row className="mb-3">
@@ -1115,7 +1267,7 @@ function AddProductsPage() {
                     <div className="spinner-border spinner-border-sm me-2" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
-                    Processing...
+                    Processing {processingStatus.current} of {processingStatus.total}...
                   </>
                 ) : (
                   <>

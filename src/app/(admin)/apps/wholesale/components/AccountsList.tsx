@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { Metadata } from 'next'
 import PageTitle from '@/components/PageTitle'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
-import { Button, Card, Form, Row, Col, CardHeader } from 'react-bootstrap'
+import { Button, Card, Form, Row, Col, CardHeader, InputGroup } from 'react-bootstrap'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/utils/axiosInstance'
@@ -125,57 +125,111 @@ export default function WholesaleAccountsPage() {
           </div>
         </CardHeader>
         <Card.Body>
-          <h6 className="fs-15 mb-2">Select Account</h6>
-          <div className="position-relative">
+          <h6 className="fs-15 mb-2 text-muted fw-semibold">Select Account</h6>
+          <div className="position-relative" style={{ zIndex: dropdownOpen ? 1050 : 1 }}>
             <Button
-              variant="outline-secondary"
+              variant={dropdownOpen ? "light" : "outline-secondary"}
               onClick={() => setDropdownOpen((prev) => !prev)}
-              className="w-100 text-start d-flex justify-content-between align-items-center rounded-pill shadow-sm py-2 px-3"
+              className={`w-100 text-start d-flex justify-content-between align-items-center shadow-sm py-2 px-3 ${dropdownOpen ? 'border-primary' : ''}`}
+              style={{ borderRadius: '0.75rem', transition: 'all 0.2s ease' }}
             >
-              <span>
-                {selectedAccount
-                  ? `${selectedAccount.firstName} ${selectedAccount.lastName}`
-                  : 'Select an Account'}
-              </span>
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center">
+                {selectedAccount ? (
+                  <div className="d-flex align-items-center gap-2">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '32px', height: '32px', fontSize: '14px' }}>
+                      {selectedAccount.firstName?.charAt(0)}{selectedAccount.lastName?.charAt(0)}
+                    </div>
+                    <span className="fw-semibold text-dark fs-6" style={{ letterSpacing: '0.3px' }}>
+                      {selectedAccount.firstName} {selectedAccount.lastName}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-muted d-flex align-items-center">
+                    <IconifyIcon icon="tabler:user-search" className="me-2 fs-5 text-primary" />
+                    <span className="fw-medium">Select an Account...</span>
+                  </span>
+                )}
+              </div>
+              <div className="d-flex align-items-center gap-3">
                 {selectedAccount && (
                   <BalanceStatusIndicator balance={selectedAccount.currentBalance} />
                 )}
-                <IconifyIcon icon="tabler:chevron-down" className="fs-4" />
+                <IconifyIcon 
+                  icon={dropdownOpen ? "tabler:chevron-up" : "tabler:chevron-down"} 
+                  className={`fs-4 text-muted`} 
+                  style={{ transition: 'transform 0.2s ease', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}
+                />
               </div>
             </Button>
+            
             {dropdownOpen && (
               <div
-                className="position-absolute w-100 bg-white border rounded shadow"
-                style={{ zIndex: 1000, top: '110%' }}
+                className="position-absolute w-100 bg-white rounded shadow-lg border"
+                style={{ top: 'calc(100% + 8px)', overflow: 'hidden' }}
               >
-                <Form.Control
-                  type="text"
-                  placeholder="Search accounts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-0 p-2"
-                />
+                <div className="p-2 bg-light border-bottom">
+                  <InputGroup className="shadow-sm">
+                    <InputGroup.Text className="bg-white border-end-0 text-primary">
+                      <IconifyIcon icon="tabler:search" />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search accounts by name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="border-start-0 py-2"
+                      style={{ boxShadow: 'none' }}
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <InputGroup.Text 
+                        className="bg-white border-start-0 text-muted"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <IconifyIcon icon="tabler:x" />
+                      </InputGroup.Text>
+                    )}
+                  </InputGroup>
+                </div>
                 <ul
-                  className="list-unstyled mb-0"
-                  style={{ maxHeight: '300px', overflowY: 'auto', cursor: 'pointer' }}
+                  className="list-unstyled mb-0 m-0"
+                  style={{ maxHeight: '350px', overflowY: 'auto' }}
                 >
                   {filteredAccounts.length > 0 ? (
-                    filteredAccounts.map((acc) => (
+                    filteredAccounts.map((acc, index) => (
                       <li
                         key={acc._id}
-                        className="p-2 border-bottom hover-bg-light d-flex justify-content-between align-items-center"
+                        className={`p-3 d-flex justify-content-between align-items-center ${index !== filteredAccounts.length - 1 ? 'border-bottom border-light' : ''}`}
+                        style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         onClick={() => {
                           setSelectedAccount(acc)
                           setDropdownOpen(false)
+                          setSearchQuery('')
                         }}
                       >
-                        <span>{acc.firstName} {acc.lastName}</span>
+                        <div className="d-flex align-items-center gap-3">
+                          <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold text-uppercase" style={{ width: '40px', height: '40px' }}>
+                            {acc.firstName?.charAt(0)}{acc.lastName?.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="fw-semibold text-dark fs-6">{acc.firstName} {acc.lastName}</div>
+                            {(acc.email || acc.phone) && <div className="text-muted" style={{ fontSize: '0.8rem' }}>{acc.email || acc.phone || 'No contact info'}</div>}
+                          </div>
+                        </div>
                         <BalanceStatusIndicator balance={acc.currentBalance} />
                       </li>
                     ))
                   ) : (
-                    <li className="p-2 text-muted">No accounts found</li>
+                    <li className="p-5 text-center text-muted">
+                      <div className="bg-light rounded-circle d-inline-flex p-3 mb-3">
+                        <IconifyIcon icon="tabler:users-x" className="fs-1 text-secondary" />
+                      </div>
+                      <h6 className="fw-semibold mb-1">No matches found</h6>
+                      <p className="small mb-0">We couldn't find any account matching "{searchQuery}"</p>
+                    </li>
                   )}
                 </ul>
               </div>
