@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Metadata } from 'next'
 import { Row, Col, Card, CardBody, CardHeader, CardTitle, Button, Form, Table, Modal } from 'react-bootstrap'
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -10,9 +9,6 @@ import api from '@/utils/axiosInstance'
 import { useAuthStore } from '@/store/authStore'
 import { useNotificationContext } from '@/context/useNotificationContext'
 import IconifyIcon from '@/components/wrappers/IconifyIcon'
-
-export const metadata: Metadata = { title: 'Add Products' }
-
 const multipleProductSchema = yup.object({
   products: yup.array().of(
     yup.object({
