@@ -799,7 +799,7 @@ function AddProductsPage() {
       for (let i = 0; i < data.products.length; i++) {
         const prod = data.products[i]
         setProcessingStatus({ current: i + 1, total: totalProducts })
-        
+
         try {
           const the_category = userCategories.find((cat) => cat.name === prod.category)
           const res = await api.post('/api/inventory', {
@@ -816,7 +816,7 @@ function AddProductsPage() {
             status: "",
             notes: "",
           })
-          
+
           createdProducts.push({ ...res.data, measurement: prod.measurement, qty: prod.qty })
           successIndices.push(i)
         } catch (error: any) {
@@ -828,28 +828,28 @@ function AddProductsPage() {
 
       // If all succeeded, produce transaction
       await produce_transaction(createdProducts, avg_shipping, shippingCost)
-      
+
       // Remove all products from form since they are all uploaded
       reset({
         products: [],
         shippingCost: 0
       })
-      
+
       showNotification({ message: 'All products added successfully', variant: 'success' })
       router.back()
     } catch (error: any) {
       console.error('Error in batch processing:', error)
-      
+
       // Remove successfully processed products from the form
       // We sort descending to avoid index shifting issues while removing
       const sortedIndices = [...successIndices].sort((a, b) => b - a)
       sortedIndices.forEach(idx => remove(idx))
-      
+
       const errorMessage = error?.response?.data?.error || 'Error adding products. Successfully processed items have been removed from the list.'
-      showNotification({ 
-        message: errorMessage, 
+      showNotification({
+        message: errorMessage,
         variant: 'danger',
-        autohide: false 
+        autohide: false
       })
     } finally {
       setLoading(false)
@@ -1169,7 +1169,7 @@ function AddProductsPage() {
                 Add Another Product
               </Button>
 
-              <Button
+              {/* <Button
                 variant="outline-warning"
                 onClick={loadTestData}
                 className="w-md-auto"
@@ -1177,7 +1177,7 @@ function AddProductsPage() {
               >
                 <IconifyIcon icon="tabler:test-pipe" className="me-1" />
                 Load Test Data
-              </Button>
+              </Button> */}
             </div>
 
             {/* Shipping Cost */}
