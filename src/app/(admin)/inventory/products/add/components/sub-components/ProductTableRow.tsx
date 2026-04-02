@@ -18,6 +18,16 @@ interface ProductTableRowProps {
   productTypes: any[];
 }
 
+const preventNumberInputStepping = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    event.preventDefault()
+  }
+}
+
+const preventWheelNumberChange = (event: React.WheelEvent<HTMLInputElement>) => {
+  event.currentTarget.blur()
+}
+
 const ProductTableRow: React.FC<ProductTableRowProps> = ({
   index,
   control,
@@ -87,6 +97,8 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
               step="any"
               size="sm"
               isInvalid={!!productErrors?.qty && shouldShowErrors}
+              onKeyDown={preventNumberInputStepping}
+              onWheel={preventWheelNumberChange}
               {...field}
             />
           )}
@@ -179,6 +191,8 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
               step="any"
               size="sm"
               isInvalid={!!productErrors?.price && shouldShowErrors}
+              onKeyDown={preventNumberInputStepping}
+              onWheel={preventWheelNumberChange}
               {...field}
             />
           )}

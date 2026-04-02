@@ -18,6 +18,16 @@ interface MobileProductCardProps {
   productTypes: any[];
 }
 
+const preventNumberInputStepping = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    event.preventDefault()
+  }
+}
+
+const preventWheelNumberChange = (event: React.WheelEvent<HTMLInputElement>) => {
+  event.currentTarget.blur()
+}
+
 const MobileProductCard: React.FC<MobileProductCardProps> = ({
   index,
   control,
@@ -94,6 +104,8 @@ const MobileProductCard: React.FC<MobileProductCardProps> = ({
                   step="any"
                   size="sm"
                   isInvalid={!!productErrors?.qty && shouldShowErrors}
+                  onKeyDown={preventNumberInputStepping}
+                  onWheel={preventWheelNumberChange}
                   {...field}
                 />
               )}
@@ -149,6 +161,8 @@ const MobileProductCard: React.FC<MobileProductCardProps> = ({
                   step="any"
                   size="sm"
                   isInvalid={!!productErrors?.price && shouldShowErrors}
+                  onKeyDown={preventNumberInputStepping}
+                  onWheel={preventWheelNumberChange}
                   {...field}
                 />
               )}
